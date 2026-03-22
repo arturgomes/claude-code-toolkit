@@ -1,0 +1,24 @@
+{
+  "name": "arturgomes",
+  "owner": {
+    "name": "Artur Gomes",
+    "email": "arturgomes@users.noreply.github.com"
+  },
+  "metadata": {
+    "description": "Codebase intelligence layer for prp-core: adds Serena (LSP) + SocratiCode (semantic) search, cross-session memory keyed by Jira ticket + branch, and Jira context injection directly into the prp-plan and prp-implement workflow phases.",
+    "homepage": "https://github.com/arturgomes/claude-code-toolkit",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "codebase-intelligence",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/arturgomes/claude-code-toolkit.git",
+        "path": "plugins/codebase-intelligence"
+      },
+      "version": "1.0.0",
+      "description": "Augments prp-core prp-plan and prp-implement with two-tier codebase search (Serena LSP + SocratiCode semantic), cross-session task memory keyed by Jira ticket + branch, and live Jira ticket context injection. Install alongside prp-core."
+    }
+  ]
+}
