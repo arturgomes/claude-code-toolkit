@@ -1,15 +1,8 @@
 # arturgomes/claude-code-toolkit
 
-Claude Code **plugin marketplace** — intelligence layer for prp-core.
+Claude Code **plugin marketplace** — codebase intelligence layer for prp-core.
 
-## Add this marketplace
-
-```bash
-/plugin marketplace add arturgomes/claude-code-toolkit
-/plugin install codebase-intelligence
-```
-
-## Install alongside prp-core
+## Install
 
 ```bash
 /plugin marketplace add Wirasm/PRPs-agentic-eng
@@ -21,74 +14,52 @@ Claude Code **plugin marketplace** — intelligence layer for prp-core.
 
 ---
 
-## What this adds to prp-core
+## Skills
 
-`codebase-intelligence` shadows `prp-core:prp-plan` and `prp-core:prp-implement` with
-augmented versions. Every original phase is preserved — the plugin only injects at
-specific integration points.
-
-### In `prp-plan`
-
-```
-Pre-Phase I   → Load ~/.claude/memory/<TICKET>/<branch>.md
-Pre-Phase II  → Fetch Jira ticket: summary, AC, QA failure comments
-Phase 2 (EXPLORE):
-  Step 2A     → Memory pre-fill (skip re-searching cached areas)
-  Step 2B     → prp-core:codebase-explorer + prp-core:codebase-analyst (unchanged)
-  Step 2C     → Serena LSP symbol resolution + SocratiCode semantic enrichment
-  Discovery   → Table gains Source column (memory/serena/socraticode/explorer/analyst)
-Phase 6 (GENERATE):
-  Plan file   → Gets Intelligence Context section (ticket, AC, QA, discovery sources)
-Post-gen      → Save planning session to memory
-```
-
-### In `prp-implement`
-
-```
-Pre-Phase     → Load memory, restore prior task completion state
-Phase 3.0     → Per-file memory cache check before first task
-Phase 3.1     → Check memory before reading each MIRROR file
-Phase 3.4     → Save interim memory every 3 tasks
-Phase 5.2     → Report gets Intelligence Summary section
-Phase 5.5     → Final memory save with full implementation status
-```
-
----
+| Skill | Purpose |
+|---|---|
+| `task-memory` | Cross-session memory in `~/.claude/memory/<TICKET>/<branch>.md` |
+| `codebase-search` | Serena (LSP) + SocratiCode (semantic), cache-aside |
+| `drift-guard` | Seven drift questions at every phase gate — keeps work anchored to AC |
+| `context7-research` | Context7 MCP — verified library docs, no hallucinated API calls |
+| `ask-kb` | Query personal KB for patterns and principles |
+| `consult-kb` | Review architecture decisions against KB |
+| `kb-indexer` | Ingest books/PDFs into the KB |
 
 ## MCP setup
 
-### Serena (LSP structural)
 ```bash
+# Serena
 docker pull ghcr.io/oraios/serena:latest
 claude mcp add serena --transport stdio \
-  -- docker run --rm -i --network host \
-  -v ~/projects:/workspaces/projects \
+  -- docker run --rm -i --network host -v ~/projects:/workspaces/projects \
   ghcr.io/oraios/serena:latest serena start-mcp-server --transport stdio
-```
 
-### SocratiCode (semantic — zero config)
-```bash
+# SocratiCode (zero config)
 claude mcp add socraticode --transport stdio -- npx -y socraticode
-# Then once per project: > Index this codebase
-```
 
-### Atlassian Jira
-```bash
-echo -n "email@company.com:jira-api-token" | base64
-claude mcp add atlassian \
-  --transport http https://mcp.atlassian.com/v1/mcp \
+# Context7
+claude mcp add context7 --transport http https://mcp.context7.com/mcp
+
+# Atlassian Jira
+echo -n "email@company.com:api-token" | base64
+claude mcp add atlassian --transport http https://mcp.atlassian.com/v1/mcp \
   --header "Authorization: Basic <base64>"
 ```
-API token: https://id.atlassian.com/manage-profile/security/api-tokens
 
----
-
-## Memory location
-
-All memory lives in `~/.claude/memory/` — never inside project directories.
+## KB setup
 
 ```bash
-# Protect from accidental commits (run once globally)
-echo ".memory/" >> ~/.gitignore_global
+mkdir -p ~/kb
+cp plugins/codebase-intelligence/skills/ask-kb/references/kb-registry-example.yaml ~/kb/kb-registry.yaml
+# edit to point at your KB files
+```
+
+## Global gitignore
+
+```bash
+printf ".memory/\n.serena/\n.indexes/\n" >> ~/.gitignore_global
 git config --global core.excludesfile ~/.gitignore_global
 ```
+
+See [plugins/codebase-intelligence/README.md](plugins/codebase-intelligence/README.md) for the full phase injection map.

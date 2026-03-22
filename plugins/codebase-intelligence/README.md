@@ -1,143 +1,118 @@
 # codebase-intelligence
 
-Augments **prp-core** (Wirasm/PRPs-agentic-eng) with a persistent intelligence layer.
-
-Install alongside prp-core. The commands here shadow `prp-core:prp-plan` and
-`prp-core:prp-implement` with augmented versions that add memory, Jira context,
-and two-tier search without removing any of the original logic.
+Intelligence layer for prp-core. Adds memory, KB, Context7, and drift-guard to
+`prp-plan` and `prp-implement` without removing any original prp-core logic.
 
 ---
 
-## What changes in each command
-
-### `prp-plan` augmentations
-
-| Phase | Original | Added by codebase-intelligence |
-|---|---|---|
-| Pre-Phase I | — | Load `~/.claude/memory/{TICKET}/{BRANCH}.md` |
-| Pre-Phase II | — | Fetch Jira ticket + acceptance criteria + QA failure comments |
-| Phase 2 Step 2A | — | Memory pre-fill: skip re-searching areas already cached |
-| Phase 2 Steps 2B | `codebase-explorer` + `codebase-analyst` agents | Unchanged |
-| Phase 2 Step 2C | — | Serena symbol resolution + SocratiCode semantic enrichment |
-| Phase 2 table | 5 columns | + `Source` column (memory/serena/socraticode/explorer/analyst) |
-| Phase 6 plan | Standard sections | + `Intelligence Context` section (ticket, AC, QA, discovery sources) |
-| Post-generation | — | Save planning session to task-memory |
-
-### `prp-implement` augmentations
-
-| Phase | Original | Added by codebase-intelligence |
-|---|---|---|
-| Pre-Phase | — | Load task-memory, restore prior task completion state |
-| Phase 3.0 | — | Per-file memory cache check before implementation starts |
-| Phase 3.1 | Read MIRROR file | + Check memory for prior findings on this file |
-| Phase 3.4 | — | Save interim memory entry every 3 tasks |
-| Phase 5.2 | Standard report | + Intelligence Summary section |
-| Phase 5.5 | — | Final memory save with full implementation status |
-
----
-
-## Components
-
-| File | Type | Purpose |
-|---|---|---|
-| `commands/prp-plan.md` | Command | Shadows `prp-core:prp-plan` |
-| `commands/prp-implement.md` | Command | Shadows `prp-core:prp-implement` |
-| `skills/task-memory.md` | Skill | Cross-session memory in `~/.claude/memory/` |
-| `skills/codebase-search.md` | Skill | Two-tier search: Serena (LSP) + SocratiCode (semantic) |
-| `agents/codebase-researcher.md` | Agent | Standalone pre-planning research pass |
-
----
-
-## MCP dependencies
-
-### Serena — structural LSP search
-```bash
-docker pull ghcr.io/oraios/serena:latest
-
-claude mcp add serena --transport stdio \
-  -- docker run --rm -i --network host \
-  -v ~/projects:/workspaces/projects \
-  ghcr.io/oraios/serena:latest serena start-mcp-server --transport stdio
-```
-
-### SocratiCode — semantic vector search (zero config)
-```bash
-# Auto-manages its own Qdrant + Ollama Docker containers on first run
-claude mcp add socraticode --transport stdio -- npx -y socraticode
-```
-
-Index your project once after install:
-```
-> Index this codebase
-```
-
-### Atlassian Jira — ticket context
-```bash
-echo -n "your-email@company.com:your-api-token" | base64
-
-claude mcp add atlassian \
-  --transport http https://mcp.atlassian.com/v1/mcp \
-  --header "Authorization: Basic <base64-output>"
-```
-
-Get your API token: https://id.atlassian.com/manage-profile/security/api-tokens
-
----
-
-## Install both plugins
-
-```bash
-# 1. Add prp-core marketplace
-/plugin marketplace add Wirasm/PRPs-agentic-eng
-/plugin install prp-core
-
-# 2. Add codebase-intelligence marketplace
-/plugin marketplace add arturgomes/claude-code-toolkit
-/plugin install codebase-intelligence
-```
-
-Commands from `codebase-intelligence` shadow the same-named commands from `prp-core`.
-Claude Code gives precedence to user-installed plugins in alphabetical order — if needed,
-manage precedence via `/plugin` settings.
-
----
-
-## Typical workflow
+## Phase injection map — prp-plan
 
 ```
-# New feature
-/prp-plan "implement PDF export for invoices PROJ-421"
-  → loads memory (none) → fetches Jira PROJ-421 → runs agents + Serena + SocratiCode
-  → generates plan with Intelligence Context section
-  → saves planning session to memory
+Pre-Phase I    → task-memory: load ~/.claude/memory/<TICKET>/<branch>.md
+Pre-Phase II   → Atlassian MCP: Jira ticket, AC, QA failure comments
+Pre-Phase III  → drift-guard: TASK ANCHOR with verbatim AC (GATE if AC missing)
 
-/prp-implement .claude/PRPs/plans/pdf-export.plan.md
-  → loads memory (1 session) → restores prior findings
-  → implements tasks with per-file cache checks
-  → saves every 3 tasks + final session
+Phase 0 gate   → [ANCHOR] re-stated
+Phase 1 gate   → drift-guard: user story maps to ≥1 AC?
 
-# QA failure 3 weeks later
-/prp-plan "fix PROJ-421 QA failures"
-  → loads memory (2 sessions: planning + implementation)
-  → fetches Jira — finds QA rejection comment
-  → resumes from exactly where implementation left off
-  → no re-investigation needed
+Phase 2:
+  Step 2A      → task-memory: cache pre-fill
+  Step 2B      → prp-core:codebase-explorer + prp-core:codebase-analyst (unchanged)
+  Step 2C      → codebase-search: Serena + SocratiCode enrichment
+  Step 2D      → ask-kb: personal KB patterns for feature domain
+  Step 2E gate → drift-guard Q#1,2,5: every file must trace to ≥1 AC
+
+Phase 3:
+  Step 3A      → context7-research: verify all library APIs first
+  Step 3B      → ask-kb: check KB before sending to web-researcher
+  Step 3C      → prp-core:web-researcher (gaps only, after Context7 + KB)
+  Gate         → drift-guard Q#5: no research-introduced scope in plan
+
+Phase 4 gate   → drift-guard Q#3: after-state = minimum that satisfies AC
+
+Phase 5:
+  KB review    → consult-kb: architecture against KB principles (🔴/🟡/🟢/💡)
+  Gate         → drift-guard: full 7 questions → ✅ ON TRACK required
+
+Phase 6 plan:
+  Added        → Intelligence Context section (ticket, AC verbatim, KB, Context7, QA)
+  Added        → AC Traceability table (every AC → ≥1 task, every task → ≥1 AC)
+  Gate         → drift-guard Q#7: every AC has a task?
+
+Post-gen       → task-memory: save planning session
+```
+
+## Phase injection map — prp-implement
+
+```
+Pre-Phase I    → task-memory: restore prior context + task completion state
+Pre-Phase II   → drift-guard: load TASK ANCHOR from plan
+
+Per-task (Phase 3):
+  3.0          → task-memory: per-file cache pre-load
+  3.0b         → context7-research: pre-load confirmed library signatures
+  3.1 (EVERY)  → drift-guard Q#1,4: before EVERY task — "which AC? adding anything extra?"
+  3.3          → context7-research: verify API before writing library call
+  3.4          → ask-kb: KB pattern for non-trivial implementation decisions
+  3.7          → drift-guard: "while I'm here" stop signal
+  3.8          → task-memory: save every ~3 tasks (crash-safe)
+
+Phase 4.5      → drift-guard final gate: every AC verified with a named test
+
+Phase 5.2 report:
+  Added        → Intelligence Summary (memory, Context7, KB, drift stats)
+  Added        → AC coverage table (every AC with test name and result)
+
+Phase 5.5      → task-memory: final save (Context7 + KB findings preserved for future sessions)
 ```
 
 ---
 
-## Memory location
+## drift-guard: the seven questions
+
+Run at every phase gate and before every implementation task:
+
+1. **REQUIREMENT TRACE** — Does this directly serve an AC?
+2. **SCOPE BOUNDARY** — Is this inside the files the plan identified?
+3. **COMPLEXITY BUDGET** — More complex than the problem warrants?
+4. **GOLD-PLATE CHECK** — More general/flexible/elegant than AC requires?
+5. **RESEARCH DRIFT** — Did research introduce scope not in the original ticket?
+6. **ARCHITECTURAL DRIFT** — Architectural decisions beyond what this task needs?
+7. **AC COVERAGE** — Which AC does NOT yet have a corresponding task?
+
+Verdict: ✅ ON TRACK (all pass) · ⚠️ DRIFT RISK (1-2) · 🔴 DRIFTING (3+, STOP)
+
+---
+
+## Context7 anti-hallucination contract
+
+Before any external library call is written:
+1. Library version read from `package.json`
+2. `context7 → resolve-library-id`
+3. `context7 → get-library-docs` for the specific API topic
+4. Confirmed signature documented in plan's `Context7 Library Facts` section
+5. Implementation uses only confirmed signatures
+
+If Context7 is unavailable → flag response as **unverified**.
+
+---
+
+## Memory structure
 
 ```
 ~/.claude/memory/
 ├── PROJ-421/
-│   └── feature-pdf-export.md        ← planning + implementation sessions
-└── PROJ-388/
-    └── bugfix-auth-timeout.md
+│   └── feature-pdf-export.md     ← planning + implementation + QA resume sessions
+├── PROJ-388/
+│   └── bugfix-auth-timeout.md
+└── PROJ-512/
+    └── main.md                   ← fallback when branch has no ticket prefix
 ```
 
-Add to global gitignore (run once):
-```bash
-echo ".memory/" >> ~/.gitignore_global
-git config --global core.excludesfile ~/.gitignore_global
-```
+Each file accumulates dated session entries:
+- Planning session: findings, decisions, KB results, Context7 facts
+- Implementation sessions: per-task progress, deviations, drift removals
+- QA resume sessions: failure context, what was tried, resumption point
+
+A session interrupted mid-task restarts with full context. A QA failure weeks later
+restores the entire investigation — no re-research needed.

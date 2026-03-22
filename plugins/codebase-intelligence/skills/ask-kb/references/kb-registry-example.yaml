@@ -1,0 +1,96 @@
+# kb-registry.yaml
+# Place this file at: ~/kb/kb-registry.yaml (or set KB_ROOT env var)
+# This is the INDEX — Claude reads this first, then only loads relevant files.
+# Keep descriptions tight. Keywords drive selection.
+
+version: "1.0"
+
+# Default root for all KB paths below
+# Can be overridden per-entry with absolute paths
+kb_root: "~/kb"
+
+knowledge_bases:
+
+  - id: software-architecture
+    name: "Software Architecture Patterns"
+    description: "System design, distributed patterns, microservices, event-driven architecture"
+    keywords:
+      - architecture
+      - microservices
+      - event sourcing
+      - cqrs
+      - saga
+      - retry
+      - circuit breaker
+      - domain driven design
+      - ddd
+      - bounded context
+      - hexagonal
+      - clean architecture
+    sources:
+      - title: "Building Microservices - Sam Newman"
+        file: "architecture/building-microservices.md"
+        topics: [service decomposition, inter-service communication, deployment]
+      - title: "Designing Data-Intensive Applications - Kleppmann"
+        file: "architecture/ddia.md"
+        topics: [replication, partitioning, transactions, stream processing]
+      - title: "Personal Architecture Principles"
+        file: "architecture/my-principles.md"
+        topics: [our stack decisions, patterns we use, patterns we avoid]
+
+  - id: engineering-excellence
+    name: "Engineering Excellence"
+    description: "Code quality, testing strategies, refactoring, clean code practices"
+    keywords:
+      - clean code
+      - refactoring
+      - testing
+      - tdd
+      - solid
+      - dry
+      - design patterns
+      - technical debt
+    sources:
+      - title: "Clean Code - Robert Martin"
+        file: "engineering/clean-code.md"
+        topics: [naming, functions, comments, formatting, error handling]
+      - title: "A Philosophy of Software Design - Ousterhout"
+        file: "engineering/philosophy-sw-design.md"
+        topics: [complexity, deep modules, information hiding]
+
+  - id: strategy
+    name: "Business & Product Strategy"
+    description: "Strategic frameworks, product decisions, market positioning, competitive advantage"
+    keywords:
+      - strategy
+      - product strategy
+      - competitive advantage
+      - market
+      - where to play
+      - how to win
+      - value proposition
+    sources:
+      - title: "Playing to Win - Lafley & Martin"
+        file: "strategy/playing-to-win.md"
+        topics: [winning aspiration, where to play, how to win, capabilities, management systems]
+
+  - id: llm-engineering
+    name: "LLM Engineering"
+    description: "Prompt engineering, RAG, agents, AI system design, LLM patterns"
+    keywords:
+      - llm
+      - prompt
+      - rag
+      - retrieval augmented generation
+      - agent
+      - chain of thought
+      - few shot
+      - embedding
+      - vector database
+    sources:
+      - title: "AI Engineering - Chip Huyen"
+        file: "llm/ai-engineering.md"
+        topics: [evaluation, fine-tuning, RAG patterns, deployment]
+      - title: "Personal LLM Patterns"
+        file: "llm/my-llm-patterns.md"
+        topics: [prompting conventions, tool use patterns, agent architecture]

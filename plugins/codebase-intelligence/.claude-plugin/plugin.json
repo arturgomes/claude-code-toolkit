@@ -1,6 +1,6 @@
 {
   "name": "codebase-intelligence",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Augments prp-core prp-plan and prp-implement with two-tier codebase search (Serena LSP + SocratiCode semantic), cross-session task memory keyed by Jira ticket + branch, and live Jira ticket context injection. Install alongside prp-core.",
   "author": {
     "name": "Artur Gomes",

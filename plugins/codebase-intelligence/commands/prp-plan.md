@@ -1,308 +1,321 @@
 ---
 description: >
-  Enhanced prp-plan with codebase intelligence. Extends prp-core:prp-plan with:
-  cross-session memory (task-memory skill), live Jira ticket context (Atlassian MCP),
-  and two-tier codebase search (Serena + SocratiCode) injected into Phase 2 EXPLORE.
-  Use exactly as you would /prp-plan — pass a feature description or path to a .prd.md file.
+  Enhanced prp-plan. Extends prp-core:prp-plan with: cross-session memory (task-memory),
+  Jira context injection (Atlassian MCP), two-tier codebase search (Serena + SocratiCode),
+  personal knowledge base consultation (ask-kb + consult-kb), verified library docs (Context7),
+  and continuous requirements grounding (drift-guard).
+  Use exactly as prp-core:prp-plan — pass a feature description, Jira ticket, or .prd.md path.
 argument-hint: <feature description | JIRA-TICKET | path/to/prd.md>
 ---
 
 <objective>
-Transform "$ARGUMENTS" into a battle-tested implementation plan through systematic codebase
-exploration, pattern extraction, strategic research, AND persistent memory + semantic search.
+Transform "$ARGUMENTS" into a battle-tested implementation plan.
 
 **Core Principle**: PLAN ONLY — no code written. Create a context-rich document that enables
 one-pass implementation success.
 
-**Execution Order**: MEMORY FIRST → JIRA CONTEXT → CODEBASE (structural + semantic + agents) → RESEARCH.
+**Non-negotiable**: Every decision in this plan must trace to an acceptance criterion.
+The drift-guard skill enforces this at every phase gate. When in doubt, do less — not more.
 
-**Agent Strategy** (same as prp-core, augmented):
-- `prp-core:codebase-explorer` — finds WHERE code lives and extracts implementation patterns
-- `prp-core:codebase-analyst` — analyzes HOW integration points work and traces data flow
-- `prp-core:web-researcher` — strategic web research with citations and gap analysis
+**Execution Order**:
+MEMORY → JIRA → ANCHOR → DETECT → PARSE → EXPLORE → KB → CONTEXT7 → RESEARCH → DESIGN → ARCHITECT → GENERATE
 
-**Intelligence Layer** (added by codebase-intelligence):
-- `codebase-intelligence:task-memory` skill — load prior session findings before any search
-- `codebase-intelligence:codebase-search` skill — Serena (LSP) + SocratiCode (semantic) to
-  enrich Phase 2 discovery table with exact file:line references and semantic neighbours
-- Atlassian MCP — inject live Jira ticket context, acceptance criteria, QA failure comments
+**Skill + Agent roster**:
+- `codebase-intelligence:task-memory` — prior session context
+- `codebase-intelligence:drift-guard` — requirements anchor, enforced at every gate
+- `codebase-intelligence:codebase-search` — Serena (LSP) + SocratiCode (semantic)
+- `codebase-intelligence:ask-kb` — personal KB patterns and principles
+- `codebase-intelligence:consult-kb` — KB review of proposed architecture
+- `codebase-intelligence:context7-research` — verified library docs, no hallucination
+- `prp-core:codebase-explorer` — WHERE code lives, implementation patterns
+- `prp-core:codebase-analyst` — HOW integration points work, data flow
+- `prp-core:web-researcher` — external docs (runs AFTER Context7 + KB, gaps only)
 </objective>
 
 <context>
 CLAUDE.md rules: @CLAUDE.md
 
-**Directory Discovery** (run these to understand project structure):
-- List root contents: `ls -la`
-- Find main source directories: `ls -la */ 2>/dev/null | head -50`
-- Identify project type from config files (package.json, pyproject.toml, Cargo.toml, go.mod, etc.)
-
-**IMPORTANT**: Do NOT assume `src/` exists. Discover the actual structure before proceeding.
+**Directory Discovery**:
+- `ls -la` and `ls -la */ 2>/dev/null | head -50`
+- Identify project type from config files (package.json, pyproject.toml, Cargo.toml, go.mod)
+- Do NOT assume `src/` exists — discover actual structure first.
 </context>
 
 <process>
 
 <!-- ═══════════════════════════════════════════════════════════════════
-     INTELLIGENCE PRE-PHASE — added by codebase-intelligence plugin
-     Runs BEFORE the standard prp-core phases
+     PRE-PHASES — codebase-intelligence layer
      ═══════════════════════════════════════════════════════════════════ -->
 
-## Pre-Phase I: MEMORY — Load prior session context
+## Pre-Phase I: MEMORY — Restore prior context
 
-Follow skill: `codebase-intelligence:task-memory` → **SESSION START protocol**
+Follow skill: `codebase-intelligence:task-memory` → SESSION START protocol.
 
-Steps:
-1. Run `git branch --show-current` → store as {branch}
-2. Extract Jira ticket ID: match `[A-Z]+-[0-9]+` from {branch} or from `$ARGUMENTS`
+1. `git branch --show-current` → {branch}
+2. Extract ticket: `[A-Z]+-[0-9]+` from {branch} or `$ARGUMENTS`
 3. Check `~/.claude/memory/{TICKET}/{BRANCH}.md`
 
-**If memory EXISTS:**
-- Read last 3 sessions
-- Print summary: last date · implementation status · open blockers
-- Ask user: "📂 Prior context found for {TICKET}. Continue from last session, or start fresh?"
-- If continuing: pre-populate discovery table with prior file:line findings (skip re-searching those areas)
-
-**If memory DOES NOT EXIST:**
-- Print: "🆕 No prior memory for {TICKET}. Running full discovery."
-- Create empty memory file
+If memory **exists**: load last 3 sessions, print summary, ask "Continue or start fresh?"
+If memory **absent**: "🆕 No prior memory for {TICKET}. Starting fresh."
 
 **PRE-PHASE-I CHECKPOINT:**
 - [ ] Branch and ticket ID determined
-- [ ] Memory loaded (or confirmed absent)
-- [ ] Prior findings pre-populated (or fresh start confirmed)
+- [ ] Memory loaded or fresh start confirmed
 
 ---
 
 ## Pre-Phase II: JIRA — Inject ticket context
 
-**If Atlassian MCP is available and a ticket ID was found:**
+If Atlassian MCP is available and a ticket ID was found:
 
-1. Fetch issue: `get_issue(ticket_id)`
-2. Extract and store:
-   - Summary and full description
-   - Acceptance criteria (from Description or dedicated AC field)
-   - Labels, priority, story points
-   - **All comments** — scan for QA/failure keywords: fail, reject, QA, blocked, acceptance, doesn't pass
-3. If QA failure comments found, print:
-   > "⚠️ QA failure detected in comments ({date}): {one-line summary}"
-   > This will be included in the plan as a "QA Context" section.
+1. `get_issue(ticket_id)` → full issue
+2. Extract: summary, description, acceptance criteria, labels, priority, story points
+3. Scan all comments for: fail, reject, QA, blocked, doesn't pass, acceptance criteria
+4. QA failures found → print: "⚠️ QA failure detected ({date}): {one-line summary}"
 
-**If Atlassian MCP is unavailable:**
-- Skip silently — do not block planning
-- Note in plan: "Jira context unavailable — acceptance criteria sourced from user input only"
+If unavailable: skip silently, note "Jira context unavailable" in plan.
 
 **PRE-PHASE-II CHECKPOINT:**
 - [ ] Jira ticket context fetched (or skipped with note)
-- [ ] Acceptance criteria extracted
-- [ ] QA failures identified (if any)
+- [ ] Acceptance criteria captured
+- [ ] QA failures identified
+
+---
+
+## Pre-Phase III: ANCHOR — Establish the requirements anchor
+
+Follow skill: `codebase-intelligence:drift-guard` → The Anchor Document.
+
+Write this now, before any discovery or design:
+
+```
+TASK ANCHOR
+───────────────────────────────────────────────
+Ticket:  {JIRA-TICKET}
+Summary: {one-line description}
+Type:    {NEW_CAPABILITY | BUG_FIX | ENHANCEMENT | REFACTOR}
+
+Acceptance Criteria (verbatim — do not paraphrase):
+  1. {AC item 1}
+  2. {AC item 2}
+  ...
+
+Hard boundaries (NOT in scope):
+  {to be defined in Phase 5 — placeholder for now}
+───────────────────────────────────────────────
+```
+
+**This anchor is fixed for this session.** Every phase gate re-states it.
+
+**GATE**: AC missing or vague → STOP. Ask the user to specify at least one testable AC
+before continuing. A plan without clear AC will drift by definition.
+
+**PRE-PHASE-III CHECKPOINT:**
+- [ ] Anchor written with ≥1 testable AC
+- [ ] AC is observable (pass/fail determinable)
+
+---
 
 <!-- ═══════════════════════════════════════════════════════════════════
-     STANDARD prp-core PHASES — unchanged from Wirasm/PRPs-agentic-eng
+     STANDARD prp-core PHASES — unchanged logic, intelligence injected
      ═══════════════════════════════════════════════════════════════════ -->
 
 ## Phase 0: DETECT - Input Type Resolution
 
-**Determine input type:**
-
 | Input Pattern | Type | Action |
-|---------------|------|--------|
-| Ends with `.prd.md` | PRD file | Parse PRD, select next phase |
-| Ends with `.md` and contains "Implementation Phases" | PRD file | Parse PRD, select next phase |
-| File path that exists | Document | Read and extract feature description |
-| Free-form text | Description | Use directly as feature input |
-| Empty/blank | Conversation | Use conversation context as input |
+|---|---|---|
+| Ends with `.prd.md` | PRD file | Parse PRD, select next pending phase |
+| Ends with `.md` + "Implementation Phases" | PRD file | Parse PRD, select next pending phase |
+| Existing file path | Document | Read and extract feature description |
+| Free-form text | Description | Use directly |
+| Empty/blank | Conversation | Use conversation context |
 
-### If PRD File Detected:
-
-1. Read the PRD file
-2. Parse the Implementation Phases table — find rows with `Status: pending`
-3. Check dependencies — only select phases whose dependencies are `complete`
-4. Select the next actionable phase
-5. Extract phase context (PHASE, GOAL, SCOPE, SUCCESS SIGNAL, PRD CONTEXT)
-6. Report selection to user
-
-### If Free-form or Conversation Context:
-- Proceed directly to Phase 1 with the input as feature description
+If PRD detected: read file, find next pending phase with dependencies complete, extract context, report to user.
 
 **PHASE_0_CHECKPOINT:**
 - [ ] Input type determined
-- [ ] If PRD: next phase selected and dependencies verified
-- [ ] Feature description ready for Phase 1
+- [ ] Feature description ready
+- [ANCHOR] {ticket} — AC: {AC list}
 
 ---
 
 ## Phase 1: PARSE - Feature Understanding
 
-**EXTRACT from input:**
+Extract: core problem, user value, feature type (NEW_CAPABILITY | ENHANCEMENT | REFACTOR | BUG_FIX), complexity (LOW | MEDIUM | HIGH), affected systems.
 
-- Core problem being solved
-- User value and business impact
-- Feature type: NEW_CAPABILITY | ENHANCEMENT | REFACTOR | BUG_FIX
-- Complexity: LOW | MEDIUM | HIGH
-- Affected systems list
-
-**FORMULATE user story:**
-
+Formulate user story:
 ```
 As a <user type>
 I want to <action/goal>
 So that <benefit/value>
 ```
 
+**DRIFT CHECK**: Does the user story match the TASK ANCHOR? Reconcile any mismatch now.
+
 **PHASE_1_CHECKPOINT:**
+- [ ] Problem statement specific and testable
+- [ ] User story maps to ≥1 AC item
+- [ ] Complexity has rationale
+- [ANCHOR] {ticket} — AC: {AC list}
 
-- [ ] Problem statement is specific and testable
-- [ ] User story follows correct format
-- [ ] Complexity assessment has rationale
-- [ ] Affected systems identified
-
-**GATE**: If requirements are AMBIGUOUS → STOP and ASK user for clarification before proceeding.
+**GATE**: AMBIGUOUS requirements → STOP and ask before proceeding.
 
 ---
 
 ## Phase 2: EXPLORE - Codebase Intelligence
 
-<!-- ─────────────────────────────────────────────────────────────────
-     AUGMENTED PHASE — codebase-intelligence adds Steps 2A and 2B
-     before and after the standard agent launch
-     ───────────────────────────────────────────────────────────────── -->
+### Step 2A — Memory pre-fill
 
-### Step 2A — MEMORY PRE-FILL (codebase-intelligence)
-
-Before launching agents: check task-memory for areas already investigated.
-Follow skill: `codebase-intelligence:codebase-search` → **Execution flow step 1**.
-
-- For each area in the feature scope, check if a prior finding exists in memory
-- Mark pre-filled areas with `[FROM MEMORY]` in the discovery table
-- Only run agents and MCP searches for areas NOT already covered
+Follow `codebase-intelligence:codebase-search` → Execution flow step 1.
+Mark cached areas `[FROM MEMORY]`. Only search uncached areas.
 
 ---
 
-### Step 2B — PARALLEL AGENTS (standard prp-core)
+### Step 2B — Parallel agents (standard prp-core)
 
-**Launch two agents in parallel using multiple Task tool calls in a single message:**
+Launch simultaneously using multiple Task tool calls:
 
-#### Agent 1: `prp-core:codebase-explorer`
-
+**Agent 1: `prp-core:codebase-explorer`**
 ```
-Find all code relevant to implementing: [feature description].
-
-LOCATE:
-1. Similar implementations - analogous features with file:line references
-2. Naming conventions - actual examples of function/class/file naming
-3. Error handling patterns - how errors are created, thrown, caught
-4. Logging patterns - logger usage, message formats
-5. Type definitions - relevant interfaces and types
-6. Test patterns - test file structure, assertion styles, test file locations
-7. Configuration - relevant config files and settings
-8. Dependencies - relevant libraries already in use
-
-Categorize findings by purpose (implementation, tests, config, types, docs).
-Return ACTUAL code snippets from codebase, not generic examples.
+Find all code relevant to: [feature description].
+LOCATE: similar implementations, naming conventions, error handling patterns,
+logging patterns, type definitions, test patterns, configuration, dependencies.
+Return ACTUAL code snippets from codebase with file:line references.
 ```
 
-#### Agent 2: `prp-core:codebase-analyst`
-
+**Agent 2: `prp-core:codebase-analyst`**
 ```
-Analyze the implementation details relevant to: [feature description].
-
-TRACE:
-1. Entry points - where new code will connect to existing code
-2. Data flow - how data moves through related components
-3. State changes - side effects in related functions
-4. Contracts - interfaces and expectations between components
-5. Patterns in use - design patterns and architectural decisions
-
-Document what exists with precise file:line references. No suggestions or improvements.
+Analyze implementation details for: [feature description].
+TRACE: entry points, data flow, state changes, contracts, patterns in use.
+Document with precise file:line references. No suggestions or improvements.
 ```
 
 ---
 
-### Step 2C — TWO-TIER ENRICHMENT (codebase-intelligence)
+### Step 2C — Two-tier enrichment
 
-After agents complete: run Serena + SocratiCode to add exact symbol resolution and
-semantic neighbours that static text analysis may have missed.
+Follow `codebase-intelligence:codebase-search` → Execution flow steps 2–3.
 
-Follow skill: `codebase-intelligence:codebase-search` → **Execution flow steps 2–3**.
-
-**Serena enrichment** (Tier 1):
-- For every symbol name mentioned by the agents, resolve exact file:line via `find_symbol`
-- For entry points identified, get callers via `get_symbol_references`
-- For any file path mentioned, verify it exists via `find_files`
-
-**SocratiCode enrichment** (Tier 2):
-- Run 3 semantic queries covering the behavioural intent of the feature
-- Take top-3 results per query
-- Add any new files not already in the agent findings
+- **Serena (Tier 1)**: resolve all agent-mentioned symbols to exact file:line via `find_symbol`, `get_symbol_references`
+- **SocratiCode (Tier 2)**: 3 semantic queries for intent/behaviour areas, top-3 results each
 
 ---
 
-### Merge All Results into Unified Discovery Table
+### Step 2D — KB pattern consultation
 
-Combine memory pre-fills, agent findings, Serena, and SocratiCode into one table:
+Follow skill: `codebase-intelligence:ask-kb`.
+
+For the primary domains touched by this feature:
+> "What patterns and principles apply to {feature/domain}?"
+> "Are there documented anti-patterns for {primary approach}?"
+
+If KB has relevant content → add `## KB Principles` section to discovery notes.
+If KB is silent → note "KB not consulted for this domain" and continue.
+
+---
+
+### Step 2E — Merge into unified discovery table
 
 | Category | File:Lines | Pattern Description | Code Snippet | Source |
-|----------|------------|---------------------|--------------|--------|
-| NAMING | `src/features/X/service.ts:10-15` | camelCase functions | `export function createThing()` | explorer |
-| ERRORS | `src/features/X/errors.ts:5-20` | Custom error classes | `class ThingNotFoundError` | serena |
-| LOGGING | `src/core/logging/index.ts:1-10` | getLogger pattern | `const logger = getLogger("domain")` | explorer |
-| TESTS | `src/features/X/tests/service.test.ts:1-30` | describe/it blocks | `describe("service", () => {` | analyst |
-| TYPES | `src/features/X/models.ts:1-20` | Type inference | `type Thing = typeof things.$inferSelect` | serena |
-| FLOW | `src/features/X/service.ts:40-60` | Data transformation | `input → validate → persist → respond` | analyst |
-| SEMANTIC | `src/features/Y/handler.ts:80-95` | Related auth logic | `validateToken(req.headers)` | socraticode |
-| MEMORY | `src/features/Z/service.ts:30` | Prior session finding | `parseDocument()` entry point | memory |
+|---|---|---|---|---|
+| NAMING | `src/X/service.ts:10` | camelCase functions | `export function createThing()` | explorer |
+| ERRORS | `src/X/errors.ts:5` | Custom error classes | `class ThingNotFoundError` | serena |
+| FLOW | `src/X/service.ts:40` | Transform chain | `input→validate→persist` | analyst |
+| SEMANTIC | `src/Y/handler.ts:80` | Related auth logic | `validateToken(req)` | socraticode |
+| MEMORY | `src/Z/service.ts:30` | Prior finding | `parseDocument()` entry | memory |
+| KB | — | Principle | "Prefer explicit error types" | ask-kb |
 
-**Source** values: `explorer` · `analyst` · `serena` · `socraticode` · `memory`
+Source values: `explorer` · `analyst` · `serena` · `socraticode` · `memory` · `ask-kb`
+
+---
+
+**DRIFT CHECK (drift-guard questions #1, #2, #5)**:
+For every row: "Does changing this file serve ≥1 AC item?"
+Remove rows that don't trace to any AC. Label them "Removed — out of scope."
 
 **PHASE_2_CHECKPOINT:**
-
-- [ ] Memory pre-fill checked — prior findings reused where available
-- [ ] Both prp-core agents launched in parallel and completed
-- [ ] Serena symbol resolution run for all mentioned symbols
-- [ ] SocratiCode semantic queries run (3 queries, top-3 each)
-- [ ] Discovery table has Source column populated
-- [ ] At least 3 similar implementations found with file:line refs
-- [ ] Code snippets are ACTUAL (from codebase, not invented)
+- [ ] Memory pre-fill checked
+- [ ] Both prp-core agents completed in parallel
+- [ ] Serena + SocratiCode enrichment done
+- [ ] KB consulted (result documented)
+- [ ] Discovery table has Source column
+- [ ] **DRIFT**: Every file in table traces to ≥1 AC
+- [ANCHOR] {ticket} — AC: {AC list}
 
 ---
 
 ## Phase 3: RESEARCH - External Documentation
 
-**ONLY AFTER Phase 2 is complete.**
+**Only after Phase 2. Codebase patterns come first.**
 
-Use Task tool with `subagent_type="prp-core:web-researcher"`:
+### Step 3A — Context7 library verification
+
+Follow skill: `codebase-intelligence:context7-research`.
+
+For every external library used in the implementation:
+1. Read exact version from `package.json` (or equivalent)
+2. `context7 → resolve-library-id` for the library
+3. `context7 → get-library-docs` for the specific API area needed
+4. Document confirmed signatures and gotchas
+
+Add `## Context7 Library Facts` section to notes. Flag any API discrepancies with the plan.
+
+### Step 3B — KB research check
+
+Follow skill: `codebase-intelligence:ask-kb`.
+
+For each topic to research, check KB first:
+> "Does my KB already cover {topic} best practices or patterns?"
+
+If KB covers it → use it, skip web search for that topic.
+If KB is silent → proceed to web-researcher for that topic.
+
+### Step 3C — Web researcher (gaps only)
+
+Use Task tool `subagent_type="prp-core:web-researcher"` for topics NOT covered by Context7 or KB:
 
 ```
-Research external documentation relevant to implementing: [feature description].
+Research documentation for: [feature description].
 
-FIND:
-1. Official documentation for involved libraries (match versions from package.json: [list deps])
-2. Known gotchas, breaking changes, deprecations for these versions
-3. Security considerations and best practices
-4. Performance optimization patterns
+Already verified via Context7: [libraries + confirmed API signatures].
+Already covered by KB: [topics with KB source].
 
-Return findings with direct links, key insights, gotchas, and conflicts with codebase patterns.
+FIND for uncovered topics only:
+1. Best practices and usage patterns
+2. Gotchas not visible in API docs
+3. Security considerations
+4. Performance patterns
+
+Return: direct doc links, key insights, gotchas with mitigations.
+Do not re-document what Context7 or KB already covered.
 ```
 
-Format findings as versioned references with URL anchors and APPLIES_TO notes.
+**DRIFT CHECK (drift-guard question #5)**:
+"Did research introduce scope not in the original AC?"
+If yes → label "Future consideration: {topic}", do NOT include in the plan.
 
 **PHASE_3_CHECKPOINT:**
-- [ ] `prp-core:web-researcher` agent completed
-- [ ] Documentation versions match package.json
-- [ ] URLs include specific section anchors
-- [ ] Gotchas documented with mitigation strategies
+- [ ] Context7 run for all external libraries
+- [ ] Confirmed signatures in `Context7 Library Facts` section
+- [ ] KB consulted for research topics
+- [ ] Web researcher run for remaining gaps only
+- [ ] **DRIFT**: No research-introduced scope in plan
+- [ANCHOR] {ticket} — AC: {AC list}
 
 ---
 
 ## Phase 4: DESIGN - UX Transformation
 
-Create ASCII before/after diagrams showing the user experience transformation.
-Document interaction changes in a table: Location · Before · After · User Impact.
+Create ASCII before/after diagrams. Document interaction changes: Location · Before · After · User Impact.
+
+**DRIFT CHECK (drift-guard question #3)**:
+"Is the after-state more complex than the AC requires?"
+If yes → simplify to the minimum that satisfies AC.
 
 **PHASE_4_CHECKPOINT:**
-- [ ] Before state accurately reflects current behavior
-- [ ] After state shows all new capabilities
-- [ ] Data flows are traceable
-- [ ] User value is explicit and measurable
+- [ ] Before state accurate
+- [ ] After state = minimum that satisfies AC (no more)
+- [ ] Data flows traceable
 
 ---
 
@@ -310,16 +323,32 @@ Document interaction changes in a table: Location · Before · After · User Imp
 
 For complex features: use `prp-core:codebase-analyst` to trace architecture at integration points.
 
+### KB architecture review
+
+Follow skill: `codebase-intelligence:consult-kb`.
+
+Run the proposed approach against the KB:
+> "Does this architecture violate documented principles or known anti-patterns?"
+
+Document as: 🔴 Violation / 🟡 Tension / 🟢 Aligned / 💡 Suggestion
+
 Then document:
-- `APPROACH_CHOSEN` and rationale
+- `APPROACH_CHOSEN` with rationale (cite codebase patterns AND KB principles)
 - `ALTERNATIVES_REJECTED` with specific reasons
-- `NOT_BUILDING` — explicit scope limits
+- `NOT_BUILDING` — explicit scope exclusions (update TASK ANCHOR boundaries now)
+
+**DRIFT CHECK — full seven questions (drift-guard)**:
+Run all seven questions against the proposed approach and file list.
+Verdict MUST be ✅ ON TRACK before proceeding.
 
 **PHASE_5_CHECKPOINT:**
-- [ ] Approach aligns with existing architecture
-- [ ] Dependencies ordered correctly
-- [ ] Edge cases identified with mitigations
-- [ ] Scope boundaries explicit and justified
+- [ ] Approach aligns with codebase patterns AND KB principles
+- [ ] KB review: violations/tensions documented
+- [ ] Alternatives rejected with reasons
+- [ ] NOT_BUILDING is explicit
+- [ ] TASK ANCHOR boundaries updated
+- [ ] **DRIFT**: Full seven-question check → ✅ ON TRACK
+- [ANCHOR] {ticket} — AC: {AC list}
 
 ---
 
@@ -327,82 +356,107 @@ Then document:
 
 **OUTPUT_PATH**: `.claude/PRPs/plans/{kebab-case-feature-name}.plan.md`
 
-Create directory if needed: `mkdir -p .claude/PRPs/plans`
+`mkdir -p .claude/PRPs/plans`
 
-The plan must include all standard prp-core sections PLUS these intelligence sections:
+---
 
-<!-- ─────────────────────────────────────────────────────────────────
-     ADDED SECTIONS — codebase-intelligence injects these into the
-     plan template between "Summary" and "Mandatory Reading"
-     ───────────────────────────────────────────────────────────────── -->
+### Intelligence Context section (add after Summary)
 
 ```markdown
 ## Intelligence Context
 
-**Ticket**: <JIRA-TICKET> — <ticket summary>
-**Branch**: <current branch>
-**Memory sessions loaded**: <N sessions / none>
+**Ticket**: {JIRA-TICKET} — {summary}
+**Branch**: {branch}
+**Memory sessions loaded**: {N / none}
 
-### Acceptance Criteria (from Jira)
-<extracted AC — or "not available" if Jira MCP absent>
+### Acceptance Criteria (authoritative — do not deviate from these)
+1. {verbatim AC 1}
+2. {verbatim AC 2}
 
 ### QA Context (prior failures)
-<summarised QA failure notes from Jira comments — or "none">
+{QA failure notes — or "none"}
 
-### Prior Session Decisions
-<last session's "Decisions" section if available — or "none">
+### Hard boundaries (NOT in scope)
+- {item from NOT_BUILDING}
 
-### Discovery Source Summary
+### KB Principles applied
+- {principle} — *Source: {book/section}*
+- {KB violation or tension noted} — *Source: {book/section}*
+
+### Context7 Library Facts
+#### {library}@{version}
+- `functionName(param: Type): ReturnType` — confirmed ✅
+- Gotcha: {gotcha from docs}
+
+### Prior session decisions
+{last session Decisions section — or "none"}
+
+### Discovery source summary
 | Category | File:Line | Source |
-|----------|-----------|--------|
-| <category> | <path:line> | memory / serena / socraticode / explorer / analyst |
+|---|---|---|
 ```
 
-<!-- End of added sections — the rest is standard prp-core plan template -->
+---
 
-Followed by all standard prp-core plan sections:
-- User Story · Problem Statement · Solution Statement · Metadata
-- UX Design (before/after ASCII diagrams)
-- Mandatory Reading table
-- Patterns to Mirror (with actual code snippets)
-- Files to Change
-- NOT Building (scope limits)
-- Step-by-Step Tasks (atomic, ordered, each with VALIDATE command)
-- Testing Strategy
-- Validation Commands (6 levels)
-- Acceptance Criteria
-- Completion Checklist
-- Risks and Mitigations
+### AC Traceability table (add after Files to Change)
+
+```markdown
+## AC Traceability
+
+Every AC must have ≥1 task. Every task must map to ≥1 AC.
+
+| AC Item | Tasks |
+|---|---|
+| {AC 1 verbatim} | Task 3, Task 5 |
+| {AC 2 verbatim} | Task 7 |
+```
+
+**DRIFT CHECK (drift-guard question #7)**:
+Any AC without a task → add the task NOW before finishing the plan.
+Any task without an AC mapping → remove it or justify it explicitly.
+
+---
+
+Then all standard prp-core sections:
+User Story · Problem Statement · Solution Statement · Metadata · UX Design (before/after ASCII) ·
+Mandatory Reading · Patterns to Mirror · Files to Change · NOT Building · Step-by-Step Tasks ·
+Testing Strategy · Validation Commands (6 levels) · Acceptance Criteria checklist ·
+Completion Checklist · Risks and Mitigations
 
 </process>
-
-<!-- ═══════════════════════════════════════════════════════════════════
-     POST-GENERATION — codebase-intelligence memory save
-     ═══════════════════════════════════════════════════════════════════ -->
 
 <post_generation>
 
 ## Post-Phase: SAVE — Persist to task-memory
 
-Follow skill: `codebase-intelligence:task-memory` → **SESSION END protocol**
+Follow `codebase-intelligence:task-memory` → SESSION END protocol.
 
 Append to `~/.claude/memory/{TICKET}/{BRANCH}.md`:
 
 ```markdown
-## Session: <ISO date> — Planning
+## Session: {ISO date} — Planning
 
 ### Investigated
-<all file:line findings from the discovery table>
+{file:line findings from discovery table}
 
 ### Decisions
-<APPROACH_CHOSEN and scope limits from Phase 5>
+{APPROACH_CHOSEN, scope exclusions}
+
+### KB findings
+{violations, tensions, principles applied, consult-kb results}
+
+### Context7 findings
+{confirmed library signatures}
 
 ### Implementation status
-- [ ] Plan generated: .claude/PRPs/plans/<feature>.plan.md
+- [ ] Plan: .claude/PRPs/plans/{feature}.plan.md
 - [ ] Implementation not started
 
+### Drift decisions
+{any drift detected and resolved — or "none"}
+
 ### Next steps
-- Run: /prp-implement .claude/PRPs/plans/<feature>.plan.md
+- /prp-implement .claude/PRPs/plans/{feature}.plan.md
 ```
 
 </post_generation>
@@ -410,42 +464,46 @@ Append to `~/.claude/memory/{TICKET}/{BRANCH}.md`:
 <o>
 **OUTPUT_FILE**: `.claude/PRPs/plans/{kebab-case-feature-name}.plan.md`
 
-**If input was from PRD file**, also update the PRD status (in-progress) and link the plan.
+If PRD input: update phase status to `in-progress`, link plan.
 
-**REPORT_TO_USER** after creating plan:
+**REPORT_TO_USER**:
 
 ```markdown
 ## Plan Created ✅
 
 **File**: `.claude/PRPs/plans/{feature-name}.plan.md`
 **Ticket**: {JIRA-TICKET} — {summary}
-**Memory**: {N prior sessions loaded / fresh start}
-**Jira AC**: {extracted / unavailable}
-**QA Context**: {failures found / none}
 
-**Discovery sources**:
-- 📁 Memory: {N} cached findings reused
+### Requirements grounding
+- AC items: {N} captured ✅
+- AC traceability: all items covered ✅
+- Drift checks passed: {N} gates ✅
+- Drift removals: {N} items removed from scope
+
+### Knowledge sources
+- 📁 Memory: {N} cached findings
 - 🔬 Serena: {N} symbols resolved
 - 🧠 SocratiCode: {N} semantic matches
-- 🤖 Agents: {N} patterns from explorer/analyst
+- 📚 KB ask-kb: {N} principles applied
+- 📚 KB consult-kb: {violations}/{tensions} found
+- 📖 Context7: {N} libraries, {N} signatures confirmed
+- 🌐 Web researcher: {N} gap topics
 
-**Complexity**: {LOW/MEDIUM/HIGH} — {rationale}
-**Scope**: {N} files CREATE · {M} files UPDATE · {K} tasks
-**Confidence**: {score}/10
+**Complexity**: {LOW/MEDIUM/HIGH} · **Confidence**: {score}/10
 
-**Next step**: `/prp-implement .claude/PRPs/plans/{feature-name}.plan.md`
+**Next**: `/prp-implement .claude/PRPs/plans/{feature-name}.plan.md`
 ```
 </o>
 
 <verification>
-**FINAL_VALIDATION before saving plan:**
-
-- [ ] Intelligence Context section present (ticket, memory, Jira AC, QA context)
-- [ ] Discovery table has Source column and at least one memory/serena/socraticode entry
-- [ ] All patterns from agents documented with actual code snippets
-- [ ] External docs versioned to match package.json
-- [ ] Every task has at least one executable validation command
-- [ ] Tasks ordered by dependency (top-to-bottom executable)
-- [ ] No placeholders — all content is specific and actionable
+- [ ] Intelligence Context section present (ticket, AC verbatim, KB, Context7, QA)
+- [ ] AC Traceability table complete — every AC has ≥1 task
+- [ ] Every task maps to ≥1 AC — no orphan tasks
+- [ ] Context7 Library Facts present for all external libraries
+- [ ] KB principles cited for architectural decisions
+- [ ] NOT Building is specific and non-empty
+- [ ] All patterns from agents are ACTUAL code snippets (not invented)
+- [ ] Every task has an executable validation command
+- [ ] Drift guard: seven-question check ✅ ON TRACK at Phase 5
 - [ ] Memory saved to `~/.claude/memory/{TICKET}/{BRANCH}.md`
 </verification>
