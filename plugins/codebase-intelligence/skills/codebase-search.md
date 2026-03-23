@@ -97,10 +97,13 @@ findings about the files involved. Cache hits avoid redundant Serena calls mid-i
 
 ## MCP requirements
 
-| MCP | Purpose | Install |
+Both MCPs are registered once via `claude mcp add --scope user` (Claude Code terminal)
+and are then available globally across all projects. See the repo README for setup commands.
+
+| MCP | Transport | Purpose |
 |---|---|---|
-| `serena` | LSP structural search | `docker pull ghcr.io/oraios/serena:latest` then `claude mcp add serena ...` |
-| `socraticode` | Semantic vector search | `claude mcp add socraticode --transport stdio -- npx -y socraticode` |
+| `serena` | stdio (Docker) | LSP structural search |
+| `socraticode` | stdio (npx) | Semantic vector search |
 
 If either is unavailable, fall back to the available tier and note the limitation in output.
 

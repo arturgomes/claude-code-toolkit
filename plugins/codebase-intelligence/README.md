@@ -97,7 +97,50 @@ If Context7 is unavailable → flag response as **unverified**.
 
 ---
 
-## Memory structure
+## MCP setup (Claude Code terminal)
+
+All MCPs use `--scope user` — registered once, available in every project.
+Run these commands in your terminal; Claude Code stores config in `~/.claude/`.
+
+```bash
+# Verify what's registered
+claude mcp list
+
+# Serena — LSP structural search
+docker pull ghcr.io/oraios/serena:latest
+claude mcp add serena \
+  --scope user \
+  --transport stdio \
+  -- docker run --rm -i \
+     --network host \
+     -v "${HOME}/projects:/workspaces/projects" \
+     ghcr.io/oraios/serena:latest \
+     serena start-mcp-server --transport stdio
+
+# SocratiCode — semantic vector search (auto-manages its own Docker stack)
+claude mcp add socraticode \
+  --scope user \
+  --transport stdio \
+  -- npx -y socraticode
+
+# Context7 — verified library docs
+claude mcp add context7 \
+  --scope user \
+  --transport http \
+  https://mcp.context7.com/mcp
+
+# Atlassian Jira
+echo -n "email@company.com:api-token" | base64
+claude mcp add atlassian \
+  --scope user \
+  --transport http \
+  https://mcp.atlassian.com/v1/mcp \
+  --header "Authorization: Basic <base64>"
+```
+
+---
+
+
 
 ```
 ~/.claude/memory/

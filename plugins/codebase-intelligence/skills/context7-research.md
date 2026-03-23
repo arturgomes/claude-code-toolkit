@@ -112,10 +112,16 @@ Before writing any task that uses an external library:
 
 ## MCP requirement
 
+Context7 is registered once via `claude mcp add` (Claude Code terminal):
+
 ```bash
-# Add Context7 MCP to Claude Code
-claude mcp add context7 --transport http https://mcp.context7.com/mcp
+claude mcp add context7 \
+  --scope user \
+  --transport http \
+  https://mcp.context7.com/mcp
 ```
+
+`--scope user` makes it available in every project automatically. No per-repo config needed.
 
 If Context7 MCP is unavailable: fall back to `prp-core:web-researcher` for docs,
 but flag the response as **unverified** and note it in the plan.
