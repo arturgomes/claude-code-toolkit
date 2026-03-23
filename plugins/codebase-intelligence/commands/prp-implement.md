@@ -38,20 +38,37 @@ Fix issues immediately. Working implementation, not just existing code.
 
 ## Pre-Phase I: MEMORY — Restore prior context
 
-Follow skill: `codebase-intelligence:task-memory` → SESSION START protocol.
+Execute these steps NOW — do not skip or defer:
 
-1. `git branch --show-current` → {branch}
-2. Extract ticket from {branch} or from the plan's "Intelligence Context" section
-3. Check `~/.claude/memory/{TICKET}/{BRANCH}.md`
+```bash
+# 1. Get current branch
+git branch --show-current
+```
 
-If memory **exists**:
-- Load last 3 sessions
-- Print: "📂 Memory loaded for {TICKET} — {N} areas pre-cached"
+Extract ticket ID matching `[A-Z]+-[0-9]+` from branch name, or from the plan file's "Intelligence Context" section. Store as `{TICKET}` and `{BRANCH}`.
+
+```bash
+# 2. Ensure memory directory exists
+mkdir -p .claude/memory/{TICKET}
+
+# 3. Check for prior session
+ls .claude/memory/{TICKET}/{BRANCH}.md 2>/dev/null && echo "EXISTS" || echo "NEW"
+```
+
+**If EXISTS — load it:**
+```bash
+cat .claude/memory/{TICKET}/{BRANCH}.md
+```
+Print: `📂 Memory loaded for {TICKET} ({BRANCH})`
 - Restore "Implementation status" checkboxes from prior session
-- Pre-load any GOTCHA notes from prior sessions for files in the plan
-- If prior session shows tasks completed → verify against git log before re-doing
+- Pre-load any GOTCHA notes for files listed in the plan
+- If prior session shows tasks completed → verify against `git log` before re-doing
 
-If memory **absent**: "🆕 No prior memory. Starting fresh."
+**If NEW — create it:**
+Print: `🆕 No prior memory for {TICKET}. Starting fresh.`
+```bash
+printf "# Memory: {TICKET} / {BRANCH}\n\nCreated: $(date -u +%Y-%m-%dT%H:%M:%SZ)\n\n---\n"   > .claude/memory/{TICKET}/{BRANCH}.md
+```"
 
 **PRE-PHASE-I CHECKPOINT:**
 - [ ] Branch and ticket confirmed
@@ -405,7 +422,7 @@ mv $ARGUMENTS .claude/PRPs/plans/completed/
 
 Follow `codebase-intelligence:task-memory` → SESSION END protocol.
 
-Append to `~/.claude/memory/{TICKET}/{BRANCH}.md`:
+Append to `.claude/memory/{TICKET}/{BRANCH}.md`:
 
 ```markdown
 ## Session: {ISO date} — Implementation Complete
@@ -475,7 +492,7 @@ Append to `~/.claude/memory/{TICKET}/{BRANCH}.md`:
 ### Artifacts
 - Report: `.claude/PRPs/reports/{name}-report.md`
 - Plan archived: `.claude/PRPs/plans/completed/`
-- Memory: `~/.claude/memory/{TICKET}/{BRANCH}.md`
+- Memory: `.claude/memory/{TICKET}/{BRANCH}.md`
 
 ### Next
 1. Review report
@@ -521,5 +538,5 @@ Pre-phases will restore context automatically.
 - **AC_VERIFIED**: Every AC item has a named passing test
 - **REPORT_CREATED**: Report with Intelligence Summary and AC coverage table
 - **PLAN_ARCHIVED**: Plan in completed/
-- **MEMORY_SAVED**: Final session in `~/.claude/memory/{TICKET}/{BRANCH}.md`
+- **MEMORY_SAVED**: Final session in `.claude/memory/{TICKET}/{BRANCH}.md`
 - **SCOPE_DEFENDED**: Drift log shows no unintended additions

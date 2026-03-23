@@ -49,14 +49,36 @@ CLAUDE.md rules: @CLAUDE.md
 
 ## Pre-Phase I: MEMORY — Restore prior context
 
-Follow skill: `codebase-intelligence:task-memory` → SESSION START protocol.
+Execute these steps NOW — do not skip or defer:
 
-1. `git branch --show-current` → {branch}
-2. Extract ticket: `[A-Z]+-[0-9]+` from {branch} or `$ARGUMENTS`
-3. Check `~/.claude/memory/{TICKET}/{BRANCH}.md`
+```bash
+# 1. Get current branch
+git branch --show-current
+```
 
-If memory **exists**: load last 3 sessions, print summary, ask "Continue or start fresh?"
-If memory **absent**: "🆕 No prior memory for {TICKET}. Starting fresh."
+Extract ticket ID matching `[A-Z]+-[0-9]+` from the branch name, or from `$ARGUMENTS` if provided directly. Store as `{TICKET}` and `{BRANCH}`.
+
+```bash
+# 2. Ensure memory directory exists
+mkdir -p .claude/memory/{TICKET}
+
+# 3. Check for prior session
+ls .claude/memory/{TICKET}/{BRANCH}.md 2>/dev/null && echo "EXISTS" || echo "NEW"
+```
+
+**If EXISTS — load it:**
+```bash
+cat .claude/memory/{TICKET}/{BRANCH}.md
+```
+Print: `📂 Memory loaded for {TICKET} ({BRANCH})`
+Summarise: last session date · status · open blockers.
+Ask: "Continue from last session, or start fresh?"
+
+**If NEW — create it:**
+Print: `🆕 No prior memory for {TICKET}. Starting fresh.`
+```bash
+printf "# Memory: {TICKET} / {BRANCH}\n\nCreated: $(date -u +%Y-%m-%dT%H:%M:%SZ)\n\n---\n"   > .claude/memory/{TICKET}/{BRANCH}.md
+```
 
 **PRE-PHASE-I CHECKPOINT:**
 - [ ] Branch and ticket ID determined
@@ -429,9 +451,13 @@ Completion Checklist · Risks and Mitigations
 
 ## Post-Phase: SAVE — Persist to task-memory
 
-Follow `codebase-intelligence:task-memory` → SESSION END protocol.
+Execute NOW — append session entry to `.claude/memory/{TICKET}/{BRANCH}.md`:
 
-Append to `~/.claude/memory/{TICKET}/{BRANCH}.md`:
+```bash
+cat >> .claude/memory/{TICKET}/{BRANCH}.md << 'MEMEOF'
+```
+
+Append with this structure:
 
 ```markdown
 ## Session: {ISO date} — Planning
@@ -505,5 +531,5 @@ If PRD input: update phase status to `in-progress`, link plan.
 - [ ] All patterns from agents are ACTUAL code snippets (not invented)
 - [ ] Every task has an executable validation command
 - [ ] Drift guard: seven-question check ✅ ON TRACK at Phase 5
-- [ ] Memory saved to `~/.claude/memory/{TICKET}/{BRANCH}.md`
+- [ ] Memory saved to `.claude/memory/{TICKET}/{BRANCH}.md`
 </verification>
