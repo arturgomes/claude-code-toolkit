@@ -17,15 +17,16 @@ Phase 1 gate   → drift-guard: user story maps to ≥1 AC?
 
 Phase 2:
   Step 2A      → task-memory: cache pre-fill
-  Step 2B      → prp-core:codebase-explorer + prp-core:codebase-analyst (unchanged)
-  Step 2C      → codebase-search: Serena + SocratiCode enrichment
+  Step 2B      → codebase-intelligence:codebase-explorer (enhanced — Serena + SocratiCode + KB)
+               + codebase-intelligence:codebase-analyst (enhanced — Serena LSP-verified entry points)
+  Step 2C      → codebase-search: Serena + SocratiCode enrichment (fills gaps agents missed)
   Step 2D      → ask-kb: personal KB patterns for feature domain
   Step 2E gate → drift-guard Q#1,2,5: every file must trace to ≥1 AC
 
 Phase 3:
   Step 3A      → context7-research: verify all library APIs first
   Step 3B      → ask-kb: check KB before sending to web-researcher
-  Step 3C      → prp-core:web-researcher (gaps only, after Context7 + KB)
+  Step 3C      → codebase-intelligence:web-researcher (KB pre-check + Context7 + web for gaps)
   Gate         → drift-guard Q#5: no research-introduced scope in plan
 
 Phase 4 gate   → drift-guard Q#3: after-state = minimum that satisfies AC
@@ -94,6 +95,19 @@ Before any external library call is written:
 5. Implementation uses only confirmed signatures
 
 If Context7 is unavailable → flag response as **unverified**.
+
+---
+
+## Agents
+
+These agents shadow the prp-core equivalents. When prp-plan calls `codebase-intelligence:codebase-explorer`, it gets our version — not prp-core's.
+
+| Agent | Extends | What's added |
+|---|---|---|
+| `codebase-explorer` | `prp-core:codebase-explorer` | Step 0: memory pre-fill · Step 1: Serena LSP symbol resolution · Step 3: SocratiCode semantic queries · Step 4: KB pattern lookup · Source column in every output table |
+| `codebase-analyst` | `prp-core:codebase-analyst` | Step 0: memory pre-fill · Step 1: Serena-first entry point resolution · Step 3: drift-guard scope boundary check · Source column in every output table |
+| `web-researcher` | `prp-core:web-researcher` | Step 0: KB pre-check (skip web for covered topics) · Step 1: Context7 library API verification · Step 3: drift-guard scope check on research findings |
+| `codebase-researcher` | — (standalone) | Full pre-planning research pass combining all three tiers |
 
 ---
 

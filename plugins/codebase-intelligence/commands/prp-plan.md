@@ -27,9 +27,9 @@ MEMORY → JIRA → ANCHOR → DETECT → PARSE → EXPLORE → KB → CONTEXT7 
 - `codebase-intelligence:ask-kb` — personal KB patterns and principles
 - `codebase-intelligence:consult-kb` — KB review of proposed architecture
 - `codebase-intelligence:context7-research` — verified library docs, no hallucination
-- `prp-core:codebase-explorer` — WHERE code lives, implementation patterns
-- `prp-core:codebase-analyst` — HOW integration points work, data flow
-- `prp-core:web-researcher` — external docs (runs AFTER Context7 + KB, gaps only)
+- `codebase-intelligence:codebase-explorer` — WHERE code lives, implementation patterns
+- `codebase-intelligence:codebase-analyst` — HOW integration points work, data flow
+- `codebase-intelligence:web-researcher` — external docs (runs AFTER Context7 + KB, gaps only)
 </objective>
 
 <context>
@@ -175,7 +175,7 @@ Mark cached areas `[FROM MEMORY]`. Only search uncached areas.
 
 Launch simultaneously using multiple Task tool calls:
 
-**Agent 1: `prp-core:codebase-explorer`**
+**Agent 1: `codebase-intelligence:codebase-explorer`**
 ```
 Find all code relevant to: [feature description].
 LOCATE: similar implementations, naming conventions, error handling patterns,
@@ -183,7 +183,7 @@ logging patterns, type definitions, test patterns, configuration, dependencies.
 Return ACTUAL code snippets from codebase with file:line references.
 ```
 
-**Agent 2: `prp-core:codebase-analyst`**
+**Agent 2: `codebase-intelligence:codebase-analyst`**
 ```
 Analyze implementation details for: [feature description].
 TRACE: entry points, data flow, state changes, contracts, patterns in use.
@@ -272,7 +272,7 @@ If KB is silent → proceed to web-researcher for that topic.
 
 ### Step 3C — Web researcher (gaps only)
 
-Use Task tool `subagent_type="prp-core:web-researcher"` for topics NOT covered by Context7 or KB:
+Use Task tool `subagent_type="codebase-intelligence:web-researcher"` for topics NOT covered by Context7 or KB:
 
 ```
 Research documentation for: [feature description].
@@ -321,7 +321,7 @@ If yes → simplify to the minimum that satisfies AC.
 
 ## Phase 5: ARCHITECT - Strategic Design
 
-For complex features: use `prp-core:codebase-analyst` to trace architecture at integration points.
+For complex features: use `codebase-intelligence:codebase-analyst` to trace architecture at integration points.
 
 ### KB architecture review
 
