@@ -98,7 +98,7 @@ The `ask-kb`, `consult-kb`, and `kb-indexer` skills need a registry file:
 
 ```bash
 mkdir -p ~/kb
-cp "$(claude --print-config-dir)/plugins/arturgomes/codebase-intelligence/skills/ask-kb/references/kb-registry-example.yaml" \
+cp ~/.claude/plugins/arturgomes/claude-code-toolkit/plugins/codebase-intelligence/skills/ask-kb/references/kb-registry-example.yaml \
    ~/kb/kb-registry.yaml
 # Edit ~/kb/kb-registry.yaml to point at your KB files
 ```
