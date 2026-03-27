@@ -173,13 +173,13 @@ git config --global core.excludesfile ~/.gitignore_global
 
 ## Usage
 
-Everything runs through `/prp-plan` and `/prp-implement` — same commands as prp-core,
+Everything runs through `/codebase-intelligence:prp-plan` and `/codebase-intelligence:prp-implement` — same commands as prp-core,
 but with the intelligence layer active.
 
 ### Plan a new feature
 
 ```
-/prp-plan "add PDF export for invoices PROJ-421"
+/codebase-intelligence:prp-plan "add PDF export for invoices PROJ-421"
 ```
 
 What happens automatically:
@@ -195,14 +195,14 @@ What happens automatically:
 ### Implement the plan
 
 ```
-/prp-implement .claude/PRPs/plans/pdf-export-for-invoices.plan.md
+/codebase-intelligence:prp-implement .claude/PRPs/plans/pdf-export-for-invoices.plan.md
 ```
 
 ### Resume after QA failure (weeks later)
 
 ```
 git checkout feature/PROJ-421-pdf-export
-/prp-plan "fix PROJ-421 QA failures"
+/codebase-intelligence:prp-plan "fix PROJ-421 QA failures"
 ```
 
 Memory loads automatically — prior investigation, implementation decisions, and QA failure

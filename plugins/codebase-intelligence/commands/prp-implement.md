@@ -1,4 +1,5 @@
 ---
+name: codebase-intelligence:prp-implement
 description: >
   Enhanced prp-implement. Extends prp-core:prp-implement with: cross-session memory restored
   before execution, Context7 library verification before each task that calls external APIs,
@@ -453,7 +454,7 @@ Append to `~/.claude/memory/{TICKET}/{BRANCH}.md`:
 
 ### Next steps
 - Review report, create PR: /prp-pr
-- If QA rejects: run /prp-plan "fix {TICKET} QA failures" — memory is saved
+- If QA rejects: run /codebase-intelligence:prp-plan "fix {TICKET} QA failures" — memory is saved
 ```
 
 **PHASE_5_CHECKPOINT:**
@@ -497,7 +498,7 @@ Append to `~/.claude/memory/{TICKET}/{BRANCH}.md`:
 ### Next
 1. Review report
 2. `/prp-pr` to create PR
-3. If QA rejects later: `/prp-plan "fix {TICKET} QA failures"` — memory is ready
+3. If QA rejects later: `/codebase-intelligence:prp-plan "fix {TICKET} QA failures"` — memory is ready
 ```
 
 ---
@@ -522,7 +523,7 @@ Do not adjust the AC to match the implementation.
 ### Session Interrupted
 Memory saved every ~3 tasks. Restart with the same command:
 ```
-/prp-implement $ARGUMENTS
+/codebase-intelligence:prp-implement $ARGUMENTS
 ```
 Pre-phases will restore context automatically.
 

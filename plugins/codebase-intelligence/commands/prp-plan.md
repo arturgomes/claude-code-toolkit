@@ -1,4 +1,5 @@
 ---
+name: codebase-intelligence:prp-plan
 description: >
   Enhanced prp-plan. Extends prp-core:prp-plan with: cross-session memory (task-memory),
   Jira context injection (Atlassian MCP), two-tier codebase search (Serena + SocratiCode),
@@ -482,7 +483,7 @@ Append with this structure:
 {any drift detected and resolved — or "none"}
 
 ### Next steps
-- /prp-implement .claude/PRPs/plans/{feature}.plan.md
+- /codebase-intelligence:prp-implement .claude/PRPs/plans/{feature}.plan.md
 ```
 
 </post_generation>
@@ -517,7 +518,7 @@ If PRD input: update phase status to `in-progress`, link plan.
 
 **Complexity**: {LOW/MEDIUM/HIGH} · **Confidence**: {score}/10
 
-**Next**: `/prp-implement .claude/PRPs/plans/{feature-name}.plan.md`
+**Next**: `/codebase-intelligence:prp-implement .claude/PRPs/plans/{feature-name}.plan.md`
 ```
 </o>
 
