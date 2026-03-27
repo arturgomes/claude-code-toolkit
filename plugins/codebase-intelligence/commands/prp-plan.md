@@ -139,7 +139,7 @@ before continuing. A plan without clear AC will drift by definition.
 ---
 
 <!-- ═══════════════════════════════════════════════════════════════════
-     STANDARD prp-core PHASES — unchanged logic, intelligence injected
+     STANDARD PHASES — with codebase-intelligence injected at marked points
      ═══════════════════════════════════════════════════════════════════ -->
 
 ## Phase 0: DETECT - Input Type Resolution
@@ -193,7 +193,7 @@ Mark cached areas `[FROM MEMORY]`. Only search uncached areas.
 
 ---
 
-### Step 2B — Parallel agents (standard prp-core)
+### Step 2B — Parallel agents (codebase-intelligence)
 
 Launch simultaneously using multiple Task tool calls:
 
@@ -257,7 +257,7 @@ Remove rows that don't trace to any AC. Label them "Removed — out of scope."
 
 **PHASE_2_CHECKPOINT:**
 - [ ] Memory pre-fill checked
-- [ ] Both prp-core agents completed in parallel
+- [ ] Both codebase-intelligence agents completed in parallel
 - [ ] Serena + SocratiCode enrichment done
 - [ ] KB consulted (result documented)
 - [ ] Discovery table has Source column
@@ -439,7 +439,7 @@ Any task without an AC mapping → remove it or justify it explicitly.
 
 ---
 
-Then all standard prp-core sections:
+Then all standard plan sections:
 User Story · Problem Statement · Solution Statement · Metadata · UX Design (before/after ASCII) ·
 Mandatory Reading · Patterns to Mirror · Files to Change · NOT Building · Step-by-Step Tasks ·
 Testing Strategy · Validation Commands (6 levels) · Acceptance Criteria checklist ·

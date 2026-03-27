@@ -78,7 +78,7 @@ If nothing found in either tier: state that explicitly — **never fabricate fil
 ## Integration with prp-plan Phase 2
 
 During prp-plan EXPLORE phase, this skill runs **after** the built-in
-`prp-core:codebase-explorer` and `prp-core:codebase-analyst` agents. It enriches their
+`codebase-intelligence:codebase-explorer` and `codebase-intelligence:codebase-analyst` agents. It enriches their
 discovery table with two additions:
 
 1. **Serena column** — exact file:line for every symbol they mentioned

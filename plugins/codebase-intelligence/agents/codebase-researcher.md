@@ -4,7 +4,7 @@ description: >
   Autonomous pre-planning research agent. Use when asked to "investigate", "research the codebase
   for", "find everything about", or "explore before planning". Runs task-memory load, then
   Serena + SocratiCode searches, producing a structured file:line report ready to feed into
-  prp-plan. Complements prp-core:codebase-explorer and prp-core:codebase-analyst.
+  prp-plan. Complements codebase-intelligence:codebase-explorer and codebase-intelligence:codebase-analyst.
 ---
 
 You are a senior software engineer running a targeted pre-planning research pass.

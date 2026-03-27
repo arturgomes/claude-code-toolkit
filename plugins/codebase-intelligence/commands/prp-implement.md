@@ -102,7 +102,7 @@ If the plan has no Intelligence Context section (e.g., plain prp-core plan):
 ---
 
 <!-- ═══════════════════════════════════════════════════════════════════
-     STANDARD prp-core PHASES — with intelligence hooks marked
+     STANDARD PHASES — with codebase-intelligence hooks marked
      ═══════════════════════════════════════════════════════════════════ -->
 
 ## Phase 0: DETECT - Project Environment
@@ -379,7 +379,7 @@ mkdir -p .claude/PRPs/reports
 
 **Path**: `.claude/PRPs/reports/{plan-name}-report.md`
 
-Include all standard prp-core report sections plus:
+Include all standard report sections plus:
 
 ```markdown
 ## Intelligence Summary

@@ -99,7 +99,7 @@ Docs fetched: {topic}
 
 ## Integration with prp-plan Phase 3
 
-During RESEARCH, run Context7 **before** the `prp-core:web-researcher` agent for any
+During RESEARCH, run Context7 **before** the `codebase-intelligence:web-researcher` agent for any
 library-related questions. Provide the confirmed signatures to the web-researcher so
 it searches for usage patterns rather than basic API questions.
 
@@ -123,5 +123,5 @@ claude mcp add context7 \
 
 `--scope user` makes it available in every project automatically. No per-repo config needed.
 
-If Context7 MCP is unavailable: fall back to `prp-core:web-researcher` for docs,
+If Context7 MCP is unavailable: fall back to `codebase-intelligence:web-researcher` for docs,
 but flag the response as **unverified** and note it in the plan.
