@@ -60,15 +60,15 @@ Extract ticket ID matching `[A-Z]+-[0-9]+` from the branch name, or from `$ARGUM
 
 ```bash
 # 2. Ensure memory directory exists
-mkdir -p .claude/memory/{TICKET}
+mkdir -p ~/.claude/memory/{TICKET}
 
 # 3. Check for prior session
-ls .claude/memory/{TICKET}/{BRANCH}.md 2>/dev/null && echo "EXISTS" || echo "NEW"
+ls ~/.claude/memory/{TICKET}/{BRANCH}.md 2>/dev/null && echo "EXISTS" || echo "NEW"
 ```
 
 **If EXISTS — load it:**
 ```bash
-cat .claude/memory/{TICKET}/{BRANCH}.md
+cat ~/.claude/memory/{TICKET}/{BRANCH}.md
 ```
 Print: `📂 Memory loaded for {TICKET} ({BRANCH})`
 Summarise: last session date · status · open blockers.
@@ -77,7 +77,7 @@ Ask: "Continue from last session, or start fresh?"
 **If NEW — create it:**
 Print: `🆕 No prior memory for {TICKET}. Starting fresh.`
 ```bash
-printf "# Memory: {TICKET} / {BRANCH}\n\nCreated: $(date -u +%Y-%m-%dT%H:%M:%SZ)\n\n---\n"   > .claude/memory/{TICKET}/{BRANCH}.md
+printf "# Memory: {TICKET} / {BRANCH}\n\nCreated: $(date -u +%Y-%m-%dT%H:%M:%SZ)\n\n---\n"   > ~/.claude/memory/{TICKET}/{BRANCH}.md
 ```
 
 **PRE-PHASE-I CHECKPOINT:**
@@ -451,10 +451,10 @@ Completion Checklist · Risks and Mitigations
 
 ## Post-Phase: SAVE — Persist to task-memory
 
-Execute NOW — append session entry to `.claude/memory/{TICKET}/{BRANCH}.md`:
+Execute NOW — append session entry to `~/.claude/memory/{TICKET}/{BRANCH}.md`:
 
 ```bash
-cat >> .claude/memory/{TICKET}/{BRANCH}.md << 'MEMEOF'
+cat >> ~/.claude/memory/{TICKET}/{BRANCH}.md << 'MEMEOF'
 ```
 
 Append with this structure:
@@ -531,5 +531,5 @@ If PRD input: update phase status to `in-progress`, link plan.
 - [ ] All patterns from agents are ACTUAL code snippets (not invented)
 - [ ] Every task has an executable validation command
 - [ ] Drift guard: seven-question check ✅ ON TRACK at Phase 5
-- [ ] Memory saved to `.claude/memory/{TICKET}/{BRANCH}.md`
+- [ ] Memory saved to `~/.claude/memory/{TICKET}/{BRANCH}.md`
 </verification>

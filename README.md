@@ -151,7 +151,7 @@ To add a book to your KB later, upload the PDF to Claude Code and say:
 
 ```bash
 cat >> .gitignore << 'EOF'
-.claude/memory/
+~/.claude/memory/
 .serena/
 .indexes/
 EOF
@@ -161,7 +161,7 @@ Or add globally so you never have to think about it:
 
 ```bash
 cat >> ~/.gitignore_global << 'EOF'
-.claude/memory/
+~/.claude/memory/
 .serena/
 .indexes/
 EOF
@@ -184,7 +184,7 @@ but with the intelligence layer active.
 
 What happens automatically:
 1. Reads current git branch → extracts `PROJ-421`
-2. Creates `.claude/memory/PROJ-421/<branch>.md` (or loads existing)
+2. Creates `~/.claude/memory/PROJ-421/<branch>.md` (or loads existing)
 3. Fetches Jira ticket details + acceptance criteria (if Jira MCP configured)
 4. Runs `codebase-explorer` + `codebase-analyst` with Serena + SocratiCode
 5. Checks your KB for relevant patterns
@@ -232,7 +232,7 @@ context restored without re-searching.
 
 | Skill | Purpose |
 |---|---|
-| `task-memory` | Per-session memory in `.claude/memory/<TICKET>/<branch>.md` |
+| `task-memory` | Global cross-session memory in `~/.claude/memory/<TICKET>/<branch>.md` |
 | `codebase-search` | Two-tier search: Serena (LSP) + SocratiCode (semantic), cache-aside |
 | `drift-guard` | Seven drift questions at every phase gate — keeps work anchored to AC |
 | `context7-research` | Verified library docs via Context7 MCP — no hallucinated API calls |

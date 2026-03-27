@@ -49,15 +49,15 @@ Extract ticket ID matching `[A-Z]+-[0-9]+` from branch name, or from the plan fi
 
 ```bash
 # 2. Ensure memory directory exists
-mkdir -p .claude/memory/{TICKET}
+mkdir -p ~/.claude/memory/{TICKET}
 
 # 3. Check for prior session
-ls .claude/memory/{TICKET}/{BRANCH}.md 2>/dev/null && echo "EXISTS" || echo "NEW"
+ls ~/.claude/memory/{TICKET}/{BRANCH}.md 2>/dev/null && echo "EXISTS" || echo "NEW"
 ```
 
 **If EXISTS — load it:**
 ```bash
-cat .claude/memory/{TICKET}/{BRANCH}.md
+cat ~/.claude/memory/{TICKET}/{BRANCH}.md
 ```
 Print: `📂 Memory loaded for {TICKET} ({BRANCH})`
 - Restore "Implementation status" checkboxes from prior session
@@ -67,7 +67,7 @@ Print: `📂 Memory loaded for {TICKET} ({BRANCH})`
 **If NEW — create it:**
 Print: `🆕 No prior memory for {TICKET}. Starting fresh.`
 ```bash
-printf "# Memory: {TICKET} / {BRANCH}\n\nCreated: $(date -u +%Y-%m-%dT%H:%M:%SZ)\n\n---\n"   > .claude/memory/{TICKET}/{BRANCH}.md
+printf "# Memory: {TICKET} / {BRANCH}\n\nCreated: $(date -u +%Y-%m-%dT%H:%M:%SZ)\n\n---\n"   > ~/.claude/memory/{TICKET}/{BRANCH}.md
 ```"
 
 **PRE-PHASE-I CHECKPOINT:**
@@ -422,7 +422,7 @@ mv $ARGUMENTS .claude/PRPs/plans/completed/
 
 Follow `codebase-intelligence:task-memory` → SESSION END protocol.
 
-Append to `.claude/memory/{TICKET}/{BRANCH}.md`:
+Append to `~/.claude/memory/{TICKET}/{BRANCH}.md`:
 
 ```markdown
 ## Session: {ISO date} — Implementation Complete
@@ -492,7 +492,7 @@ Append to `.claude/memory/{TICKET}/{BRANCH}.md`:
 ### Artifacts
 - Report: `.claude/PRPs/reports/{name}-report.md`
 - Plan archived: `.claude/PRPs/plans/completed/`
-- Memory: `.claude/memory/{TICKET}/{BRANCH}.md`
+- Memory: `~/.claude/memory/{TICKET}/{BRANCH}.md`
 
 ### Next
 1. Review report
@@ -538,5 +538,5 @@ Pre-phases will restore context automatically.
 - **AC_VERIFIED**: Every AC item has a named passing test
 - **REPORT_CREATED**: Report with Intelligence Summary and AC coverage table
 - **PLAN_ARCHIVED**: Plan in completed/
-- **MEMORY_SAVED**: Final session in `.claude/memory/{TICKET}/{BRANCH}.md`
+- **MEMORY_SAVED**: Final session in `~/.claude/memory/{TICKET}/{BRANCH}.md`
 - **SCOPE_DEFENDED**: Drift log shows no unintended additions

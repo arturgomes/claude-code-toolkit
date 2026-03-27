@@ -10,19 +10,19 @@ user-invocable: true
 
 # task-memory
 
-Cross-session memory stored in `.claude/memory/` inside the project — version-controllable
-if you want, gitignored if you don't.
+Cross-session memory stored globally in `~/.claude/memory/` — persists across all projects
+and sessions, never inside any repo directory.
 
 ## Memory file path
 
 ```
-.claude/memory/<JIRA-TICKET>/<git-branch>.md
+~/.claude/memory/<JIRA-TICKET>/<git-branch>.md
 ```
 
 Examples:
-- `.claude/memory/PROJ-421/feature-pdf-export.md`
-- `.claude/memory/PROJ-388/bugfix-auth-timeout.md`
-- `.claude/memory/PROJ-512/main.md`  ← fallback when branch has no ticket prefix
+- `~/.claude/memory/PROJ-421/feature-pdf-export.md`
+- `~/.claude/memory/PROJ-388/bugfix-auth-timeout.md`
+- `~/.claude/memory/PROJ-512/main.md`  ← fallback when branch has no ticket prefix
 
 ---
 
@@ -37,15 +37,15 @@ git branch --show-current
 # Match pattern [A-Z]+-[0-9]+ in branch name, or use value from $ARGUMENTS if provided
 
 # 3. Ensure memory directory exists
-mkdir -p .claude/memory/{TICKET}
+mkdir -p ~/.claude/memory/{TICKET}
 
 # 4. Check for prior session file
-ls .claude/memory/{TICKET}/{BRANCH}.md 2>/dev/null
+ls ~/.claude/memory/{TICKET}/{BRANCH}.md 2>/dev/null
 ```
 
 **If file EXISTS:**
 ```bash
-cat .claude/memory/{TICKET}/{BRANCH}.md
+cat ~/.claude/memory/{TICKET}/{BRANCH}.md
 ```
 - Print: `📂 Memory loaded for {TICKET} ({BRANCH})`
 - Summarise: last session date · implementation status · open blockers
@@ -56,7 +56,7 @@ cat .claude/memory/{TICKET}/{BRANCH}.md
 - Create the file immediately:
 
 ```bash
-cat > .claude/memory/{TICKET}/{BRANCH}.md << 'EOF'
+cat > ~/.claude/memory/{TICKET}/{BRANCH}.md << 'EOF'
 # Memory: {TICKET} / {BRANCH}
 
 Created: {ISO date}
@@ -70,10 +70,10 @@ EOF
 
 ## SESSION END — exact steps to execute
 
-Append a dated entry to `.claude/memory/{TICKET}/{BRANCH}.md`:
+Append a dated entry to `~/.claude/memory/{TICKET}/{BRANCH}.md`:
 
 ```bash
-cat >> .claude/memory/{TICKET}/{BRANCH}.md << 'EOF'
+cat >> ~/.claude/memory/{TICKET}/{BRANCH}.md << 'EOF'
 
 ## Session: {ISO-8601 datetime}
 
@@ -103,7 +103,7 @@ When returning after a QA rejection:
 
 ```bash
 # 1. Load memory (SESSION START above)
-cat .claude/memory/{TICKET}/{BRANCH}.md
+cat ~/.claude/memory/{TICKET}/{BRANCH}.md
 
 # 2. Read "Implementation status" and "QA / Failures" sections
 
