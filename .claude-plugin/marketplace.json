@@ -17,7 +17,7 @@
         "url": "arturgomes/claude-code-toolkit",
         "path": "plugins/codebase-intelligence",
         "ref": "main",
-        "sha": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0"
+        "sha": "01f6a8a5d5c1a4445b455f16564fd817f8bc4d90"
       },
       "version": "1.0.0",
       "description": "Augments prp-core prp-plan and prp-implement with two-tier codebase search..."
