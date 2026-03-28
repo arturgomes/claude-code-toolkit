@@ -154,7 +154,45 @@ claude mcp add atlassian \
 
 ---
 
+## Skills
 
+Quality and planning skills from CLAUDE.md shortcuts, now invocable as Claude Code skills:
+
+| Skill | Source Shortcut | Phase Injection | Purpose |
+|-------|-----------------|-----------------|---------|
+| `product-spec` | QPO | Manual / Pre-planning | Generate comprehensive PRD from feature idea with 8-section structure |
+| `technical-plan` | QPLAN | prp-plan Phase 4 (DESIGN) | Validate plan consistency with codebase patterns, minimal changes, DRY |
+| `test-scenarios` | QUX | prp-plan Phase 5 (ARCHITECT) | Generate QA test cases (happy path, edge, error, performance, security) |
+| `quality-review` | QCHECK | prp-implement After each task | Run full quality checklist (function + test + best practices) |
+| `function-quality` | QCHECKF | prp-implement After writing function | Validate function against 20-point checklist (readability, complexity, design, types, testability, DRY, naming) |
+| `test-quality` | QCHECKT | prp-implement After writing test | Validate test against 16-point checklist (structure, quality, coverage, property testing, integration) |
+
+**Manual invocation**:
+```bash
+# Generate product spec
+product-spec: Add LinkedIn scheduling feature
+
+# Validate technical plan
+technical-plan: path/to/plan.md
+
+# Generate test scenarios
+test-scenarios: Dark mode toggle feature
+
+# Run comprehensive review
+quality-review
+
+# Review specific function
+function-quality: path/to/file.ts:functionName
+
+# Review test file
+test-quality: path/to/test-file.spec.ts
+```
+
+**Future work**: Automatic phase injection into prp-plan/prp-implement workflows.
+
+---
+
+## Memory persistence
 
 ```
 ~/.claude/memory/
