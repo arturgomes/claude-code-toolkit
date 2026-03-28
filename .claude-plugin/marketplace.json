@@ -14,7 +14,7 @@
       "name": "codebase-intelligence",
       "source": {
         "type": "git-subdir",
-        "path": "./plugins/quality-review-plugin"
+        "path": "./plugins/odebase-intelligence"
       },
       "version": "1.0.0",
       "description": "Augments prp-core prp-plan and prp-implement with two-tier codebase search..."
