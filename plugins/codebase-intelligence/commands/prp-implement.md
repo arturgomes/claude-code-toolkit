@@ -363,12 +363,36 @@ AC 2: "{verbatim AC}" → {test that covers it} → {result}
 
 All AC items must be green before marking implementation complete.
 
+### 4.6 Quality Review
+
+Follow skill: `codebase-intelligence:quality-review`.
+
+Run comprehensive quality checks on all modified files:
+- Function Quality Checklist (20 items)
+- Test Quality Checklist (16 items)
+- Implementation Best Practices verification
+- DRY violations check
+- Nesting depth check
+- Early returns verification
+
+**GATE**: Quality review must show ✅ PASS or ⚠️ NEEDS WORK (not ❌ BLOCKED) before proceeding to report.
+
+If ❌ BLOCKED:
+1. Fix all 🔴 violations
+2. Re-run quality-review
+3. Continue only when ✅ PASS or ⚠️ NEEDS WORK
+
+Document quality score for inclusion in implementation report.
+
 **PHASE_4_CHECKPOINT:**
 - [ ] Type-check passes
 - [ ] Lint passes
 - [ ] Tests pass
 - [ ] Build succeeds
 - [ ] **Every AC item verified with a specific test** ← drift-guard final gate
+- [ ] Quality review run on all changed files
+- [ ] All 🔴 violations fixed
+- [ ] Quality score documented
 
 ---
 
@@ -391,6 +415,7 @@ Include all standard report sections plus:
 **Context7 verifications**: {N libraries, N signatures confirmed}
 **KB consultations**: {N — topics and results}
 **Drift checks**: {N total} — {N passed, N triggered, N removals}
+**Quality review**: {✅ PASS | ⚠️ NEEDS WORK} — {N functions, N tests reviewed, X violations fixed}
 
 ### Drift removals (scope defended)
 - {what was NOT built and why}
@@ -400,6 +425,14 @@ Include all standard report sections plus:
 
 ### KB patterns applied
 - {pattern} — *Source: {KB reference}*
+
+### Quality review summary
+- Functions reviewed: {N}
+- Test files reviewed: {N}
+- Average function quality: {X/20}
+- Average test quality: {X/16}
+- 🔴 Violations fixed: {N}
+- 🟡 Tensions noted: {N}
 
 ### AC coverage
 | AC Item | Test | Result |
@@ -440,10 +473,17 @@ Append to `~/.claude/memory/{TICKET}/{BRANCH}.md`:
 ### KB patterns applied
 {what was used and where}
 
+### Quality review
+- Functions: {N} reviewed, avg score {X/20}
+- Tests: {N} reviewed, avg score {X/16}
+- Violations fixed: {list critical issues fixed}
+- Status: {✅ PASS | ⚠️ NEEDS WORK}
+
 ### Implementation status
 - [x] All {N} tasks complete
 - [x] Type-check ✅ lint ✅ tests ✅ build ✅
 - [x] All AC items verified ✅
+- [x] Quality review ✅
 - [x] Report: .claude/PRPs/reports/{name}-report.md
 
 ### Drift decisions
@@ -537,6 +577,7 @@ Pre-phases will restore context automatically.
 - **TESTS_PASS**: All green
 - **BUILD_PASS**: Build succeeds
 - **AC_VERIFIED**: Every AC item has a named passing test
+- **QUALITY_VERIFIED**: Quality review ✅ PASS or ⚠️ NEEDS WORK (all 🔴 violations fixed)
 - **REPORT_CREATED**: Report with Intelligence Summary and AC coverage table
 - **PLAN_ARCHIVED**: Plan in completed/
 - **MEMORY_SAVED**: Final session in `~/.claude/memory/{TICKET}/{BRANCH}.md`
