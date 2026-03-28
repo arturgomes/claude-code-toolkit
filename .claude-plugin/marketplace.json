@@ -13,11 +13,8 @@
     {
       "name": "codebase-intelligence",
       "source": {
-        "source": "git-subdir",
-        "url": "arturgomes/claude-code-toolkit",
-        "path": "plugins/codebase-intelligence",
-        "ref": "main",
-        "sha": "01f6a8a5d5c1a4445b455f16564fd817f8bc4d90"
+        "type": "git-subdir",
+        "path": "./plugins/quality-review-plugin"
       },
       "version": "1.0.0",
       "description": "Augments prp-core prp-plan and prp-implement with two-tier codebase search..."
