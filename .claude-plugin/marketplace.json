@@ -13,9 +13,11 @@
     {
       "name": "codebase-intelligence",
       "source": {
-        "type": "git-subdir",
-        "url": "https://github.com/arturgomes/claude-code-toolkit.git",
-        "path": "plugins/codebase-intelligence"
+        "source": "git-subdir",
+        "url": "arturgomes/claude-code-toolkit",
+        "path": "plugins/codebase-intelligence",
+        "ref": "main",
+        "sha": "fa0b4bc0644ad2441363cd966356e7be0129ae5a"
       },
       "version": "1.0.0",
       "description": "Augments prp-core prp-plan and prp-implement with two-tier codebase search (Serena LSP + SocratiCode semantic), cross-session task memory keyed by Jira ticket + branch, and live Jira ticket context injection. Install alongside prp-core."
