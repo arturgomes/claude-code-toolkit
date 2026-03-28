@@ -13,7 +13,7 @@
     {
       "name": "codebase-intelligence",
       "source": {
-        "source": "git-subdir",
+        "type": "git-subdir",
         "url": "https://github.com/arturgomes/claude-code-toolkit.git",
         "path": "plugins/codebase-intelligence"
       },
