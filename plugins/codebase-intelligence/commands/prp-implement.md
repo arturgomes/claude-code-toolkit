@@ -39,42 +39,29 @@ Fix issues immediately. Working implementation, not just existing code.
 
 ## Pre-Phase I: MEMORY — Restore prior context
 
-Execute these steps NOW — do not skip or defer:
+Execute the session-memory skill to restore implementation context:
 
-```bash
-# 1. Get current branch
-git branch --show-current
+```
+Skill(session-memory)
 ```
 
-Extract ticket ID matching `[A-Z]+-[0-9]+` from branch name, or from the plan file's "Intelligence Context" section. Store as `{TICKET}` and `{BRANCH}`.
+Follow the skill's SESSION START protocol:
+1. Extract ticket ID from branch name or plan's "Intelligence Context"
+2. Load existing implementation session from Obsidian vault (if exists)
+3. Create new session with frontmatter (if new)
+4. Restore prior implementation status and task progress
 
-```bash
-# 2. Ensure memory directory exists
-mkdir -p ~/.claude/memory/{TICKET}
-
-# 3. Check for prior session
-ls ~/.claude/memory/{TICKET}/{BRANCH}.md 2>/dev/null && echo "EXISTS" || echo "NEW"
-```
-
-**If EXISTS — load it:**
-```bash
-cat ~/.claude/memory/{TICKET}/{BRANCH}.md
-```
-Print: `📂 Memory loaded for {TICKET} ({BRANCH})`
-- Restore "Implementation status" checkboxes from prior session
-- Pre-load any GOTCHA notes for files listed in the plan
-- If prior session shows tasks completed → verify against `git log` before re-doing
-
-**If NEW — create it:**
-Print: `🆕 No prior memory for {TICKET}. Starting fresh.`
-```bash
-printf "# Memory: {TICKET} / {BRANCH}\n\nCreated: $(date -u +%Y-%m-%dT%H:%M:%SZ)\n\n---\n"   > ~/.claude/memory/{TICKET}/{BRANCH}.md
-```"
+The skill handles:
+- Vault-based session at `~/Documents/Obsidian-Vault/02-Notes/Sessions/{TICKET}-{BRANCH}.md`
+- Frontmatter restoration (ticket, branch, date, phase: implementation)
+- Implementation status checkboxes from prior session
+- GOTCHA notes for files listed in the plan
+- Git log verification of completed tasks
 
 **PRE-PHASE-I CHECKPOINT:**
-- [ ] Branch and ticket confirmed
-- [ ] Memory loaded or fresh start
-- [ ] Prior task state restored
+- [ ] session-memory skill executed
+- [ ] Session context loaded or created
+- [ ] Prior task state restored (if continuing)
 
 ---
 
@@ -286,7 +273,7 @@ Any thought starting with:
 
 ### Step 3.8 — Memory save per milestone
 
-Every 3 tasks (or after any significant discovery), append interim entry to task-memory:
+Every 3 tasks (or after any significant discovery), use the session-memory skill to append interim progress:
 
 ```markdown
 ## Session: {ISO date} — Implementation (task {N}/{total})
@@ -325,7 +312,7 @@ Task 2: CREATE src/features/x/service.ts ✅ (AC: {which AC})
 - [ ] Drift check run before every task
 - [ ] Context7 verified for all library calls
 - [ ] KB consulted for pattern decisions
-- [ ] Memory saved at milestones (every ~3 tasks)
+- [ ] Session saved at milestones via session-memory skill (every ~3 tasks)
 - [ ] Deviations documented
 
 ---
@@ -399,10 +386,26 @@ Document quality score for inclusion in implementation report.
 ## Phase 5: REPORT - Create Implementation Report
 
 ```bash
-mkdir -p .claude/PRPs/reports
+mkdir -p ~/Documents/Obsidian-Vault/07-PRPs-Claude-Code-Toolkit/reports
 ```
 
-**Path**: `.claude/PRPs/reports/{plan-name}-report.md`
+**Path**: `~/Documents/Obsidian-Vault/07-PRPs-Claude-Code-Toolkit/reports/{plan-name}-report.md`
+
+**FRONTMATTER_TEMPLATE**: Include at the start of every report file:
+```yaml
+---
+title: {plan-name}-report
+created: {YYYY-MM-DD}
+source: Implementation session
+project: claude-code-toolkit
+tags:
+  - prp
+  - claude-code-toolkit
+  - report
+  - implementation
+plan: "[[{plan-name}]]"
+---
+```
 
 Include all standard report sections plus:
 
@@ -448,15 +451,19 @@ Check plan for `Source PRD:` reference. Update phase from `in-progress` to `comp
 ### 5.4 Archive Plan
 
 ```bash
-mkdir -p .claude/PRPs/plans/completed
-mv $ARGUMENTS .claude/PRPs/plans/completed/
+mkdir -p ~/Documents/Obsidian-Vault/07-PRPs-Claude-Code-Toolkit/plans/completed
+mv $ARGUMENTS ~/Documents/Obsidian-Vault/07-PRPs-Claude-Code-Toolkit/plans/completed/
 ```
 
 ### 5.5 Final memory save
 
-Follow `codebase-intelligence:task-memory` → SESSION END protocol.
+Execute the session-memory skill to save the final implementation session:
 
-Append to `~/.claude/memory/{TICKET}/{BRANCH}.md`:
+```
+Skill(session-memory)
+```
+
+Follow the skill's SESSION END protocol to append:
 
 ```markdown
 ## Session: {ISO date} — Implementation Complete
@@ -502,7 +509,7 @@ Append to `~/.claude/memory/{TICKET}/{BRANCH}.md`:
 - [ ] AC coverage table in report — all ✅
 - [ ] PRD updated (if applicable)
 - [ ] Plan archived
-- [ ] Final memory saved with Context7 and KB findings preserved
+- [ ] Final session saved via session-memory skill to vault
 
 ---
 
@@ -533,7 +540,7 @@ Append to `~/.claude/memory/{TICKET}/{BRANCH}.md`:
 ### Artifacts
 - Report: `.claude/PRPs/reports/{name}-report.md`
 - Plan archived: `.claude/PRPs/plans/completed/`
-- Memory: `~/.claude/memory/{TICKET}/{BRANCH}.md`
+- Session: `~/Documents/Obsidian-Vault/02-Notes/Sessions/{TICKET}-{BRANCH}.md`
 
 ### Next
 1. Review report
@@ -580,5 +587,5 @@ Pre-phases will restore context automatically.
 - **QUALITY_VERIFIED**: Quality review ✅ PASS or ⚠️ NEEDS WORK (all 🔴 violations fixed)
 - **REPORT_CREATED**: Report with Intelligence Summary and AC coverage table
 - **PLAN_ARCHIVED**: Plan in completed/
-- **MEMORY_SAVED**: Final session in `~/.claude/memory/{TICKET}/{BRANCH}.md`
+- **SESSION_SAVED**: Final session in vault at `~/Documents/Obsidian-Vault/02-Notes/Sessions/{TICKET}-{BRANCH}.md`
 - **SCOPE_DEFENDED**: Drift log shows no unintended additions
