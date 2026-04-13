@@ -192,22 +192,55 @@ test-quality: path/to/test-file.spec.ts
 
 ---
 
-## Memory persistence
+## Memory Architecture
+
+**IMPORTANT**: As of v2.0, codebase-intelligence uses **vault-based session-memory** for all memory operations.
+
+### Storage Location
 
 ```
-~/.claude/memory/
-├── PROJ-421/
-│   └── feature-pdf-export.md     ← planning + implementation + QA resume sessions
-├── PROJ-388/
-│   └── bugfix-auth-timeout.md
-└── PROJ-512/
-    └── main.md                   ← fallback when branch has no ticket prefix
+~/Documents/Obsidian-Vault/02-Notes/Sessions/<TICKET>-<BRANCH>.md
 ```
 
-Each file accumulates dated session entries:
-- Planning session: findings, decisions, KB results, Context7 facts
-- Implementation sessions: per-task progress, deviations, drift removals
-- QA resume sessions: failure context, what was tried, resumption point
+Each session file contains:
+- **Frontmatter**: ticket, branch, date, phase, keywords (auto-extracted), tags
+- **Wikilinks**: `[[TICKET-BRANCH]]` for cross-referencing
+- **BM25 Search**: Full-text search via SQLite FTS5 index
 
-A session interrupted mid-task restarts with full context. A QA failure weeks later
-restores the entire investigation — no re-research needed.
+### Search Capability
+
+```bash
+python3 plugins/codebase-intelligence/tools/session_indexer.py \
+  --search "authentication" \
+  --limit 5
+```
+
+Returns top 5 BM25-ranked sessions across all tickets.
+
+### Migration from Old task-memory
+
+If you have existing memory in `~/.claude/memory/`:
+
+```bash
+# Backup is automatic — run once:
+plugins/codebase-intelligence/tools/migrate-task-memory.sh --execute
+
+# This will:
+# 1. Backup ~/.claude/memory/ to tarball
+# 2. Convert each TICKET/BRANCH.md to vault format with frontmatter
+# 3. Move to ~/Documents/Obsidian-Vault/02-Notes/Sessions/
+# 4. Build FTS5 index for all migrated sessions
+# 5. Preserve all existing data (zero data loss)
+```
+
+### Commands Using Session Memory
+
+- `/prp-plan` — Loads memory at start, saves at end with keyword extraction
+- `/prp-implement` — Loads memory, saves progress every 3 tasks
+- Agents (`codebase-explorer`, `codebase-analyst`) — Read memory for context pre-fill
+
+### Dependencies
+
+- **Obsidian vault**: `~/Documents/Obsidian-Vault/` (must exist)
+- **Python 3.13+**: For keyword extraction and indexing
+- **rank_bm25**: `pip install rank-bm25` (for BM25 scoring)
