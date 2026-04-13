@@ -97,33 +97,39 @@ migrate_prps() {
     if [[ -d "$source_base/plans" ]]; then
         echo ""
         echo "📋 Active Plans:"
-        for plan in "$source_base/plans"/*.md 2>/dev/null || true; do
+        shopt -s nullglob
+        for plan in "$source_base/plans"/*.md; do
             [[ -f "$plan" ]] || continue
             dest="$VAULT_BASE/plans/$(basename "$plan")"
             add_frontmatter "$plan" "$dest" "plan"
         done
+        shopt -u nullglob
     fi
 
     # Migrate completed plans
     if [[ -d "$source_base/plans/completed" ]]; then
         echo ""
         echo "✅ Completed Plans:"
-        for plan in "$source_base/plans/completed"/*.md 2>/dev/null || true; do
+        shopt -s nullglob
+        for plan in "$source_base/plans/completed"/*.md; do
             [[ -f "$plan" ]] || continue
             dest="$VAULT_BASE/plans/completed/$(basename "$plan")"
             add_frontmatter "$plan" "$dest" "plan"
         done
+        shopt -u nullglob
     fi
 
     # Migrate reports
     if [[ -d "$source_base/reports" ]]; then
         echo ""
         echo "📊 Reports:"
-        for report in "$source_base/reports"/*.md 2>/dev/null || true; do
+        shopt -s nullglob
+        for report in "$source_base/reports"/*.md; do
             [[ -f "$report" ]] || continue
             dest="$VAULT_BASE/reports/$(basename "$report")"
             add_frontmatter "$report" "$dest" "report"
         done
+        shopt -u nullglob
     fi
 }
 
