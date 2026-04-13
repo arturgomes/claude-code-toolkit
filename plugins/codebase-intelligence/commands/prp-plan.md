@@ -50,40 +50,27 @@ CLAUDE.md rules: @CLAUDE.md
 
 ## Pre-Phase I: MEMORY — Restore prior context
 
-Execute these steps NOW — do not skip or defer:
+Execute the session-memory skill to restore or create session context:
 
-```bash
-# 1. Get current branch
-git branch --show-current
+```
+Skill(session-memory)
 ```
 
-Extract ticket ID matching `[A-Z]+-[0-9]+` from the branch name, or from `$ARGUMENTS` if provided directly. Store as `{TICKET}` and `{BRANCH}`.
+Follow the skill's SESSION START protocol:
+1. Extract ticket ID from branch name or `$ARGUMENTS`
+2. Load existing session from Obsidian vault (if exists)
+3. Create new session with frontmatter (if new)
+4. Report session status and ask user for next action
 
-```bash
-# 2. Ensure memory directory exists
-mkdir -p ~/.claude/memory/{TICKET}
-
-# 3. Check for prior session
-ls ~/.claude/memory/{TICKET}/{BRANCH}.md 2>/dev/null && echo "EXISTS" || echo "NEW"
-```
-
-**If EXISTS — load it:**
-```bash
-cat ~/.claude/memory/{TICKET}/{BRANCH}.md
-```
-Print: `📂 Memory loaded for {TICKET} ({BRANCH})`
-Summarise: last session date · status · open blockers.
-Ask: "Continue from last session, or start fresh?"
-
-**If NEW — create it:**
-Print: `🆕 No prior memory for {TICKET}. Starting fresh.`
-```bash
-printf "# Memory: {TICKET} / {BRANCH}\n\nCreated: $(date -u +%Y-%m-%dT%H:%M:%SZ)\n\n---\n"   > ~/.claude/memory/{TICKET}/{BRANCH}.md
-```
+The skill handles:
+- Vault-based session persistence at `~/Documents/Obsidian-Vault/02-Notes/Sessions/`
+- Frontmatter metadata (ticket, branch, date, phase, keywords, tags)
+- FTS5 search index at `~/.claude/memory/{TICKET}/session_index.db`
 
 **PRE-PHASE-I CHECKPOINT:**
-- [ ] Branch and ticket ID determined
-- [ ] Memory loaded or fresh start confirmed
+- [ ] session-memory skill executed
+- [ ] Session context loaded or created
+- [ ] User confirmed next action
 
 ---
 
@@ -377,9 +364,24 @@ Verdict MUST be ✅ ON TRACK before proceeding.
 
 ## Phase 6: GENERATE - Implementation Plan File
 
-**OUTPUT_PATH**: `.claude/PRPs/plans/{kebab-case-feature-name}.plan.md`
+**OUTPUT_PATH**: `~/Documents/Obsidian-Vault/07-PRPs-Claude-Code-Toolkit/plans/{kebab-case-feature-name}.plan.md`
 
-`mkdir -p .claude/PRPs/plans`
+`mkdir -p ~/Documents/Obsidian-Vault/07-PRPs-Claude-Code-Toolkit/plans`
+
+**FRONTMATTER_TEMPLATE**: Include at the start of every plan file:
+```yaml
+---
+title: {kebab-case-feature-name}
+created: {YYYY-MM-DD}
+source: Planning session (vault-native)
+project: claude-code-toolkit
+tags:
+  - prp
+  - claude-code-toolkit
+  - plan
+  - {feature-category}
+---
+```
 
 ---
 
@@ -450,15 +452,15 @@ Completion Checklist · Risks and Mitigations
 
 <post_generation>
 
-## Post-Phase: SAVE — Persist to task-memory
+## Post-Phase: SAVE — Persist to session-memory
 
-Execute NOW — append session entry to `~/.claude/memory/{TICKET}/{BRANCH}.md`:
+Execute the session-memory skill to save the planning session:
 
-```bash
-cat >> ~/.claude/memory/{TICKET}/{BRANCH}.md << 'MEMEOF'
+```
+Skill(session-memory)
 ```
 
-Append with this structure:
+Follow the skill's SESSION END protocol to append this planning session:
 
 ```markdown
 ## Session: {ISO date} — Planning
@@ -485,6 +487,11 @@ Append with this structure:
 ### Next steps
 - /codebase-intelligence:prp-implement .claude/PRPs/plans/{feature}.plan.md
 ```
+
+The skill will:
+- Append session to `~/Documents/Obsidian-Vault/02-Notes/Sessions/{TICKET}-{BRANCH}.md`
+- Extract and update keywords in frontmatter
+- Rebuild FTS5 index at `~/.claude/memory/{TICKET}/session_index.db`
 
 </post_generation>
 
@@ -532,5 +539,5 @@ If PRD input: update phase status to `in-progress`, link plan.
 - [ ] All patterns from agents are ACTUAL code snippets (not invented)
 - [ ] Every task has an executable validation command
 - [ ] Drift guard: seven-question check ✅ ON TRACK at Phase 5
-- [ ] Memory saved to `~/.claude/memory/{TICKET}/{BRANCH}.md`
+- [ ] Session saved via session-memory skill to vault
 </verification>
