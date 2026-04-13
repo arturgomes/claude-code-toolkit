@@ -12,7 +12,7 @@
   "plugins": [
     {
       "name": "codebase-intelligence",
-      "source": "./plugins/odebase-intelligence",
+      "source": "./plugins/codebase-intelligence",
       "description": "Augments prp-core prp-plan and prp-implement with two-tier codebase search..."
     }
   ]
