@@ -1,14 +1,39 @@
 ---
 name: task-memory
 description: >
-  Persist and restore investigation findings, implementation decisions, and QA failure notes
-  across sessions keyed by Jira ticket + git branch. Invoked automatically by prp-plan and
-  prp-implement. Also invoke manually when asked to "save progress", "load context for PROJ-NNN",
-  "what did we find last time", or when resuming after a QA failure.
-user-invocable: true
+  **DEPRECATED** - Use session-memory from memory-central instead.
+  Legacy file-based memory persistence. Replaced by Obsidian vault-based session-memory
+  with frontmatter, BM25 search, and FTS5 indexing.
+user-invocable: false
 ---
 
 # task-memory
+
+> **⚠️ DEPRECATED**
+> This skill has been replaced by `session-memory`.
+>
+> **Migration**: All existing memory files can be migrated to the Obsidian vault:
+> - Old: `~/.claude/memory/<TICKET>/<BRANCH>.md`
+> - New: `~/Documents/Obsidian-Vault/02-Notes/Sessions/<TICKET>-<BRANCH>.md`
+>
+> **Run migration once**:
+> ```bash
+> /Users/artur/Documents/ai-tools/claude-code-toolkit/plugins/codebase-intelligence/tools/migrate-task-memory.sh --execute
+> ```
+>
+> **New features**:
+> - Frontmatter metadata (ticket, branch, date, phase, keywords, tags)
+> - BM25 keyword-based search via FTS5 index
+> - Vault-wide wikilinks and cross-referencing
+> - GDrive sync for cross-device access (via memory-central)
+>
+> **Use instead**: Invoke `Skill(codebase-intelligence:session-memory)` for all memory operations.
+>
+> See: `plugins/codebase-intelligence/skills/session-memory.md`
+
+---
+
+## Legacy Documentation (for reference only)
 
 Cross-session memory stored globally in `~/.claude/memory/` — persists across all projects
 and sessions, never inside any repo directory.
