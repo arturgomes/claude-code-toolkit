@@ -180,6 +180,123 @@ Memory loads automatically from Obsidian vault — prior investigation, implemen
 
 ---
 
+## Validation
+
+After installation, verify that the marketplace and plugin are correctly set up:
+
+### Step 1: Verify Marketplace Structure
+
+Run these commands from your terminal (not in Claude Code):
+
+```bash
+# Validate JSON syntax
+jq '.' .claude-plugin/marketplace.json
+jq '.' plugins/codebase-intelligence/.claude-plugin/plugin.json
+
+# Verify version consistency
+echo "Marketplace version: $(jq -r '.metadata.version' .claude-plugin/marketplace.json)"
+echo "Plugin version: $(jq -r '.version' plugins/codebase-intelligence/.claude-plugin/plugin.json)"
+# Both should show: 2.0.0
+
+# Verify component directories exist
+test -d plugins/codebase-intelligence/commands && echo "✅ commands/"
+test -d plugins/codebase-intelligence/skills && echo "✅ skills/"
+test -d plugins/codebase-intelligence/agents && echo "✅ agents/"
+
+# Count components
+echo "Commands: $(ls -1 plugins/codebase-intelligence/commands/*.md 2>/dev/null | wc -l)"
+echo "Skills: $(ls -1 plugins/codebase-intelligence/skills/*.md 2>/dev/null | wc -l)"
+echo "Agents: $(ls -1 plugins/codebase-intelligence/agents/*.md 2>/dev/null | wc -l)"
+# Expected: Commands: 2, Skills: 15, Agents: 4
+```
+
+**Expected output**:
+- Both JSON files parse without errors
+- Versions match (2.0.0)
+- All three component directories exist
+- Component counts match expected values
+
+### Step 2: Verify Plugin Installation (in Claude Code)
+
+Inside a Claude Code session:
+
+```
+/plugin list
+```
+
+**Expected output**:
+- `codebase-intelligence@2.0.0` appears in the list
+- `prp-core` also appears (if installed as prerequisite)
+
+### Step 3: Verify Command Discovery
+
+Inside a Claude Code session, start typing:
+
+```
+/codebase-intelligence:prp-
+```
+
+**Expected output**:
+- Commands autocomplete
+- Both `/codebase-intelligence:prp-plan` and `/codebase-intelligence:prp-implement` appear
+
+### Step 4: Verify Skill Availability
+
+Inside a Claude Code session:
+
+```
+Skill(session-memory)
+```
+
+**Expected output**:
+- Skill loads without errors
+- If vault directories don't exist, skill provides setup instructions
+
+### Step 5: Test End-to-End Workflow
+
+Inside a Claude Code session:
+
+```
+/codebase-intelligence:prp-plan "test feature"
+```
+
+**Expected output**:
+- Command executes
+- Creates plan file in `~/Documents/Obsidian-Vault/07-PRPs-Claude-Code-Toolkit/plans/`
+- Plan includes Intelligence Context section with AC
+- Plan includes AC Traceability table
+
+### Troubleshooting Validation Failures
+
+**Marketplace cannot be added**:
+- Verify `marketplace.json` is valid JSON: `jq '.' .claude-plugin/marketplace.json`
+- Check that `plugins[0].source` path exists: `ls -d ./plugins/codebase-intelligence`
+
+**Plugin install fails**:
+- Verify `plugin.json` is valid JSON: `jq '.' plugins/codebase-intelligence/.claude-plugin/plugin.json`
+- Check version field exists: `jq '.version' plugins/codebase-intelligence/.claude-plugin/plugin.json`
+- Ensure `.claude-plugin/` contains only `plugin.json` (no component directories)
+
+**Commands not discoverable**:
+- Verify files exist: `ls plugins/codebase-intelligence/commands/*.md`
+- Check frontmatter in command files: `head -20 plugins/codebase-intelligence/commands/prp-plan.md`
+- Ensure `name:` field follows format: `codebase-intelligence:<command-name>`
+
+**Skills fail to load**:
+- Verify skill files exist: `ls plugins/codebase-intelligence/skills/*.md`
+- Check file naming convention (kebab-case): skill file `session-memory.md` → invoked as `Skill(session-memory)`
+- Ensure skills are at plugin root level: `plugins/codebase-intelligence/skills/` not `.claude-plugin/skills/`
+
+**Agents not invokable**:
+- Verify agent files exist: `ls plugins/codebase-intelligence/agents/*.md`
+- Check that agents are referenced in command files: `grep -i "agent" plugins/codebase-intelligence/commands/prp-plan.md`
+
+**Version mismatch warnings**:
+- Sync versions: marketplace `metadata.version` must match plugin `version`
+- Update either file to match: `jq '.metadata.version = "2.0.0"' .claude-plugin/marketplace.json`
+
+---
+
 ## What's Included
 
 ### Commands (shadow prp-core)
