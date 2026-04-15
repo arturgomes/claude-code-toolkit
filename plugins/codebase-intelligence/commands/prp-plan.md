@@ -1,11 +1,9 @@
 ---
-name: codebase-intelligence:prp-plan
+name: prp-plan
 description: >
   Enhanced prp-plan. Extends prp-core:prp-plan with: cross-session memory (task-memory),
   Jira context injection (Atlassian MCP), session-memory skill,
-  personal knowledge base consultation (ask-kb + consult-kb), verified library docs (Context7),
-  and continuous requirements grounding (drift-guard).
-  Use exactly as prp-core:prp-plan — pass a feature description, Jira ticket, or .prd.md path.
+  personal knowledge base consultation (ask-kb + consult-kb), verified library docs (Context7), and continuous requirements grounding (drift-guard). Use exactly as prp-core:prp-plan — pass a feature description, Jira ticket, or .prd.md path.
 argument-hint: <feature description | JIRA-TICKET | path/to/prd.md>
 ---
 

@@ -1,11 +1,7 @@
 ---
-name: codebase-intelligence:prp-implement
+name: prp-implement
 description: >
-  Enhanced prp-implement. Extends prp-core:prp-implement with: cross-session memory restored
-  before execution, Context7 library verification before each task that calls external APIs,
-  KB consultation for implementation decisions, and continuous drift-guard checks that anchor
-  every task to the original acceptance criteria.
-  Use exactly as prp-core:prp-implement — pass the path to a .plan.md file.
+  Enhanced prp-implement. Extends prp-core:prp-implement with: cross-session memory restored before execution, Context7 library verification before each task that calls external APIs, KB consultation for implementation decisions, and continuous drift-guard checks that anchor every task to the original acceptance criteria. Use exactly as prp-core:prp-implement — pass the path to a .plan.md file.
 argument-hint: <path/to/plan.md> [--base <branch>]
 ---
 
