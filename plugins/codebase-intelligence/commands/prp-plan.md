@@ -2,7 +2,7 @@
 name: codebase-intelligence:prp-plan
 description: >
   Enhanced prp-plan. Extends prp-core:prp-plan with: cross-session memory (task-memory),
-  Jira context injection (Atlassian MCP), two-tier codebase search (Serena + SocratiCode),
+  Jira context injection (Atlassian MCP), session-memory skill,
   personal knowledge base consultation (ask-kb + consult-kb), verified library docs (Context7),
   and continuous requirements grounding (drift-guard).
   Use exactly as prp-core:prp-plan — pass a feature description, Jira ticket, or .prd.md path.
@@ -22,7 +22,7 @@ The drift-guard skill enforces this at every phase gate. When in doubt, do less 
 MEMORY → JIRA → ANCHOR → DETECT → PARSE → EXPLORE → KB → CONTEXT7 → RESEARCH → DESIGN → ARCHITECT → GENERATE
 
 **Skill + Agent roster**:
-- `codebase-intelligence:task-memory` — prior session context
+- `codebase-intelligence:session-memory` — prior session context
 - `codebase-intelligence:drift-guard` — requirements anchor, enforced at every gate
 - `codebase-intelligence:codebase-search` — Serena (LSP) + SocratiCode (semantic)
 - `codebase-intelligence:ask-kb` — personal KB patterns and principles
@@ -30,7 +30,7 @@ MEMORY → JIRA → ANCHOR → DETECT → PARSE → EXPLORE → KB → CONTEXT7 
 - `codebase-intelligence:context7-research` — verified library docs, no hallucination
 - `codebase-intelligence:codebase-explorer` — WHERE code lives, implementation patterns
 - `codebase-intelligence:codebase-analyst` — HOW integration points work, data flow
-- `codebase-intelligence:web-researcher` — external docs (runs AFTER Context7 + KB, gaps only)
+- `codebase-intelligence:web-search-hook` — external docs (runs AFTER Context7 + KB, gaps only)
 </objective>
 
 <context>
@@ -364,9 +364,7 @@ Verdict MUST be ✅ ON TRACK before proceeding.
 
 ## Phase 6: GENERATE - Implementation Plan File
 
-**OUTPUT_PATH**: `~/Documents/Obsidian-Vault/07-PRPs-Claude-Code-Toolkit/plans/{kebab-case-feature-name}.plan.md`
-
-`mkdir -p ~/Documents/Obsidian-Vault/07-PRPs-Claude-Code-Toolkit/plans`
+**OUTPUT_PATH**: `~/Documents/Obsidian-Vault/02-Notes/Plans/{kebab-case-feature-name}.plan.md`
 
 **FRONTMATTER_TEMPLATE**: Include at the start of every plan file:
 ```yaml
@@ -478,14 +476,14 @@ Follow the skill's SESSION END protocol to append this planning session:
 {confirmed library signatures}
 
 ### Implementation status
-- [ ] Plan: .claude/PRPs/plans/{feature}.plan.md
+- [ ] Plan: ~/Documents/Obsidian-Vault/02-Notes/Plans/{feature}.plan.md
 - [ ] Implementation not started
 
 ### Drift decisions
 {any drift detected and resolved — or "none"}
 
 ### Next steps
-- /codebase-intelligence:prp-implement .claude/PRPs/plans/{feature}.plan.md
+- /codebase-intelligence:prp-implement ~/Documents/Obsidian-Vault/02-Notes/Plans/{feature}.plan.md
 ```
 
 The skill will:
@@ -496,7 +494,7 @@ The skill will:
 </post_generation>
 
 <o>
-**OUTPUT_FILE**: `.claude/PRPs/plans/{kebab-case-feature-name}.plan.md`
+**OUTPUT_FILE**: `~/Documents/Obsidian-Vault/02-Notes/Plans/{kebab-case-feature-name}.plan.md`
 
 If PRD input: update phase status to `in-progress`, link plan.
 
@@ -505,7 +503,7 @@ If PRD input: update phase status to `in-progress`, link plan.
 ```markdown
 ## Plan Created ✅
 
-**File**: `.claude/PRPs/plans/{feature-name}.plan.md`
+**File**: `~/Documents/Obsidian-Vault/02-Notes/Plans/{feature-name}.plan.md`
 **Ticket**: {JIRA-TICKET} — {summary}
 
 ### Requirements grounding
@@ -525,7 +523,7 @@ If PRD input: update phase status to `in-progress`, link plan.
 
 **Complexity**: {LOW/MEDIUM/HIGH} · **Confidence**: {score}/10
 
-**Next**: `/codebase-intelligence:prp-implement .claude/PRPs/plans/{feature-name}.plan.md`
+**Next**: `/codebase-intelligence:prp-implement ~/Documents/Obsidian-Vault/02-Notes/Plans/{feature-name}.plan.md`
 ```
 </o>
 
