@@ -385,11 +385,7 @@ Document quality score for inclusion in implementation report.
 
 ## Phase 5: REPORT - Create Implementation Report
 
-```bash
-mkdir -p ~/Documents/Obsidian-Vault/07-PRPs-Claude-Code-Toolkit/reports
-```
-
-**Path**: `~/Documents/Obsidian-Vault/07-PRPs-Claude-Code-Toolkit/reports/{plan-name}-report.md`
+**Path**: `~/Documents/Obsidian-Vault/02-Notes/Reports/{plan-name}-report.md`
 
 **FRONTMATTER_TEMPLATE**: Include at the start of every report file:
 ```yaml
@@ -451,8 +447,7 @@ Check plan for `Source PRD:` reference. Update phase from `in-progress` to `comp
 ### 5.4 Archive Plan
 
 ```bash
-mkdir -p ~/Documents/Obsidian-Vault/07-PRPs-Claude-Code-Toolkit/plans/completed
-mv $ARGUMENTS ~/Documents/Obsidian-Vault/07-PRPs-Claude-Code-Toolkit/plans/completed/
+mv $ARGUMENTS ~/Documents/Obsidian-Vault/02-Notes/Plans/completed/
 ```
 
 ### 5.5 Final memory save
