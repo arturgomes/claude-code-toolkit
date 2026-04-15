@@ -538,4 +538,5 @@ If PRD input: update phase status to `in-progress`, link plan.
 - [ ] Every task has an executable validation command
 - [ ] Drift guard: seven-question check ✅ ON TRACK at Phase 5
 - [ ] Session saved via session-memory skill to vault
+- [ ] Return REPORT_TO_USER with the next command so the user knows what to do next when clearing the session.
 </verification>

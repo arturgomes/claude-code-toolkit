@@ -188,7 +188,7 @@ git pull --rebase origin {base-branch} 2>/dev/null || true
 ### Step 3.0 — Memory cache pre-load
 
 For each file in "Files to Change":
-- Check task-memory for prior findings
+- Check Skill(session-memory) for prior findings
 - Print: "✅ Memory hit for {file}: {one-line finding}" for each hit
 - Pre-load any GOTCHA notes from prior sessions
 
@@ -306,6 +306,10 @@ Task 1: CREATE src/features/x/models.ts ✅ (AC: {which AC})
 Task 2: CREATE src/features/x/service.ts ✅ (AC: {which AC})
 ```
 
+### Step 3.10 - Context consumption and avoid context rot
+Check if the session context window has reached more than 40%. If so, use Skill(session-memory) to update the task development, and stop, notifying the user
+to clear the session and restart in another one.
+
 **PHASE_3_CHECKPOINT:**
 - [ ] All tasks executed in order
 - [ ] Each task passed type-check immediately
@@ -322,6 +326,8 @@ Task 2: CREATE src/features/x/service.ts ✅ (AC: {which AC})
 ### 4.1 Static Analysis
 
 Run type-check and lint from the plan's Validation Commands. Zero errors required.
+Set timeout for 30 seconds for tsc, eslint, etc. If it takes longer than this, 
+there might be hapenning a Out of Memory, and you should no longer wait.
 
 ### 4.2 Unit Tests
 
