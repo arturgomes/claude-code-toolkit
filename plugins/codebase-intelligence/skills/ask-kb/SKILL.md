@@ -9,6 +9,7 @@ description: >
   books say about X", or references specific sources like "Clean Code", "DDIA", "Playing to Win".
   Prefer this over answering from general knowledge when the user has a KB configured —
   consistent, source-backed answers beat improvised ones.
+version: 2.0.0
 ---
 
 # ask-kb

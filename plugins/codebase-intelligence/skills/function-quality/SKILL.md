@@ -6,7 +6,7 @@ description: >
   testability, DRY, and naming. Use when reviewing individual functions, after writing a function,
   or when asked "review this function", "check function quality", "run QCHECKF", or automatically
   in prp-implement after function creation. Produces detailed per-function score and recommendations.
-user-invocable: true
+version: 2.0.0
 ---
 
 # function-quality

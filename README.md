@@ -56,15 +56,15 @@ You should see both `prp-core` and `codebase-intelligence` listed.
 The plugin stores PRPs and session memory in your Obsidian vault. Create the required directories:
 
 ```bash
-mkdir -p ~/Documents/Obsidian-Vault/07-PRPs-Claude-Code-Toolkit/plans/completed
-mkdir -p ~/Documents/Obsidian-Vault/07-PRPs-Claude-Code-Toolkit/reports
+mkdir -p ~/Documents/Obsidian-Vault/02-Notes/Plans/completed
+mkdir -p ~/Documents/Obsidian-Vault/02-Notes/Reports
 mkdir -p ~/Documents/Obsidian-Vault/02-Notes/Sessions
 ```
 
 The plugin will automatically:
-- Create plans in `~/Documents/Obsidian-Vault/07-PRPs-Claude-Code-Toolkit/plans/`
-- Create reports in `~/Documents/Obsidian-Vault/07-PRPs-Claude-Code-Toolkit/reports/`
-- Archive completed plans to `~/Documents/Obsidian-Vault/07-PRPs-Claude-Code-Toolkit/plans/completed/`
+- Create plans in `~/Documents/Obsidian-Vault/02-Notes/Plans/`
+- Create reports in `~/Documents/Obsidian-Vault/02-Notes/Reports/`
+- Archive completed plans to `~/Documents/Obsidian-Vault/02-Notes/Plans/completed/`
 - Save session memory to `~/Documents/Obsidian-Vault/02-Notes/Sessions/`
 
 All files include Obsidian frontmatter (YAML metadata) for searching and linking.
@@ -145,7 +145,7 @@ What happens automatically:
 4. Runs codebase exploration and analysis
 5. Checks your KB for relevant patterns (if configured)
 6. Verifies library APIs via Context7
-7. Generates plan in `~/Documents/Obsidian-Vault/07-PRPs-Claude-Code-Toolkit/plans/pdf-export-for-invoices.plan.md`
+7. Generates plan in `~/Documents/Obsidian-Vault/02-Notes/Plans/pdf-export-for-invoices.plan.md`
 8. Saves session findings to memory with keyword indexing
 
 The plan includes:
@@ -158,7 +158,7 @@ The plan includes:
 ### Implement the plan
 
 ```
-/codebase-intelligence:prp-implement ~/Documents/Obsidian-Vault/07-PRPs-Claude-Code-Toolkit/plans/pdf-export-for-invoices.plan.md
+/codebase-intelligence:prp-implement ~/Documents/Obsidian-Vault/02-Notes/Plans/pdf-export-for-invoices.plan.md
 ```
 
 What happens automatically:
@@ -166,7 +166,7 @@ What happens automatically:
 2. Runs drift check before every task (validates against AC)
 3. Verifies library APIs via Context7 before writing code
 4. Saves memory every ~3 tasks with progress updates
-5. Creates report in `~/Documents/Obsidian-Vault/07-PRPs-Claude-Code-Toolkit/reports/`
+5. Creates report in `~/Documents/Obsidian-Vault/02-Notes/Reports/`
 6. Archives plan to `.../plans/completed/` when done
 
 ### Resume after QA failure (weeks later)
@@ -262,7 +262,7 @@ Inside a Claude Code session:
 
 **Expected output**:
 - Command executes
-- Creates plan file in `~/Documents/Obsidian-Vault/07-PRPs-Claude-Code-Toolkit/plans/`
+- Creates plan file in `~/Documents/Obsidian-Vault/02-Notes/Plans/`
 - Plan includes Intelligence Context section with AC
 - Plan includes AC Traceability table
 
@@ -400,18 +400,15 @@ Check `~/kb/kb-registry.yaml` exists and has valid YAML syntax. The skills degra
 
 ```
 ~/Documents/Obsidian-Vault/
-├── 02-Notes/
-│   └── Sessions/                    # Session memory
-│       └── TICKET-123/
-│           └── branch-name.md
-└── 07-PRPs-Claude-Code-Toolkit/
-    ├── README.md                    # Index with wikilinks
-    ├── plans/
+└── 02-Notes/
+    ├── Sessions/                    # Session memory
+    │   └── TICKET-123-branch.md
+    ├── Plans/
     │   ├── feature-a.plan.md        # Active plans
     │   ├── feature-b.plan.md
     │   └── completed/               # Archived plans
     │       └── feature-c.plan.md
-    └── reports/
+    └── Reports/
         ├── feature-a-report.md      # Implementation reports
         └── feature-c-report.md
 ```

@@ -43,12 +43,12 @@ Skill(session-memory)
 
 Follow the skill's SESSION START protocol:
 1. Extract ticket ID from branch name or plan's "Intelligence Context"
-2. Load existing implementation session from Obsidian vault (if exists)
+2. Load existing implementation session from Obsidian vault using Obsidian MCP (if exists)
 3. Create new session with frontmatter (if new)
 4. Restore prior implementation status and task progress
 
 The skill handles:
-- Vault-based session at `~/Documents/Obsidian-Vault/02-Notes/Sessions/{TICKET}-{BRANCH}.md`
+- Vault-based session at `~/Documents/Obsidian-Vault/02-Notes/Sessions/{TICKET}-{BRANCH}.md` check using Obsidian MCP
 - Frontmatter restoration (ticket, branch, date, phase: implementation)
 - Implementation status checkboxes from prior session
 - GOTCHA notes for files listed in the plan
@@ -387,7 +387,7 @@ Document quality score for inclusion in implementation report.
 
 ## Phase 5: REPORT - Create Implementation Report
 
-**Path**: `~/Documents/Obsidian-Vault/02-Notes/Reports/{plan-name}-report.md`
+**Path**: read using Obsidian MCP `~/Documents/Obsidian-Vault/02-Notes/Reports/{plan-name}-report.md`
 
 **FRONTMATTER_TEMPLATE**: Include at the start of every report file:
 ```yaml
@@ -584,5 +584,5 @@ Pre-phases will restore context automatically.
 - **QUALITY_VERIFIED**: Quality review ✅ PASS or ⚠️ NEEDS WORK (all 🔴 violations fixed)
 - **REPORT_CREATED**: Report with Intelligence Summary and AC coverage table
 - **PLAN_ARCHIVED**: Plan in completed/
-- **SESSION_SAVED**: Final session in vault at `~/Documents/Obsidian-Vault/02-Notes/Sessions/{TICKET}-{BRANCH}.md`
+- **SESSION_SAVED**: Final session in vault at `~/Documents/Obsidian-Vault/02-Notes/Sessions/{TICKET}-{BRANCH}.md` using Obsidian MCP
 - **SCOPE_DEFENDED**: Drift log shows no unintended additions

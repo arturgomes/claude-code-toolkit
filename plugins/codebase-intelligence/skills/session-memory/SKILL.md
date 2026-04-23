@@ -6,7 +6,7 @@ description: >
   vault-based architecture. Invoked automatically by prp-plan and prp-implement, or manually
   when asked to "save progress", "load context for PROJ-NNN", "what did we find last time",
   or when resuming after a QA failure.
-user-invocable: true
+version: 2.0.0
 ---
 
 # session-memory

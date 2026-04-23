@@ -9,7 +9,7 @@ description: >
   "should we also do X?", or "does this still match the requirement?".
   The skill's job is to be an honest, blunt mirror — not to block progress, but to ensure
   every decision traces back to the stated requirement.
-user-invocable: true
+version: 2.0.0
 ---
 
 # drift-guard

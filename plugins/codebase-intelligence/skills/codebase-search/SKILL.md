@@ -6,7 +6,7 @@ description: >
   findings back. Invoked automatically during prp-plan Phase 2 and prp-implement Phase 0.
   Also invoke manually when asked to "find", "locate", "search", "where is X", or
   "how does Y work" about the codebase.
-user-invocable: true
+version: 2.0.0
 ---
 
 # codebase-search

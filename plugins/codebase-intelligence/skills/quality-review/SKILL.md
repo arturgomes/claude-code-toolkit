@@ -6,7 +6,7 @@ description: >
   major changes, before committing, or when asked "review my code", "check quality", "run QCHECK",
   or automatically after prp-implement tasks. Runs Function Quality Checklist, Test Quality Checklist,
   and Implementation Best Practices checks. Produces structured feedback with file:line references.
-user-invocable: true
+version: 2.0.0
 ---
 
 # quality-review

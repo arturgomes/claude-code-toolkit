@@ -7,7 +7,7 @@ description: >
   Also invoke manually when asked "how does X work in version Y", "what's the API for Z",
   "look up the docs for", or any question about a library's current interface.
   Prevents hallucinated API calls by grounding every library usage in live documentation.
-user-invocable: true
+version: 2.0.0
 ---
 
 # context7-research

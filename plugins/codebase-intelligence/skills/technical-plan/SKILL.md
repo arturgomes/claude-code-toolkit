@@ -7,7 +7,7 @@ description: >
   "validate this approach", "check plan consistency", "does this follow our patterns?",
   or automatically after prp-plan Phase 4 (DESIGN). Prevents architectural drift by ensuring
   plans leverage existing patterns rather than introducing new abstractions unnecessarily.
-user-invocable: true
+version: 2.0.0
 ---
 
 # technical-plan

@@ -8,6 +8,7 @@ description: >
   Trigger phrases: "add this book to my KB", "extract principles from this PDF", "index this ebook",
   "add to knowledge base", "extract from this document", "update my KB with this", "catalog this book".
   This is the ingestion pipeline for the KB system.
+version: 2.0.0
 ---
 
 # kb-indexer

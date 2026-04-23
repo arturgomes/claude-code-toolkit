@@ -7,7 +7,7 @@ description: >
   defining requirements for a proposal, or when asked "create a PRD", "define product spec",
   "act as product owner", or "what should this feature include?". Produces structured
   artifacts ready for technical planning (QPLAN) and QA test generation (QUX).
-user-invocable: true
+version: 2.0.0
 ---
 
 # product-spec

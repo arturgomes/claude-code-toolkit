@@ -4,7 +4,7 @@
 
 set -euo pipefail
 
-VAULT_BASE="$HOME/Documents/Obsidian-Vault/07-PRPs-Claude-Code-Toolkit"
+VAULT_BASE="$HOME/Documents/Obsidian-Vault/02-Notes"
 DRY_RUN=true
 
 # Parse arguments
@@ -100,7 +100,7 @@ migrate_prps() {
         shopt -s nullglob
         for plan in "$source_base/plans"/*.md; do
             [[ -f "$plan" ]] || continue
-            dest="$VAULT_BASE/plans/$(basename "$plan")"
+            dest="$VAULT_BASE/Plans/$(basename "$plan")"
             add_frontmatter "$plan" "$dest" "plan"
         done
         shopt -u nullglob
@@ -113,7 +113,7 @@ migrate_prps() {
         shopt -s nullglob
         for plan in "$source_base/plans/completed"/*.md; do
             [[ -f "$plan" ]] || continue
-            dest="$VAULT_BASE/plans/completed/$(basename "$plan")"
+            dest="$VAULT_BASE/Plans/completed/$(basename "$plan")"
             add_frontmatter "$plan" "$dest" "plan"
         done
         shopt -u nullglob
@@ -126,7 +126,7 @@ migrate_prps() {
         shopt -s nullglob
         for report in "$source_base/reports"/*.md; do
             [[ -f "$report" ]] || continue
-            dest="$VAULT_BASE/reports/$(basename "$report")"
+            dest="$VAULT_BASE/Reports/$(basename "$report")"
             add_frontmatter "$report" "$dest" "report"
         done
         shopt -u nullglob
@@ -144,8 +144,8 @@ echo ""
 
 # Create vault directories if executing
 if [[ "$DRY_RUN" == false ]]; then
-    mkdir -p "$VAULT_BASE/plans/completed"
-    mkdir -p "$VAULT_BASE/reports"
+    mkdir -p "$VAULT_BASE/Plans/completed"
+    mkdir -p "$VAULT_BASE/Reports"
     echo "✅ Vault directories created"
 fi
 
@@ -168,9 +168,9 @@ else
     echo "✅ Migration complete!"
     echo ""
     echo "File counts:"
-    echo "  Plans (active):   $(find "$VAULT_BASE/plans" -maxdepth 1 -name "*.md" 2>/dev/null | wc -l | xargs)"
-    echo "  Plans (completed): $(find "$VAULT_BASE/plans/completed" -name "*.md" 2>/dev/null | wc -l | xargs)"
-    echo "  Reports:          $(find "$VAULT_BASE/reports" -name "*.md" 2>/dev/null | wc -l | xargs)"
+    echo "  Plans (active):   $(find "$VAULT_BASE/Plans" -maxdepth 1 -name "*.md" 2>/dev/null | wc -l | xargs)"
+    echo "  Plans (completed): $(find "$VAULT_BASE/Plans/completed" -name "*.md" 2>/dev/null | wc -l | xargs)"
+    echo "  Reports:          $(find "$VAULT_BASE/Reports" -name "*.md" 2>/dev/null | wc -l | xargs)"
     echo ""
     echo "Next steps:"
     echo "  1. Review migrated files in $VAULT_BASE"

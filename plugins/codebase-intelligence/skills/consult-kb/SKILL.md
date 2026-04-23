@@ -9,6 +9,7 @@ description: >
   "audit this design", "is this consistent with [book/principle]?", "review like a senior",
   "check against our architecture principles". This produces structured feedback with KB citations,
   not just generic code review.
+version: 2.0.0
 ---
 
 # consult-kb

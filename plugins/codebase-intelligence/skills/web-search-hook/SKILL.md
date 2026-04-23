@@ -5,6 +5,7 @@ description: >
   Use this skill proactively when the user asks questions that might be answered from previously
   cached web content. Trigger on queries like "search for...", "find information about...",
   "what does the web say about...". Always check the cache FIRST before using WebSearch.
+version: 2.0.0
 ---
 
 # web-search-hook

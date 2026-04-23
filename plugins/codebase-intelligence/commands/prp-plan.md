@@ -61,7 +61,7 @@ Follow the skill's SESSION START protocol:
 4. Report session status and ask user for next action
 
 The skill handles:
-- Vault-based session persistence at `~/Documents/Obsidian-Vault/02-Notes/Sessions/`
+- Vault-based session persistence at using Obsidian MCP `~/Documents/Obsidian-Vault/02-Notes/Sessions/`
 - Frontmatter metadata (ticket, branch, date, phase, keywords, tags)
 - FTS5 search index at `~/.claude/memory/{TICKET}/session_index.db`
 
@@ -362,7 +362,7 @@ Verdict MUST be ✅ ON TRACK before proceeding.
 
 ## Phase 6: GENERATE - Implementation Plan File
 
-**OUTPUT_PATH**: `~/Documents/Obsidian-Vault/02-Notes/Plans/{kebab-case-feature-name}.plan.md`
+**OUTPUT_PATH**: Obsidian MCP `~/Documents/Obsidian-Vault/02-Notes/Plans/{kebab-case-feature-name}.plan.md`
 
 **FRONTMATTER_TEMPLATE**: Include at the start of every plan file:
 ```yaml
@@ -474,7 +474,7 @@ Follow the skill's SESSION END protocol to append this planning session:
 {confirmed library signatures}
 
 ### Implementation status
-- [ ] Plan: ~/Documents/Obsidian-Vault/02-Notes/Plans/{feature}.plan.md
+- [ ] Plan: write on ~/Documents/Obsidian-Vault/02-Notes/Plans/{feature}.plan.md using Obsidian MCP
 - [ ] Implementation not started
 
 ### Drift decisions
@@ -501,7 +501,7 @@ If PRD input: update phase status to `in-progress`, link plan.
 ```markdown
 ## Plan Created ✅
 
-**File**: `~/Documents/Obsidian-Vault/02-Notes/Plans/{feature-name}.plan.md`
+**File**: using Obsidian MCP `~/Documents/Obsidian-Vault/02-Notes/Plans/{feature-name}.plan.md`
 **Ticket**: {JIRA-TICKET} — {summary}
 
 ### Requirements grounding

@@ -6,7 +6,7 @@ description: >
   Use when reviewing test files, after writing tests, or when asked "review my tests",
   "check test quality", "run QCHECKT", or automatically in prp-implement after test creation.
   Produces detailed per-test-file score and recommendations.
-user-invocable: true
+version: 2.0.0
 ---
 
 # test-quality

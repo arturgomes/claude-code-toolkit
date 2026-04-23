@@ -14,6 +14,7 @@ allowed-tools:
   - Bash(git branch *)
   - Bash(gh pr create *)
   - Bash(gh pr view *)
+version: 2.0.0
 ---
 
 Ship the current changes through commit, push, and PR creation. Confirm with the user before each step using the AskUserQuestion tool.

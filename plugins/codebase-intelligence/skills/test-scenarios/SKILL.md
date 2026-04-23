@@ -7,7 +7,7 @@ description: >
   writing tests, or when asked "what should I test?", "generate QA scenarios", "test cases
   for this feature", or automatically after prp-plan Phase 5 (ARCHITECT). Produces structured
   test tables ready for implementation.
-user-invocable: true
+version: 2.0.0
 ---
 
 # test-scenarios
