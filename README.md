@@ -1,7 +1,7 @@
 # arturgomes/claude-code-toolkit
 
-Codebase intelligence plugin for **Claude Code** (terminal). Extends `prp-core` with
-persistent memory in Obsidian vault, Context7 library verification, and drift-guard requirements anchoring.
+Self-contained Claude Code plugin that brings intelligent planning and implementation to your codebase — with
+persistent session memory in Obsidian vault, Context7 library verification, and drift-guard requirements anchoring.
 
 > For [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) only — not Claude Desktop.
 
@@ -29,15 +29,12 @@ Adds intelligent memory and verification layers to the PRP (Planning-Research-Pr
 
 ## Installation
 
-### Step 1 — Install plugins
+### Step 1 — Install the plugin
 
 Open your terminal and run Claude Code. Plugin commands run **inside** the Claude Code session, not from your shell:
 
 ```
 # Inside claude session:
-/plugin marketplace add Wirasm/PRPs-agentic-eng
-/plugin install prp-core
-
 /plugin marketplace add arturgomes/claude-code-toolkit
 /plugin install codebase-intelligence
 
@@ -49,7 +46,7 @@ Verify:
 /plugin list
 ```
 
-You should see both `prp-core` and `codebase-intelligence` listed.
+You should see `codebase-intelligence` listed.
 
 ### Step 2 — Set up Obsidian vault structure
 
@@ -226,7 +223,6 @@ Inside a Claude Code session:
 
 **Expected output**:
 - `codebase-intelligence@2.0.0` appears in the list
-- `prp-core` also appears (if installed as prerequisite)
 
 ### Step 3: Verify Command Discovery
 
@@ -299,12 +295,12 @@ Inside a Claude Code session:
 
 ## What's Included
 
-### Commands (shadow prp-core)
+### Commands
 
-| Command | Replaces | What's added |
-|---|---|---|
-| `prp-plan` | `prp-core:prp-plan` | Vault storage, session memory, Jira injection, drift-guard anchor, KB consultation, Context7 verification, AC traceability table |
-| `prp-implement` | `prp-core:prp-implement` | Memory restore, per-task drift checks, Context7 before library calls, vault-based reports, session memory saves |
+| Command | Description |
+|---|---|
+| `prp-plan` | Generate a battle-tested implementation plan — with vault storage, session memory, Jira injection, drift-guard anchor, KB consultation, Context7 verification, and AC traceability table |
+| `prp-implement` | Execute a plan end-to-end — with memory restore, per-task drift checks, Context7 before library calls, vault-based reports, and session memory saves |
 
 ### Skills
 
