@@ -206,3 +206,32 @@ If user-facing:
 - **Mobile/Desktop**: Same toggle on both platforms
 - **Accessibility**: Ensure WCAG AA contrast ratios in both themes
 ```
+
+---
+
+## Vault Save (required after generating any PRD)
+
+After completing the PRD output, save it to the Obsidian vault.
+
+### Step 1 — Check hierarchy
+```
+mcp__ultimate-obsidian__list_vault({ path: "02-Notes/Specs" })
+```
+- If `Specs/` does not exist yet, the create_or_update_note call will create it automatically.
+- Review the listing to confirm naming consistency with existing specs.
+
+### Step 2 — Save the PRD
+```
+mcp__ultimate-obsidian__create_or_update_note({
+  filepath: "02-Notes/Specs/{kebab-case-feature-name}.prd.md",
+  mode: "overwrite",
+  content: "---\ntitle: {kebab-case-feature-name}\ncreated: {YYYY-MM-DD}\ntype: prd\nproject: {project-name}\ntags:\n  - prd\n  - {feature-category}\n---\n\n{full PRD content}"
+})
+```
+
+### Step 3 — Report to user
+```
+✅ PRD saved: ~/Documents/Obsidian-Vault/02-Notes/Specs/{kebab-case-feature-name}.prd.md
+
+Next: /codebase-intelligence:prp-plan ~/Documents/Obsidian-Vault/02-Notes/Specs/{kebab-case-feature-name}.prd.md
+```

@@ -1,7 +1,7 @@
 ---
 name: prp-plan
 description: >
-  Enhanced prp-plan. Extends prp-core:prp-plan with: cross-session memory (task-memory),
+  Enhanced prp-plan. Extends prp-core:prp-plan with: cross-session memory (session-memory),
   Jira context injection (Atlassian MCP), session-memory skill,
   personal knowledge base consultation (ask-kb + consult-kb), verified library docs (Context7), and continuous requirements grounding (drift-guard). Use exactly as prp-core:prp-plan — pass a feature description, Jira ticket, or .prd.md path.
 argument-hint: <feature description | JIRA-TICKET | path/to/prd.md>
@@ -362,7 +362,19 @@ Verdict MUST be ✅ ON TRACK before proceeding.
 
 ## Phase 6: GENERATE - Implementation Plan File
 
-**OUTPUT_PATH**: Obsidian MCP `~/Documents/Obsidian-Vault/02-Notes/Plans/{kebab-case-feature-name}.plan.md`
+**HIERARCHY CHECK** — Before saving, list the target folder to confirm placement:
+```
+mcp__ultimate-obsidian__list_vault({ path: "02-Notes/Plans" })
+```
+Review existing plan names to ensure consistent kebab-case naming with no duplicates.
+
+**OUTPUT_PATH**: Save via Obsidian MCP — do NOT use Write tool or bash:
+```
+mcp__ultimate-obsidian__create_or_update_note({
+  filepath: "02-Notes/Plans/{kebab-case-feature-name}.plan.md",
+  content: "..."
+})
+```
 
 **FRONTMATTER_TEMPLATE**: Include at the start of every plan file:
 ```yaml
@@ -474,7 +486,7 @@ Follow the skill's SESSION END protocol to append this planning session:
 {confirmed library signatures}
 
 ### Implementation status
-- [ ] Plan: write on ~/Documents/Obsidian-Vault/02-Notes/Plans/{feature}.plan.md using Obsidian MCP
+- [ ] Plan saved via `mcp__ultimate-obsidian__create_or_update_note` to `02-Notes/Plans/{feature}.plan.md`
 - [ ] Implementation not started
 
 ### Drift decisions

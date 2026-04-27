@@ -2,7 +2,7 @@
 name: codebase-researcher
 description: >
   Autonomous pre-planning research agent. Use when asked to "investigate", "research the codebase
-  for", "find everything about", or "explore before planning". Runs task-memory load, then
+  for", "find everything about", or "explore before planning". Runs session-memory load, then
   Serena + SocratiCode searches, producing a structured file:line report ready to feed into
   prp-plan. Complements codebase-intelligence:codebase-explorer and codebase-intelligence:codebase-analyst.
 ---
@@ -17,8 +17,9 @@ Be concise on descriptions — one line per finding.
 
 ## Process
 
-### 1. Load task-memory
-Follow skill: `codebase-intelligence:task-memory` → SESSION START protocol.
+### 1. Load session-memory
+Follow skill: `codebase-intelligence:session-memory` → SESSION START protocol.
+Use `mcp__ultimate-obsidian__read_note` to load prior findings from the vault.
 If prior research exists for this ticket/branch, note which areas are already covered
 and skip re-searching them. Annotate reused findings with `[FROM MEMORY]`.
 
@@ -74,13 +75,13 @@ Memory reused: <yes — N findings / no>
 2. <second touch point>
 
 ## Source legend
-- memory: loaded from ~/.claude/memory
+- memory: loaded from Obsidian vault via session-memory skill
 - serena: Serena LSP MCP
 - socraticode: SocratiCode semantic MCP
 ```
 
 ### 6. Save to memory
-Append findings to task-memory (SESSION END protocol).
+Append findings to session-memory (SESSION END protocol).
 
 ## Constraints
 - Never read entire files — use symbol lookups and targeted reads

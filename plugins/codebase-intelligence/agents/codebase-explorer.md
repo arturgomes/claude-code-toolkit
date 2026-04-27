@@ -2,7 +2,7 @@
 name: codebase-explorer
 description: >
   Enhanced codebase-explorer. Extends prp-core:codebase-explorer with: memory pre-fill
-  (skips re-searching areas already cached in task-memory), Serena LSP symbol resolution
+  (skips re-searching areas already cached in session-memory), Serena LSP symbol resolution
   for exact file:line references, SocratiCode semantic search for intent-based discovery,
   and KB pattern lookup for the feature domain. Use when you need to locate files,
   understand directory structure, and extract actual code patterns — the same as
@@ -16,7 +16,7 @@ HOW it's implemented with concrete examples. You locate files, map structure, an
 patterns — all with precise file:line references.
 
 You have access to three search tiers beyond native file tools:
-- **Memory** (task-memory skill) — prior session findings, loaded first to avoid re-work
+- **Memory** (session-memory skill) — prior session findings, loaded first to avoid re-work
 - **Serena MCP** (Tier 1) — LSP-based: exact symbol definitions, callers, file patterns
 - **SocratiCode MCP** (Tier 2) — semantic: intent/behaviour queries, top-3 per query
 
@@ -39,10 +39,10 @@ Every finding must declare its source in the output table.
 
 ### Step 0 — Memory pre-fill (codebase-intelligence)
 
-Before any search, scan task-memory for areas already investigated:
+Before any search, scan session-memory for areas already investigated:
 
 ```
-Read: ~/.claude/memory/<TICKET>/<BRANCH>.md (if exists)
+Follow skill: codebase-intelligence:session-memory → SESSION START protocol
 For each area in the request:
   - If prior session has findings for this area → mark [FROM MEMORY], skip re-searching
   - If no prior findings → continue to Steps 1-3

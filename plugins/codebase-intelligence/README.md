@@ -8,7 +8,7 @@ Intelligence layer for prp-core. Adds memory, KB, Context7, and drift-guard to
 ## Phase injection map — prp-plan
 
 ```
-Pre-Phase I    → task-memory: load ~/.claude/memory/<TICKET>/<branch>.md
+Pre-Phase I    → session-memory: load 02-Notes/Sessions/<TICKET>-<branch>.md via Obsidian MCP
 Pre-Phase II   → Atlassian MCP: Jira ticket, AC, QA failure comments
 Pre-Phase III  → drift-guard: TASK ANCHOR with verbatim AC (GATE if AC missing)
 
@@ -16,7 +16,7 @@ Phase 0 gate   → [ANCHOR] re-stated
 Phase 1 gate   → drift-guard: user story maps to ≥1 AC?
 
 Phase 2:
-  Step 2A      → task-memory: cache pre-fill
+  Step 2A      → session-memory: cache pre-fill
   Step 2B      → codebase-intelligence:codebase-explorer (enhanced — Serena + SocratiCode + KB)
                + codebase-intelligence:codebase-analyst (enhanced — Serena LSP-verified entry points)
   Step 2C      → codebase-search: Serena + SocratiCode enrichment (fills gaps agents missed)
@@ -40,23 +40,23 @@ Phase 6 plan:
   Added        → AC Traceability table (every AC → ≥1 task, every task → ≥1 AC)
   Gate         → drift-guard Q#7: every AC has a task?
 
-Post-gen       → task-memory: save planning session
+Post-gen       → session-memory: save planning session
 ```
 
 ## Phase injection map — prp-implement
 
 ```
-Pre-Phase I    → task-memory: restore prior context + task completion state
+Pre-Phase I    → session-memory: restore prior context + task completion state
 Pre-Phase II   → drift-guard: load TASK ANCHOR from plan
 
 Per-task (Phase 3):
-  3.0          → task-memory: per-file cache pre-load
+  3.0          → session-memory: per-file cache pre-load
   3.0b         → context7-research: pre-load confirmed library signatures
   3.1 (EVERY)  → drift-guard Q#1,4: before EVERY task — "which AC? adding anything extra?"
   3.3          → context7-research: verify API before writing library call
   3.4          → ask-kb: KB pattern for non-trivial implementation decisions
   3.7          → drift-guard: "while I'm here" stop signal
-  3.8          → task-memory: save every ~3 tasks (crash-safe)
+  3.8          → session-memory: save every ~3 tasks (crash-safe)
 
 Phase 4.5      → drift-guard final gate: every AC verified with a named test
 
@@ -64,7 +64,7 @@ Phase 5.2 report:
   Added        → Intelligence Summary (memory, Context7, KB, drift stats)
   Added        → AC coverage table (every AC with test name and result)
 
-Phase 5.5      → task-memory: final save (Context7 + KB findings preserved for future sessions)
+Phase 5.5      → session-memory: final save (Context7 + KB findings preserved for future sessions)
 ```
 
 ---
@@ -217,13 +217,13 @@ python3 plugins/codebase-intelligence/tools/session_indexer.py \
 
 Returns top 5 BM25-ranked sessions across all tickets.
 
-### Migration from Old task-memory
+### Migration from Old session-memory
 
 If you have existing memory in `~/.claude/memory/`:
 
 ```bash
 # Backup is automatic — run once:
-plugins/codebase-intelligence/tools/migrate-task-memory.sh --execute
+plugins/codebase-intelligence/tools/migrate-session-memory.sh --execute
 
 # This will:
 # 1. Backup ~/.claude/memory/ to tarball

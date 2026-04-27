@@ -43,29 +43,41 @@ git branch --show-current
 # Match pattern [A-Z]+-[0-9]+ in branch name, or use value from $ARGUMENTS if provided
 # If no match, use "GENERAL" as ticket
 
-# 3. Build vault path
-VAULT_PATH=~/Documents/Obsidian-Vault/02-Notes/Sessions/{TICKET}-{BRANCH}.md
-
-# 4. Check for prior session file
-ls "$VAULT_PATH" 2>/dev/null
+# 3. Build vault-relative path
+VAULT_REL="02-Notes/Sessions/{TICKET}-{BRANCH}.md"
 ```
 
-**If file EXISTS:**
-```bash
-# Read frontmatter and last session
-head -50 "$VAULT_PATH"
+**HIERARCHY CHECK** (run once per new session before Step 4):
+```
+mcp__ultimate-obsidian__list_vault({ path: "02-Notes/Sessions" })
+```
+Confirms the Sessions folder exists and shows existing session files.
+Use the listing to verify the new filename `{TICKET}-{BRANCH}.md` is not a duplicate.
+
+**Step 4 — Check for prior session** using `check_exists` MCP tool:
+```
+mcp__ultimate-obsidian__check_exists({ filepath: "02-Notes/Sessions/{TICKET}-{BRANCH}.md" })
+```
+
+**If EXISTS (returns `exists: true`):**
+
+Read the file using `read_note` MCP tool:
+```
+mcp__ultimate-obsidian__read_note({ filepath: "02-Notes/Sessions/{TICKET}-{BRANCH}.md" })
 ```
 - Print: `📂 Memory loaded for {TICKET} ({BRANCH})`
 - Display: frontmatter keywords, last session date, implementation status
-- **Search capability**: "Want to search past decisions? Ask: 'Search sessions for {keyword}'"
+- **Search capability**: call `search_sessions` MCP tool with relevant keywords
 
-**If file DOES NOT EXIST:**
+**If DOES NOT EXIST (returns `exists: false`):**
 - Print: `🆕 No prior memory for {TICKET}. Starting fresh.`
-- Create the file with frontmatter:
+- Create the file using `create_or_update_note` MCP tool:
 
-```bash
-cat > "$VAULT_PATH" << 'EOF'
----
+```
+mcp__ultimate-obsidian__create_or_update_note({
+  filepath: "02-Notes/Sessions/{TICKET}-{BRANCH}.md",
+  mode: "overwrite",
+  content: `---
 title: "Session: {TICKET} / {BRANCH}"
 ticket: {TICKET}
 branch: {BRANCH}
@@ -82,18 +94,22 @@ tags: [#session, #{TICKET}]
 **Ticket**: {Jira URL if available, or TICKET value}
 
 ---
-EOF
+`
+})
 ```
 
 ---
 
 ## SESSION END — exact steps to execute
 
-Append a dated entry to vault file with keyword extraction:
+Append a dated entry to vault file, then index via MCP:
 
-```bash
-# 1. Prepare session content
-SESSION_CONTENT="
+**Step 1 — Append session block** using `create_or_update_note` MCP tool:
+```
+mcp__ultimate-obsidian__create_or_update_note({
+  filepath: "02-Notes/Sessions/{TICKET}-{BRANCH}.md",
+  mode: "append",
+  content: `
 ## Session: {ISO-8601 datetime}
 
 ### Investigated
@@ -107,31 +123,28 @@ SESSION_CONTENT="
 - [ ] {pending item}
 
 ### QA / Failures
-- {what failed, test name or error — or \"none\"}
+- {what failed, test name or error — or "none"}
 
 ### Next steps
 - {exact file:line to resume from}
-"
-
-# 2. Append to vault file
-cat >> "$VAULT_PATH" << 'EOF'
-$SESSION_CONTENT
-EOF
-
-# 3. Extract keywords and update frontmatter
-python3 /Users/artur/Documents/ai-tools/claude-code-toolkit/plugins/codebase-intelligence/tools/session_indexer.py \
-  --extract-keywords "$VAULT_PATH"
-
-# 4. Index session for BM25 search
-python3 /Users/artur/Documents/ai-tools/claude-code-toolkit/plugins/codebase-intelligence/tools/session_indexer.py \
-  --index-session "$VAULT_PATH"
+`
+})
 ```
 
+**Step 2 — Index + extract keywords** using `index_note` MCP tool:
+```
+mcp__ultimate-obsidian__index_note({
+  vault_path: "/Users/artur/Documents/Obsidian-Vault/02-Notes/Sessions/{TICKET}-{BRANCH}.md"
+})
+```
+This replaces both `session_indexer.py --extract-keywords` and `--index-session`.
+The tool updates the frontmatter `keywords:` field and rebuilds the FTS5 index in one call.
+
 **Keyword extraction logic**:
-- Extract from: Investigated, Decisions, Implementation status sections
-- Top 10 keywords by BM25 score
-- Update frontmatter `keywords: []` list
-- Add to FTS5 index for search
+- Runs inside the MCP server (`sqlite.ts`) — no Python required
+- Top 10 keywords by term frequency from Investigated, Decisions, Implementation status
+- Updates frontmatter `keywords: []` list in the vault file
+- Adds/updates entry in `~/.claude/memory/{TICKET}/session_index.db` (SQLite FTS5)
 
 ---
 
@@ -139,24 +152,17 @@ python3 /Users/artur/Documents/ai-tools/claude-code-toolkit/plugins/codebase-int
 
 When user asks: "Search sessions for {keyword}", "What did we decide about {topic}", "Find sessions about {feature}":
 
-```bash
-# 1. Determine ticket context (if any)
-# If user specifies ticket → search only that ticket's index
-# Otherwise → search all ticket indices
-
-# 2. Query FTS5 index
-python3 /Users/artur/Documents/ai-tools/claude-code-toolkit/plugins/codebase-intelligence/tools/session_indexer.py \
-  --search "{keyword}" \
-  --ticket {TICKET or "all"} \
-  --limit 5
-
-# 3. Display results:
-# For each match, show:
-# - Session title (TICKET/BRANCH)
-# - Date
-# - Matching snippet (with keyword highlighted)
-# - Link: [[TICKET-BRANCH]]
+Call the `search_sessions` MCP tool:
 ```
+mcp__ultimate-obsidian__search_sessions({
+  query: "{keyword}",
+  ticket: "{TICKET or omit for all}",
+  limit: 5
+})
+```
+
+The tool queries `~/.claude/memory/*/session_index.db` (SQLite FTS5) and returns
+BM25-ranked results. No Python or bash required.
 
 **Output format**:
 ```
@@ -178,16 +184,14 @@ python3 /Users/artur/Documents/ai-tools/claude-code-toolkit/plugins/codebase-int
 
 When returning after a QA rejection:
 
-```bash
+```
 # 1. Load memory (SESSION START above)
-head -50 "$VAULT_PATH"
+mcp__ultimate-obsidian__read_note({ filepath: "02-Notes/Sessions/{TICKET}-{BRANCH}.md" })
 
-# 2. Read "Implementation status" and "QA / Failures" sections
+# 2. Read "Implementation status" and "QA / Failures" sections from the returned content
 
 # 3. Search related sessions for context
-python3 /Users/artur/Documents/ai-tools/claude-code-toolkit/plugins/codebase-intelligence/tools/session_indexer.py \
-  --search "{ticket} QA failure" \
-  --limit 3
+mcp__ultimate-obsidian__search_sessions({ query: "{ticket} QA failure", limit: 3 })
 
 # 4. Fetch fresh QA comments from Jira MCP
 # Search comments for: fail, reject, QA, blocked, doesn't pass, acceptance
@@ -220,14 +224,14 @@ python3 /Users/artur/Documents/ai-tools/claude-code-toolkit/plugins/codebase-int
 If migrating from old `~/.claude/memory/` structure:
 
 ```bash
-# Run migration script (one-time)
-/Users/artur/Documents/ai-tools/claude-code-toolkit/plugins/codebase-intelligence/tools/migrate-task-memory.sh --execute
+# Run migration script (one-time, Node.js — no Python required)
+node /Users/artur/Documents/ai-tools/ultimate-obsidian-mcp/scripts/migrate.js --execute
 
 # This will:
 # 1. Backup ~/.claude/memory/ to tarball
 # 2. Convert each TICKET/BRANCH.md to vault format with frontmatter
-# 3. Move to ~/Documents/Obsidian-Vault/02-Notes/Sessions/
-# 4. Build FTS5 index for all migrated sessions
+# 3. Write to ~/Documents/Obsidian-Vault/02-Notes/Sessions/ via ultimate-obsidian MCP
+# 4. Build FTS5 index for all migrated sessions via index_note MCP tool
 # 5. Preserve all existing data (no data loss)
 ```
 
@@ -236,10 +240,13 @@ If migrating from old `~/.claude/memory/` structure:
 ## Dependencies
 
 - **Obsidian vault**: `~/Documents/Obsidian-Vault/` (must exist)
-- **Python 3.13+**: For keyword extraction and indexing
-- **session_indexer.py**: `/Users/artur/Documents/ai-tools/claude-code-toolkit/plugins/codebase-intelligence/tools/session_indexer.py`
-- **SQLite FTS5**: Built into Python 3 (no additional install)
-- **rank_bm25**: `pip install rank-bm25` (for keyword extraction)
+- **ultimate-obsidian MCP**: Running in Claude Code (`~/.claude/settings.json` → `ultimate-obsidian` entry)
+  - Provides `create_or_update_note`, `read_note`, `index_note`, `search_sessions` tools
+  - Handles all SQLite FTS5 indexing and BM25 search internally (TypeScript, no Python)
+- **Node.js v20+**: Required only for the MCP server itself (already running)
+- ~~Python 3.13+~~ — **not required** (replaced by MCP server)
+- ~~session_indexer.py~~ — **deprecated** (replaced by `index_note` + `search_sessions` MCP tools)
+- ~~rank_bm25~~ — **not required** (BM25 runs inside SQLite FTS5 in the MCP server)
 
 ---
 
@@ -253,7 +260,7 @@ If migrating from old `~/.claude/memory/` structure:
 | Metadata | None | Frontmatter: keywords, tags, phase, date |
 | Cross-device sync | Manual file copy | Automatic (GDrive sync via memory-central) |
 | Token cost | ~500 tokens (read full file) | ~200 tokens (frontmatter + last session) |
-| Operations | Bash cat/mkdir/ls | Python + skill API |
+| Operations | Bash cat/mkdir/ls | MCP tool calls (TypeScript, no Python) |
 
 ---
 

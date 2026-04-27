@@ -2,7 +2,7 @@
 name: codebase-search
 description: >
   Two-tier codebase search using Serena (LSP/structural) and SocratiCode (semantic/vector).
-  Follows a cache-aside pattern: check task-memory first, search only on a miss, always write
+  Follows a cache-aside pattern: check session-memory first, search only on a miss, always write
   findings back. Invoked automatically during prp-plan Phase 2 and prp-implement Phase 0.
   Also invoke manually when asked to "find", "locate", "search", "where is X", or
   "how does Y work" about the codebase.
@@ -11,7 +11,7 @@ version: 2.0.0
 
 # codebase-search
 
-Two-tier search over the codebase. Always checks task-memory before hitting the MCP servers.
+Two-tier search over the codebase. Always checks session-memory before hitting the MCP servers.
 
 ---
 
@@ -48,7 +48,7 @@ Use SocratiCode for **intent-based, natural language** queries. Requires `socrat
 ## Execution flow
 
 ```
-1. CHECK task-memory (task-memory skill → SESSION START)
+1. CHECK session-memory (session-memory skill → SESSION START)
    ├─ Cache HIT  → Return cached findings, skip MCP calls, note "from memory"
    └─ Cache MISS → Continue
 
@@ -57,7 +57,7 @@ Use SocratiCode for **intent-based, natural language** queries. Requires `socrat
    ├─ Intent / behaviour     → Tier 2: SocratiCode
    └─ Complex (both)         → Run Tier 1 first, fill gaps with Tier 2
 
-3. WRITE findings to task-memory (SESSION END append)
+3. WRITE findings to session-memory (SESSION END append)
 ```
 
 ---
@@ -90,7 +90,7 @@ The merged result replaces the standard discovery table in the plan.
 
 ## Integration with prp-implement Phase 0
 
-Before each task in the implementation loop, the skill checks task-memory for prior
+Before each task in the implementation loop, the skill checks session-memory for prior
 findings about the files involved. Cache hits avoid redundant Serena calls mid-implementation.
 
 ---

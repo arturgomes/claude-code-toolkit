@@ -47,7 +47,8 @@ This anchor is FIXED. It does not change unless the user explicitly updates the 
 or replaces the acceptance criteria in this session.
 ```
 
-Write this anchor to the first section of the active memory file and re-state it at every
+Append this anchor to the session-memory vault file using the session-memory skill
+(`mcp__ultimate-obsidian__create_or_update_note(mode: 'append')`) and re-state it at every
 phase gate.
 
 ---
@@ -117,7 +118,8 @@ When drift is detected, do this before continuing:
    a. Y is part of X → justify it explicitly and continue
    b. Y is not part of X → discard Y, resume X
    c. Y is valuable but separate → add to Jira as a follow-up ticket, not this task
-4. Write the decision to memory under "### Drift decisions"
+4. Append the decision to session-memory under "### Drift decisions" via
+   `mcp__ultimate-obsidian__create_or_update_note(mode: 'append')`
 ```
 
 ---
@@ -178,7 +180,9 @@ These phrases are the most common entry point for drift.
 
 ## Drift Log
 
-Append to task memory whenever drift is detected and resolved:
+Append to session-memory (Obsidian vault) whenever drift is detected and resolved.
+Use `mcp__ultimate-obsidian__create_or_update_note(mode: 'append')` on the active
+session file at `02-Notes/Sessions/{TICKET}-{BRANCH}.md`:
 
 ```markdown
 ### Drift decisions — Session <date>

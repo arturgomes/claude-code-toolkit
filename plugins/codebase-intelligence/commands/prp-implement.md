@@ -126,9 +126,12 @@ Use the plan's "Validation Commands" section — it specifies exact commands.
 
 ## Phase 1: LOAD - Read the Plan
 
-```bash
-cat $ARGUMENTS
+Read the plan file via Obsidian MCP:
 ```
+mcp__ultimate-obsidian__read_note({ filepath: "{vault-relative path of $ARGUMENTS}" })
+```
+Strip the vault prefix from `$ARGUMENTS` to get the vault-relative path:
+e.g. `~/Documents/Obsidian-Vault/02-Notes/Plans/foo.plan.md` → `02-Notes/Plans/foo.plan.md`
 
 Extract:
 - **Intelligence Context** — ticket, AC verbatim, KB findings, Context7 facts ← *added by this plugin*
@@ -387,7 +390,19 @@ Document quality score for inclusion in implementation report.
 
 ## Phase 5: REPORT - Create Implementation Report
 
-**Path**: read using Obsidian MCP `~/Documents/Obsidian-Vault/02-Notes/Reports/{plan-name}-report.md`
+**HIERARCHY CHECK** — Before saving, list the target folder:
+```
+mcp__ultimate-obsidian__list_vault({ path: "02-Notes/Reports" })
+```
+Confirm the report name matches the plan name (`{plan-name}-report.md`).
+
+**Path**: Save via Obsidian MCP — do NOT use Write tool or bash:
+```
+mcp__ultimate-obsidian__create_or_update_note({
+  filepath: "02-Notes/Reports/{plan-name}-report.md",
+  content: "..."
+})
+```
 
 **FRONTMATTER_TEMPLATE**: Include at the start of every report file:
 ```yaml
@@ -448,8 +463,12 @@ Check plan for `Source PRD:` reference. Update phase from `in-progress` to `comp
 
 ### 5.4 Archive Plan
 
-```bash
-mv $ARGUMENTS ~/Documents/Obsidian-Vault/02-Notes/Plans/completed/
+Move the plan to `02-Notes/Plans/completed/` via Obsidian MCP:
+```
+mcp__ultimate-obsidian__move_note({
+  filepath: "{vault-relative path of $ARGUMENTS}",
+  newPath: "02-Notes/Plans/completed/{filename}"
+})
 ```
 
 ### 5.5 Final memory save
