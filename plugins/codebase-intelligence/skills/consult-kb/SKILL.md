@@ -25,21 +25,43 @@ Understand what's being reviewed:
 - **Domain**: What technical/strategic area does it touch?
 - **Stated intent**: What is this artifact trying to achieve?
 
-### Step 2 — Locate the Registry
-Same resolution order as `ask-kb`:
-1. Path mentioned in conversation
-2. `$KB_ROOT/kb-registry.yaml`
-3. `~/kb/kb-registry.yaml`
-4. `./kb/kb-registry.yaml`
+### Step 2 — Run bookrag query for artifact domain
 
-### Step 3 — Select Relevant KBs
-Map the artifact's domain to KB keywords. An RFC about a retry mechanism → `software-architecture` KB. A product strategy doc → `strategy` KB. A code PR → `engineering-excellence` KB.
+Build a query from the artifact's stated domain and key concepts. For a retry RFC:
+`"retry patterns distributed systems idempotency"`. For a product strategy doc:
+`"strategy frameworks product decision-making"`.
 
-Load all High relevance KBs. For reviews, it's better to be thorough — slightly broader selection than `ask-kb`.
+```bash
+uv run --directory ~/Documents/ai-tools/skills-mono-repo \
+  bookrag query-hybrid "<domain-query>" \
+  --db ~/Documents/ai-tools/skills-mono-repo/master-kb/domains/obsidian-vault/bookrag.db \
+  --settings ~/Documents/ai-tools/skills-mono-repo/bookrag/config/settings.toml \
+  --stdout
+```
+
+**DB**: `~/Documents/ai-tools/skills-mono-repo/master-kb/domains/obsidian-vault/bookrag.db`  
+**Settings**: `~/Documents/ai-tools/skills-mono-repo/bookrag/config/settings.toml`
+
+Run 1-2 queries if the artifact spans multiple domains.
+
+### Step 3 — Load hit contexts
+
+For each hit above rrf_score threshold (~0.01):
+- Extract: `text` (chunk content), `source_relpath` (book/domain), `heading_path` (section)
+- Group hits by domain (software-architecture, software-craft, etc.)
+- Use these chunks as the KB reference for Step 4 review
+
+### Fallback (bookrag unavailable)
+
+If `uv` is not found or the DB path does not exist:
+1. Say: "bookrag unavailable — falling back to kb-registry.yaml"
+2. Find `kb-registry.yaml` at: `$KB_ROOT/kb-registry.yaml` → `~/kb/kb-registry.yaml` → `./kb/kb-registry.yaml`
+3. Map artifact domain to KB keywords, read relevant markdown files
+4. Run review against flat-file content
 
 ### Step 4 — Run the Review
 
-For each loaded KB, systematically check the artifact against:
+For each loaded KB chunk, systematically check the artifact against:
 
 1. **Principles** — Does it follow the documented principles?
 2. **Patterns** — Does it use the right patterns for the problem?

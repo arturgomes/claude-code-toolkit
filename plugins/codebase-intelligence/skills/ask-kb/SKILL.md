@@ -17,52 +17,64 @@ version: 2.0.0
 Answer questions by consulting the user's personal knowledge base — not from general knowledge.
 The goal: **reproducible, cited answers** grounded in principles the user has already validated.
 
+## Bookrag DB
+
+**DB**: `~/Documents/ai-tools/skills-mono-repo/master-kb/domains/obsidian-vault/bookrag.db`  
+**Settings**: `~/Documents/ai-tools/skills-mono-repo/bookrag/config/settings.toml`  
+**CWD**: `~/Documents/ai-tools/skills-mono-repo`
+
+The obsidian-vault DB covers all KB domains (software-architecture, engineering-practices,
+llm-engineering, ml-data, functional-programming, engineering-leadership, software-craft)
+plus 02-Notes and 04-Claude-Sessions vault content — 26,380 chunks total.
+
 ## Workflow
 
-### Step 1 — Locate the Registry
-Find `kb-registry.yaml` using this priority:
-1. Path explicitly mentioned in the conversation
-2. `$KB_ROOT/kb-registry.yaml` environment variable
-3. `~/kb/kb-registry.yaml` (default)
-4. `./kb/kb-registry.yaml` (project-relative fallback)
+### Step 1 — Run bookrag query-hybrid
 
-If not found → tell the user and show the expected path. Offer to help set up a KB structure.
+```bash
+uv run --directory ~/Documents/ai-tools/skills-mono-repo \
+  bookrag query-hybrid "<question>" \
+  --db ~/Documents/ai-tools/skills-mono-repo/master-kb/domains/obsidian-vault/bookrag.db \
+  --settings ~/Documents/ai-tools/skills-mono-repo/bookrag/config/settings.toml \
+  --stdout
+```
 
-### Step 2 — Select Relevant Knowledge Bases
-Read the registry (it's lean by design — just metadata and keywords).
+Output is JSON: `{ "query": "...", "hits": [ { "text", "source_relpath", "heading_path", "rrf_score", ... } ] }`
 
-Score each KB against the question:
-- **High relevance**: Keywords directly match the question domain
-- **Medium relevance**: Adjacent domain, might contain useful context
-- **Low/none**: Unrelated domain — skip entirely
+Returns up to 6 ranked hits (dense + BM25 + RRF fusion).
 
-**Token budget rule**: Load High + Medium relevance KBs. Skip Low. If 3+ KBs are High relevance, pick the 2 most directly relevant and note the others.
+### Step 2 — Parse hits and extract citations
 
-### Step 3 — Load and Read Relevant Files
-For each selected KB, read only the source files whose `topics` field matches the question.
+For each hit:
+- **Source**: extract book/domain from `source_relpath` path segments
+- **Section**: use `heading_path` (already formatted as breadcrumb, e.g. `Core Principles > Explanation`)
+- **Content**: `text` field (≈1200 chars of the relevant chunk)
+- **Rank**: `rrf_score` — higher = more relevant
 
-If a KB has 5 source files but only 1 is relevant, **read only that 1**.
+Use the top 3-4 hits. If scores drop sharply after hit 2, note the gap.
 
-### Step 4 — Formulate the Answer
-Answer the question using content from the loaded files. Follow these rules:
+### Step 3 — Formulate the Answer
 
-**DO:**
-- Cite every key claim: `[Source: Book Title, concept/section]`
-- Use the decision frameworks and heuristics from the KB
-- Acknowledge trade-offs as documented in the sources
-- Cross-reference multiple KBs if the question spans domains
+Same rules as before:
+- Cite every key claim: `[Source: {book-slug} — {heading_path}]`
+- Cross-reference multiple hits when they converge on the same principle
+- Note if hits are from vault session notes vs KB books (source_relpath prefix tells you)
 
-**DON'T:**
-- Invent principles not in the KB
-- Mix general LLM knowledge with KB content without being explicit
-- Present your own reasoning as KB-backed
+### Step 4 — Honest Gaps
 
-### Step 5 — Honest Gaps
-If the question can't be answered from the KB:
-> "This topic isn't covered in your knowledge base. The relevant KB(s) I checked were: [list]. 
-> You may want to add a source on [topic], or I can answer from general knowledge if you prefer."
+If hits are irrelevant (low rrf_score, off-topic):
+> "Bookrag returned low-confidence results for this query. The obsidian-vault DB covers
+> software-architecture, engineering-practices, llm-engineering, ml-data, functional-programming,
+> engineering-leadership, software-craft, 02-Notes, and 04-Claude-Sessions.
+> If your question is outside those domains, I can answer from general knowledge."
 
-Never silently fall back to general knowledge.
+### Fallback (bookrag unavailable)
+
+If `uv` is not found or the DB path does not exist:
+1. Say: "bookrag unavailable — falling back to kb-registry.yaml"
+2. Find `kb-registry.yaml` at: `$KB_ROOT/kb-registry.yaml` → `~/kb/kb-registry.yaml` → `./kb/kb-registry.yaml`
+3. Read and score KBs by keyword match, read relevant markdown files
+4. Answer with flat-file citations
 
 ---
 
@@ -94,21 +106,12 @@ For simple factual questions (1 concept, 1 source), a shorter format is fine —
 
 ---
 
-## Setup Help
-
-If the user doesn't have a KB yet, point them to:
-- `references/kb-registry-example.yaml` — example registry structure  
-- `references/kb-format.md` — how to format KB files
-- The `kb-indexer` skill — for extracting content from ebooks/PDFs automatically
-
----
-
 ## Example Interaction
 
 **User**: "How should I handle retries in a distributed system?"
 
 **Claude**:
-1. Reads `kb-registry.yaml`
-2. Identifies `software-architecture` KB as High relevance (keyword: `retry`)
-3. Reads `architecture/building-microservices.md` (has `retry` in topics)
-4. Answers citing Sam Newman's patterns + user's personal principles if present
+1. Runs `bookrag query-hybrid "retry patterns distributed systems"` via Bash
+2. Parses JSON hits — identifies top results from `software-architecture` KB chunks
+3. Answers citing `source_relpath` + `heading_path` from the ranked hits
+4. Example citation: `[Source: building-microservices — Retry Patterns > Exponential Backoff]`
