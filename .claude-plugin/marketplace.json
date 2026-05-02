@@ -13,7 +13,7 @@
     {
       "name": "codebase-intelligence",
       "source": "./plugins/codebase-intelligence",
-      "description": "Augments prp-core prp-plan and prp-implement with two-tier codebase search..."
+      "description": "Augments prp-core prp-plan and prp-implement with cross-session memory and Jira context injection."
     }
   ]
 }
