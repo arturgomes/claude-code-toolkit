@@ -8,21 +8,13 @@ description: >
   Trigger phrases: "add this book to my KB", "extract principles from this PDF", "index this ebook",
   "add to knowledge base", "extract from this document", "update my KB with this", "catalog this book".
   This is the ingestion pipeline for the KB system.
-version: 2.0.0
+version: 2.0.1
 ---
 
 # kb-indexer
 
 Extract structured, reusable knowledge from source materials (PDFs, EPUBs, text) into KB files
 compatible with `ask-kb` and `consult-kb`.
-
-## What This Skill Does
-- Reads a source document (uploaded PDF/EPUB or file path)
-- Extracts principles, patterns, frameworks, and decision heuristics
-- Writes a structured `.md` file in the KB format
-- Updates `kb-registry.yaml` with the new entry
-
----
 
 ## Workflow
 
@@ -86,48 +78,16 @@ Add the new source entry:
 Generate `topics` list from what was actually extracted — these drive KB selection in `ask-kb`/`consult-kb`.
 
 ### Step 6 — Report
-Tell the user:
-- File written to: `[path]`
-- Registry updated: `[kb-registry.yaml path]`
-- Topics indexed: `[list]`
-- What was skipped and why (e.g., "Chapters 1-2 were introductory, skipped")
-- Suggested KB queries to test the extraction worked
+Report: output path, registry update, topics list, what was skipped and why, 1-2 sample queries to verify extraction.
 
 ---
 
 ## EPUB Extraction
 
 ```bash
-# Extract EPUB text content
 unzip -o book.epub -d /tmp/epub_extracted/
-# Find content files
 find /tmp/epub_extracted -name "*.html" -o -name "*.xhtml" | sort
-# Extract text from HTML content files
-python3 -c "
-from html.parser import HTMLParser
-import sys
-
-class TextExtractor(HTMLParser):
-    def __init__(self):
-        super().__init__()
-        self.text = []
-        self.skip_tags = {'script', 'style'}
-        self.current_skip = False
-    def handle_starttag(self, tag, attrs):
-        if tag in self.skip_tags:
-            self.current_skip = True
-    def handle_endtag(self, tag):
-        if tag in self.skip_tags:
-            self.current_skip = False
-    def handle_data(self, data):
-        if not self.current_skip and data.strip():
-            self.text.append(data.strip())
-
-parser = TextExtractor()
-with open(sys.argv[1]) as f:
-    parser.feed(f.read())
-print('\n'.join(parser.text))
-" /tmp/epub_extracted/path/to/chapter.xhtml
+python3 references/epub-extract.py /tmp/epub_extracted/path/to/chapter.xhtml
 ```
 
 ---
@@ -165,8 +125,3 @@ Before writing the KB file, verify:
 
 ---
 
-## Reference Files
-- `references/kb-format.md` — exact format for KB markdown files
-- `references/kb-registry-example.yaml` — example registry structure
-
-Read both before writing output files.

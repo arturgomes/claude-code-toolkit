@@ -25,13 +25,8 @@ is available — no assumed file paths.
 
 ## CRITICAL: Document What Exists, Nothing More
 
-- **DO NOT** suggest improvements or changes
-- **DO NOT** perform root cause analysis
-- **DO NOT** propose future enhancements
-- **DO NOT** critique implementation or identify "problems"
-- **DO NOT** comment on code quality, performance, or security
-- **DO NOT** suggest refactoring or optimisation
-- **ONLY** describe what exists, how it works, and how components interact
+**Scope**: Describe only what exists — how it works and how components interact.
+Never suggest, critique, recommend, or identify problems.
 
 ---
 
@@ -42,7 +37,8 @@ is available — no assumed file paths.
 Before any analysis:
 
 ```
-Read: ~/.claude/memory/<TICKET>/<BRANCH>.md (if exists)
+Call: mcp__ultimate-obsidian__read_note({ filepath: "02-Notes/Sessions/{TICKET}-{BRANCH}.md" })
+If not found: skip, mark "📁 Memory: no prior sessions"
 For each component/flow in the request:
   - If prior session has data-flow analysis for this area → mark [FROM MEMORY], skip re-analysis
   - If no prior findings → continue to Steps 1-3
@@ -52,14 +48,13 @@ Print: "📁 Memory: {N} flow analyses pre-filled / {M} need fresh analysis"
 
 ### Step 1 — Serena entry point resolution (codebase-intelligence)
 
-For every component or function mentioned in the request, resolve exact locations first:
+For every component or function mentioned in the request, resolve exact locations first.
+Skip `find_symbol` if the request already includes an explicit `file:line` — use it directly.
 
-| What to resolve | Serena tool |
-|---|---|
-| Where is function X defined? | `find_symbol` |
-| Full definition of symbol X | `get_symbol_definition` |
-| Who calls function X? | `get_symbol_references` |
-| What does file X export? | `find_symbol` (scoped to file) |
+- defined at? → `find_symbol`
+- full definition? → `get_symbol_definition`
+- callers? → `get_symbol_references`
+- file exports? → `find_symbol` (scoped to file)
 
 Do this **before** reading files — Serena's results tell you exactly which lines to read.
 Mark results: source `serena`
@@ -72,14 +67,16 @@ With Serena-verified entry points:
 2. Follow function calls step by step
 3. Note where data is transformed
 4. Identify external dependencies (DB calls, API calls, queue messages)
-5. Trace error paths as well as happy paths
+5. Trace error paths only if the request mentions errors, failures, exceptions, or edge cases
 
 Read only the necessary sections — use Serena line references to avoid reading entire files.
 Mark results: source `native`
 
 ### Step 3 — Scope boundary check (codebase-intelligence — drift-guard question #2)
 
-Before finalising the analysis output, verify:
+Skip if the request names ≤1 file or ≤3 symbols — mark "Scope check: skipped (single-file)".
+
+Otherwise, before finalising the analysis output, verify:
 
 > "Are all the integration points I've mapped inside the files/systems the request asked about?
 > Did I drift into adjacent systems not relevant to the task?"
@@ -119,22 +116,22 @@ do not include its internals in the output.
 ```markdown
 ## Analysis: [Component/Feature Name]
 
-### Intelligence sources used
+### Intelligence sources used (omit if only 1 source used and no memory pre-fill)
 - Memory: {N} flow analyses pre-filled / {M} analysed fresh
 - Serena: {N} symbols resolved (entry points + callers)
 - Native: {N} files read at specific line ranges
-- Scope boundary check: {passed / N items removed as out of scope}
+- Scope boundary check: {passed / N items removed as out of scope / skipped}
 
 ### Overview
 [2-3 sentence summary of how it works]
 
-### Entry Points
+### Entry Points (mandatory)
 | Location | Purpose | Source |
 |----------|---------|--------|
 | `path/to/file.ts:45` | Main handler for X | serena |
 | `path/to/other.ts:12` | Called by Y when Z | serena |
 
-### Implementation Flow
+### Implementation Flow (mandatory)
 
 #### 1. [First Stage] (`path/file.ts:15-32`) — Source: serena + native
 - What happens at line 15
@@ -152,24 +149,24 @@ do not include its internals in the output.
          (serena)       (serena)        (native)
 ```
 
-### Patterns Found
+### Patterns Found (include only if ≥1 row)
 | Pattern | Location | Usage | Source |
 |---------|----------|-------|--------|
 | Repository | `stores/data.ts:10-50` | Data access abstraction | native |
 | Factory | `factories/builder.ts:5` | Creates X instances | serena |
 
-### Configuration
+### Configuration (include only if ≥1 row)
 | Setting | Location | Purpose | Source |
 |---------|----------|---------|--------|
 | `API_KEY` | `config/env.ts:12` | External service auth | native |
 
-### Error Handling
+### Error Handling (include only if ≥1 row)
 | Error Type | Location | Behaviour | Source |
 |------------|----------|-----------|--------|
 | ValidationError | `handlers/input.ts:28` | Returns 400, logs warning | serena |
 | NetworkError | `services/api.ts:52` | Triggers retry queue | native |
 
-### Adjacent Systems (not analysed — out of scope)
+### Adjacent Systems (include only if ≥1 item; omit when scope check skipped)
 - [system name] at [file] — touches this component but outside request scope
 ```
 
@@ -185,14 +182,8 @@ do not include its internals in the output.
 - **Focus on HOW** — mechanics, not opinions
 - **Max Serena calls**: 10 per analysis run
 
-## What NOT To Do
+## Rules
 
-- Don't guess about implementation details
-- Don't read entire files when Serena can give you the exact lines
-- Don't re-analyse areas already in memory
-- Don't skip error handling or edge cases
-- Don't make recommendations of any kind
-- Don't identify bugs or issues
-- Don't comment on performance or security
-- Don't suggest alternatives
-- Don't critique design choices
+No guesses, recommendations, bug reports, critiques, or alternatives.
+Serena lines first — never read whole files when exact lines are known.
+Don't re-analyse memory-cached areas.

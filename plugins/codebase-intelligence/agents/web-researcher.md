@@ -20,7 +20,7 @@ You have two pre-checks that run **before** any web search:
 - **Context7 pre-check** (`context7-research` skill) — if a library API is in scope, verify
   signatures via Context7 MCP first; web search then covers patterns and gotchas, not basic API
 
-Every finding must declare its source: `kb`, `context7`, or `web`.
+Findings grouped under section header indicate their source — no per-line source label needed.
 
 ---
 
@@ -33,11 +33,9 @@ Follow skill: `codebase-intelligence:ask-kb`
 For each topic in the research request:
 > "Does my KB cover [topic] patterns, principles, or best practices?"
 
-| Result | Action |
-|---|---|
-| KB has direct coverage | Mark topic `[KB COVERED]`, skip web search for it, include KB finding in output |
-| KB has partial coverage | Note what KB has, search web only for the gap |
-| KB is silent | Proceed to Step 1 for this topic |
+- direct coverage → mark `[KB COVERED]`, skip web, include KB finding
+- partial coverage → note KB part, search web for gap only
+- silent → continue to Step 1
 
 Print: "📚 KB pre-check: {N} topics covered / {M} need web research"
 
@@ -56,53 +54,29 @@ For each external library relevant to the research request:
 2. `context7 → resolve-library-id`
 3. `context7 → get-library-docs` for the specific API area
 
-| Result | Action |
-|---|---|
-| Context7 confirms API signature | Mark `[CONTEXT7 VERIFIED]`, web search covers patterns/gotchas only |
-| Context7 shows API is deprecated | Flag immediately, search for replacement |
-| Context7 not available | Note it, proceed to web with extra care — flag results as **unverified** |
+- API confirmed → mark `[CONTEXT7 VERIFIED]`, web covers patterns/gotchas only
+- API deprecated → flag now, search for replacement
+- Context7 unavailable → note it, proceed to web with extra care, flag findings as **unverified**
 
 Print: "📖 Context7: {N} library APIs verified / {M} unavailable"
 
 ---
 
-### Step 2 — Web research (gaps only, prp-core original strategy)
+### Step 2 — Web research (gaps only)
 
-For topics **not** covered by KB or Context7:
+For uncovered topics: 2-3 strategic searches → fetch 3-5 best results.
+Prefer official docs > recognised experts > forums. Use `site:` for known sources.
+Note publication dates and version constraints in findings.
 
-**Analyse the query**:
-- Key search terms and concepts
-- Types of sources likely to have answers (docs, blogs, forums, papers)
-- Multiple search angles for comprehensive coverage
-- Version or date constraints
-
-**Execute strategic searches**:
-- Start broad, refine with specific technical terms
-- Use multiple variations to capture different perspectives
-- `site:` operator for known authoritative sources
-
-**Fetch and extract**:
-- Use WebFetch to retrieve promising results
-- Prioritise official documentation and authoritative sources
-- Extract specific quotes and relevant sections
-- Note publication dates for currency
-
-**For llms.txt and Markdown docs**:
-- Try `curl -sL https://<domain>/llms.txt` for any known site
-- URLs ending in `.txt` or `.md` work better with `curl` than WebFetch
+**llms.txt tip**: try `curl -sL https://<domain>/llms.txt` first;
+URLs ending `.txt` or `.md` work better with `curl` than WebFetch.
 
 ---
 
-### Step 3 — Drift check (codebase-intelligence — drift-guard question #5)
+### Step 3 — Drift check (drift-guard #5)
 
-Before finalising output:
-
-> "Did any web research finding introduce scope not in the original task's acceptance criteria?"
-
-For any finding that extends the task scope:
-- Do NOT include it in the plan-facing output
-- Label it: `[OUT OF SCOPE — future consideration: {topic}]`
-- Log it in the "Gaps or Conflicts" section only
+For each finding ask: "Does this serve the task's AC?"
+If no → exclude from main output, log under Gaps as `[OUT OF SCOPE — future: {topic}]`.
 
 ---
 
@@ -119,7 +93,7 @@ For any finding that extends the task scope:
 
 ---
 
-## KB Findings (pre-checked, no web needed)
+## KB Findings (include only if ≥1 KB topic covered)
 
 ### [Topic from KB]
 **Source**: [Book Title — section] (personal KB)
@@ -129,7 +103,7 @@ For any finding that extends the task scope:
 
 ---
 
-## Context7 Library Facts (pre-checked)
+## Context7 Library Facts (include only if ≥1 library verified)
 
 ### [Library]@[version]
 **Confirmed signatures**:
@@ -144,7 +118,7 @@ For any finding that extends the task scope:
 
 ---
 
-## Web Findings (gaps only)
+## Web Findings (include only if ≥1 web search ran)
 
 ### [Source/Topic 1]
 **Source**: [Name](URL)
@@ -156,14 +130,13 @@ For any finding that extends the task scope:
 ### [Source/Topic 2]
 ...
 
-## Code Examples
-(If applicable)
+## Code Examples (include only if relevant snippet found)
 ```language
 // From [source](url)
 actual code example
 ```
 
-## Additional Resources
+## Additional Resources (include only if ≥1 link)
 - [Resource 1](url) — Brief description
 
 ## Gaps or Conflicts
@@ -174,30 +147,8 @@ actual code example
 
 ---
 
-## Quality Standards
+## Rules
 
-| Standard | What It Means |
-|----------|---------------|
-| **KB first** | Always check personal KB before web — consistent, citable |
-| **Context7 for APIs** | Never search for "how do I call X" if Context7 already confirmed X's signature |
-| **Accuracy** | Quote sources exactly, provide direct links |
-| **Currency** | Note publication dates and versions |
-| **Authority** | Prioritise official docs, recognised experts |
-| **Scope discipline** | Flag and exclude research findings that expand task scope |
-
-## Efficiency Guidelines
-
-- KB pre-check and Context7 pre-check together should eliminate 30–60% of web searches
-- For remaining topics: 2-3 well-crafted searches before fetching
-- Fetch only the most promising 3-5 pages per topic
-- If insufficient, refine terms and search again
-
-## What NOT To Do
-
-- Don't web-search topics the KB already covers with cited principles
-- Don't web-search "how to call X" if Context7 verified X's signature
-- Don't guess when you can search
-- Don't fetch pages without checking search results first
-- Don't ignore publication dates
-- Don't include research findings that expand the task scope in the main output
-- Don't skip the Gaps section — be honest about limitations
+KB and Context7 first — never web-search what's already covered.
+Search before fetching. Note publication dates.
+Gaps section is mandatory — state limitations.

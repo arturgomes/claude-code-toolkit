@@ -6,7 +6,7 @@ description: >
   Use when reviewing test files, after writing tests, or when asked "review my tests",
   "check test quality", "run QCHECKT", or automatically in prp-implement after test creation.
   Produces detailed per-test-file score and recommendations.
-version: 2.0.0
+version: 2.0.1
 ---
 
 # test-quality
@@ -49,109 +49,19 @@ Run the complete 16-item Test Quality Checklist on each test file added or signi
 
 ## Output Format
 
-For each test file reviewed:
+**Output schema** (single test file):
+- `# Test Quality Review`
+- `## Test File: <file>` — score `[X/16]`
+- `## Violations` — one entry per failing item: ID, issue, fix, before/after code (only if helpful)
+- `## Strengths` — items the file passes well (include only if any)
+- `## Coverage Gaps` (include only if gaps exist):
+  - **Missing edge cases:** checklist of edges not tested (empty/null/boundary/error)
+  - **Missing scenarios:** specific behaviour not covered
+- `## Overall Assessment` — buckets (sum to 16): Test Structure /2, Test Quality /6, Coverage /4, Property Testing /2, Integration /2 — each with one-line assessment, then `**Total**: [X/16]`
+- `**Verdict**: ✅ APPROVED | ⚠️ NEEDS WORK | ❌ REWRITE`
 
-```markdown
-# Test Quality Review
-
-## Test File: `file.test.ts`
-
-**Score**: [X/16]
-
----
-
-## Violations
-
-1. **Item #N**: [Check description]
-   - **Issue**: [What's wrong]
-   - **Fix**: [How to fix it]
-   - **Example**:
-     ```typescript
-     // ❌ Before
-     it('works', () => {
-       expect(fn(42)).toBeTruthy();
-     });
-
-     // ✅ After
-     it('returns sum when both inputs are positive', () => {
-       const a = 5;
-       const b = 3;
-       expect(add(a, b)).toBe(8);
-     });
-     ```
-
-2. **Item #N**: [Check description]
-   - **Issue**: [What's wrong]
-   - **Fix**: [How to fix it]
-
----
-
-## Strengths
-
-- **Item #N**: [What's done well]
-- **Item #N**: [What's done well]
-
----
-
-## Coverage Gaps
-
-**Missing edge cases**:
-- [ ] Empty inputs (e.g., `""`, `[]`, `null`)
-- [ ] Boundary values (e.g., max length, zero, -1)
-- [ ] Error conditions (e.g., invalid input, API failures)
-
-**Missing scenarios**:
-- [Specific scenario not covered]
-
----
-
-## Overall Assessment
-
-- **Test Structure**: [X/2] — [Brief assessment]
-- **Test Quality**: [X/6] — [Brief assessment]
-- **Coverage**: [X/4] — [Brief assessment]
-- **Property Testing**: [X/2] — [Brief assessment]
-- **Integration**: [X/2] — [Brief assessment]
-
-**Total**: [X/16]
-
-**Verdict**: [✅ APPROVED | ⚠️ NEEDS WORK | ❌ REWRITE]
-```
-
----
-
-## Multi-Test-Suite Review
-
-When reviewing multiple test suites in one file:
-
-```markdown
-# Test Quality Review: `file.test.ts`
-
-## Summary
-- **Test suites reviewed**: [N]
-- **Total tests**: [N]
-- **Average score**: [X.X/16]
-- **Suites passing (≥14/16)**: [N]
-- **Suites needing work (<14/16)**: [N]
-
----
-
-## Suite: `describe("functionA", ...)`
-**Score**: [X/16]
-**Tests**: [N]
-**Issues**: [Brief list]
-
----
-
-## Suite: `describe("functionB", ...)`
-**Score**: [X/16]
-**Tests**: [N]
-**Issues**: [Brief list]
-
----
-
-## File-Level Recommendations
-
-1. [Recommendation affecting multiple test suites]
-2. [Recommendation affecting multiple test suites]
-```
+**Output schema** (multi-suite in one file):
+- `# Test Quality Review: <file>`
+- `## Summary` — N suites, total tests, average /16, N passing (≥14), N needing work (<14)
+- One section per `describe(…)` suite — score, brief issue list (full schema only if score < 14)
+- `## File-Level Recommendations` — recurring issues across suites (include only if any)

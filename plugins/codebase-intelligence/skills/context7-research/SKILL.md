@@ -7,7 +7,7 @@ description: >
   Also invoke manually when asked "how does X work in version Y", "what's the API for Z",
   "look up the docs for", or any question about a library's current interface.
   Prevents hallucinated API calls by grounding every library usage in live documentation.
-version: 2.0.0
+version: 2.0.1
 ---
 
 # context7-research
@@ -15,24 +15,13 @@ version: 2.0.0
 Fetches live, version-matched documentation through the Context7 MCP.
 **No library API should be written from memory.** Always verify against Context7 first.
 
-## When to use
-
-Trigger this skill before implementing code that:
-- Calls a function or method from an external package
-- Uses a framework's lifecycle hooks or configuration API
-- Imports from a library where the API may have changed between versions
-- Requires understanding of a library's current error types or response shapes
+If Context7 MCP is unavailable, fall back to `codebase-intelligence:web-researcher` for docs but flag the response as **unverified** in the plan.
 
 ## Workflow
 
 ### Step 1 — Identify libraries in scope
 
-From the plan's `package.json` dependency list and the current task, extract:
-```
-{library-name}@{exact-version-from-package.json}
-```
-
-Never assume a version. Always read it from `package.json` (or `pyproject.toml`, `Cargo.toml`, `go.mod`).
+Read the exact version of `{library}` from `package.json` (or `pyproject.toml` / `Cargo.toml` / `go.mod`) — never assume.
 
 ### Step 2 — Resolve library ID via Context7
 
@@ -65,63 +54,23 @@ From the fetched docs, capture:
 
 ### Step 5 — Cross-check against the plan
 
-Compare the Context7 findings against what the plan says to implement:
-
-| Plan says | Context7 says | Action |
-|-----------|---------------|--------|
-| API matches docs | ✅ Confirmed | Proceed |
-| API differs slightly | ⚠️ Deviation | Update task before implementing |
-| API doesn't exist | 🔴 Hallucination | Raise immediately, fix plan |
-| API is deprecated | 🟡 Warning | Note, use recommended replacement |
+Compare findings to what the plan implements:
+- ✅ API matches docs → Proceed
+- ⚠️ API differs slightly → Update task before implementing
+- 🔴 API doesn't exist → Raise immediately, fix plan
+- 🟡 API is deprecated → Note, use recommended replacement
 
 ### Step 6 — Document findings
 
-Write a `## Context7 Library Facts` block in the plan or implementation notes:
+Write a `## Context7 Library Facts` block in the plan or implementation notes.
 
-```markdown
-## Context7 Library Facts
-
-### {library-name}@{version}
-Docs fetched: {topic}
-
-**Confirmed signatures:**
-- `functionName(param1: Type, param2?: Type): ReturnType`
-- `ClassName.method(options: OptionsType): Promise<Result>`
-
-**Gotchas found in docs:**
-- {gotcha from official docs}
-
-**Deprecated in this version:**
-- `oldFunction()` → use `newFunction()` instead
-```
+**Output schema**:
+- Section heading: `## Context7 Library Facts`
+- One sub-heading per `### {library-name}@{version}` with `Docs fetched: {topic}`
+- Bullet groups (each: include only if any): **Confirmed signatures**, **Gotchas found in docs**, **Deprecated in this version**
 
 ---
 
-## Integration with prp-plan Phase 3
+## Integration
 
-During RESEARCH, run Context7 **before** the `codebase-intelligence:web-researcher` agent for any
-library-related questions. Provide the confirmed signatures to the web-researcher so
-it searches for usage patterns rather than basic API questions.
-
-## Integration with prp-implement Phase 3
-
-Before writing any task that uses an external library:
-1. Check if the plan's `Context7 Library Facts` section already has this library documented
-2. If yes → use those facts (skip the MCP call)
-3. If no → run Context7 now, document findings, then implement
-
-## MCP requirement
-
-Context7 is registered once via `claude mcp add` (Claude Code terminal):
-
-```bash
-claude mcp add context7 \
-  --scope user \
-  --transport http \
-  https://mcp.context7.com/mcp
-```
-
-`--scope user` makes it available in every project automatically. No per-repo config needed.
-
-If Context7 MCP is unavailable: fall back to `codebase-intelligence:web-researcher` for docs,
-but flag the response as **unverified** and note it in the plan.
+Auto-invoked during `prp-plan` Phase 3 RESEARCH and `prp-implement` Phase 3. If `Context7 Library Facts` already documents this `{library}@{version}`, reuse — don't refetch.

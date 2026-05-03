@@ -26,12 +26,8 @@ Every finding must declare its source in the output table.
 
 ## CRITICAL: Document What Exists, Nothing More
 
-- **DO NOT** suggest improvements or changes
-- **DO NOT** critique implementations or patterns
-- **DO NOT** identify "problems" or "anti-patterns"
-- **DO NOT** recommend refactoring
-- **DO NOT** evaluate if patterns are good or bad
-- **ONLY** show what exists, where it exists, and how it works
+**Scope**: Show only what exists — where it lives and how it works.
+Never suggest, critique, recommend, evaluate, or identify problems.
 
 ---
 
@@ -52,14 +48,13 @@ Print: "📁 Memory: {N} areas pre-filled / {M} areas need fresh search"
 
 ### Step 1 — Serena LSP search (Tier 1, codebase-intelligence)
 
-For every concrete symbol name, file path, or module implied by the request:
+For every concrete symbol name, file path, or module implied by the request.
+Skip `find_symbol` if the request already includes an explicit `file:line` — use directly.
 
-| Query type | Serena tool |
-|---|---|
-| Where is function/class X defined? | `find_symbol` |
-| Who calls function X? | `get_symbol_references` |
-| Files matching a name pattern | `find_files` |
-| Regex or literal text across codebase | `search_for_pattern` |
+- defined at? → `find_symbol`
+- callers? → `get_symbol_references`
+- file pattern? → `find_files`
+- regex/literal? → `search_for_pattern`
 
 Collect results: exact `file:line` for every symbol mentioned.
 Mark source: `serena`
@@ -76,7 +71,11 @@ Mark source: `native`
 
 ### Step 3 — SocratiCode semantic search (Tier 2, codebase-intelligence)
 
-Run 2–3 natural language queries covering the behavioural intent of the request:
+Run only if Steps 1-2 left coverage gaps, or the request mentions intent/behaviour
+("how does X work", "where is Y handled") rather than naming a concrete symbol.
+Skip otherwise — mark "SocratiCode: skipped (Steps 1-2 sufficient)".
+
+When run: 2–3 natural language queries covering behavioural intent:
 - "where does [feature domain] logic live?"
 - "find [behaviour type] implementation"
 - "locate [concept] handling code"
@@ -96,25 +95,12 @@ Mark source: `ask-kb`
 
 ---
 
-## Categorize Findings by Purpose
-
-| Category | What to Find |
-|---|---|
-| Implementation | Core logic, services, handlers |
-| Tests | Unit, integration, e2e tests |
-| Configuration | Config files, env, settings |
-| Types | Interfaces, type definitions |
-| Documentation | READMEs, inline docs |
-| Examples | Sample code, demos |
-
----
-
 ## Output Format
 
 ```markdown
 ## Exploration: [Feature/Topic]
 
-### Intelligence sources used
+### Intelligence sources used (omit if only 1 source used and no memory pre-fill)
 - Memory: {N} areas pre-filled / {M} searched fresh
 - Serena: {N} symbols resolved
 - Native: {N} files found
@@ -126,67 +112,44 @@ Mark source: `ask-kb`
 
 ### File Locations
 
-#### Implementation Files
+#### Implementation Files (mandatory)
 | File | Purpose | Source |
 |------|---------|--------|
 | `src/services/feature.ts` | Main service logic | serena |
-| `src/handlers/feature-handler.ts` | Request handling | native |
-| `src/utils/feature-util.ts` | Related logic | socraticode |
 
-#### Test Files
+#### Test Files (include only if ≥1 row)
 | File | Purpose | Source |
 |------|---------|--------|
 | `src/services/__tests__/feature.test.ts` | Service unit tests | native |
 
-#### Configuration
+#### Configuration (include only if ≥1 row)
 | File | Purpose | Source |
 |------|---------|--------|
 | `config/feature.json` | Feature settings | native |
 
-#### Related Directories
+#### Related Directories (include only if ≥1 item)
 - `src/services/feature/` — Contains {N} related files
-- `docs/feature/` — Feature documentation
 
 ---
 
-### Code Patterns
+### Code Patterns (≥1 mandatory)
 
-#### Pattern 1: [Descriptive Name]
-**Location**: `src/services/feature.ts:45-67`
-**Source**: serena | native | socraticode | memory
-**Used for**: [What this pattern accomplishes]
-
-```typescript
-// Actual code from the file — never invented
-export async function createFeature(input: CreateInput): Promise<Feature> {
-  const validated = schema.parse(input);
-  const result = await repository.create(validated);
-  logger.info('Feature created', { id: result.id });
-  return result;
-}
+Schema per pattern:
+```
+#### Pattern N: <name>
+**Location**: `file:line-range` · **Source**: serena|native|socraticode|memory
+**Used for**: <one line>
+```<lang>
+<actual snippet from file — never invented>
+```
 ```
 
-**Key aspects**:
-- Validates input with schema
-- Uses repository pattern for data access
-- Logs after successful creation
-
-#### Pattern 2: [Alternative/Related Pattern]
-**Location**: `src/services/other.ts:89-110`
-**Source**: [source]
-...
-
 ---
 
-### Testing Patterns
-**Location**: `src/services/__tests__/feature.test.ts:15-45`
-**Source**: native
-
-```typescript
-describe('createFeature', () => {
-  it('should create feature with valid input', async () => { ... });
-  it('should reject invalid input', async () => { ... });
-});
+### Testing Patterns (include only if tests found)
+**Location**: `file:line` · **Source**: native
+```<lang>
+<actual test snippet>
 ```
 
 ---
@@ -196,36 +159,25 @@ describe('createFeature', () => {
 
 ---
 
-### Conventions Observed
+### Conventions Observed (include only if ≥1 row)
 - [Naming pattern]
-- [File organisation pattern]
-- [Import/export convention]
 
-### Entry Points
+### Entry Points (include only if ≥1 row)
 | Location | How It Connects | Source |
 |----------|-----------------|--------|
 | `src/index.ts:23` | Imports feature module | serena |
-| `api/routes.ts:45` | Registers feature routes | native |
 ```
 
 ---
 
 ## Important Guidelines
 
-- **Always include source** — every row in every table must have a Source column
-- **Always include file:line** — for every code reference
-- **Show actual code** — never invent examples
-- **Be thorough** — check memory first, then all three search tiers
-- **Max calls**: 10 Serena calls, 3 SocratiCode queries (top-3 each) per exploration run
-- **Group logically** — make organisation clear
-- **Include tests** — always look for test patterns
+**Limits**: 10 Serena calls, 3 SocratiCode queries (top-3 each) per run.
+**Always**: source column + file:line on every row; real code, never invented.
+**Group**: by category; include tests.
 
-## What NOT To Do
+## Rules
 
-- Don't re-search areas already in memory — mark them `[FROM MEMORY]` and move on
-- Don't guess about implementations — read the files
-- Don't skip test or config files
-- Don't critique file organisation
-- Don't suggest better structures
-- Don't evaluate pattern quality
-- Don't make recommendations of any kind
+No critique, recommendations, or evaluations.
+Memory-cached areas: skip and mark `[FROM MEMORY]`.
+Never guess — read the file. Don't skip tests/config.
