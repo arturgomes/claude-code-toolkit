@@ -8,14 +8,10 @@ description: >
   Use when Copilot or reviewers leave comments on an open PR and you want to address them
   systematically without a full planning cycle.
 argument-hint: <github-pr-url | owner/repo#number | PR-number>
-version: 1.0.0
+version: 1.0.1
 ---
 
 # prp-pr-review
-
-**Role**: You are a SKEPTICAL senior engineer. Your job is to evaluate every PR comment
-critically — apply genuinely valid suggestions, reject nitpicks, and explain why for
-each decision. You are not a yes-machine. A bad suggestion from Copilot gets rejected.
 
 ---
 
@@ -29,28 +25,27 @@ From `$ARGUMENTS`, extract `{OWNER}`, `{REPO}`, `{PR_NUMBER}`:
 | `{owner}/{repo}#{N}` | Split on `#` |
 | Just `{N}` (integer) | Use `gh repo view --json nameWithOwner` for owner/repo |
 
-If no argument provided: run `gh pr list --limit 5` and ask user to specify a PR.
+If no argument: run `gh pr list --limit 5` and ask user to specify a PR.
 
 ---
 
 ## Step 2: Fetch PR context (run in parallel)
 
+Common jq projection for `pulls/comments`, `pulls/reviews`, `issues/comments`:
+`.[] | {id, author: .user.login, is_bot: (.user.type == "Bot"), …}` (extra keys per endpoint listed below).
+
 ```bash
 # PR metadata
-gh pr view {PR_NUMBER} --repo {OWNER}/{REPO} \
-  --json title,body,headRefName,baseRefName,author,state,mergeable
+gh pr view {PR_NUMBER} --repo {OWNER}/{REPO} --json title,body,headRefName,baseRefName,author,state,mergeable
 
-# Inline code review comments (with diff context)
-gh api "repos/{OWNER}/{REPO}/pulls/{PR_NUMBER}/comments" --paginate \
-  --jq '.[] | {id, author: .user.login, is_bot: (.user.type == "Bot"), path, line, original_line, diff_hunk, body, resolved: (.in_reply_to_id != null)}'
+# Inline code review comments — extra keys: path, line, original_line, diff_hunk, body, resolved: (.in_reply_to_id != null)
+gh api "repos/{OWNER}/{REPO}/pulls/{PR_NUMBER}/comments" --paginate --jq '<projection + extra keys above>'
 
-# PR-level block reviews
-gh api "repos/{OWNER}/{REPO}/pulls/{PR_NUMBER}/reviews" --paginate \
-  --jq '.[] | {id, author: .user.login, is_bot: (.user.type == "Bot"), state, body}'
+# PR-level block reviews — extra keys: state, body
+gh api "repos/{OWNER}/{REPO}/pulls/{PR_NUMBER}/reviews" --paginate --jq '<projection + extra keys above>'
 
-# General discussion comments
-gh api "repos/{OWNER}/{REPO}/issues/{PR_NUMBER}/comments" --paginate \
-  --jq '.[] | {id, author: .user.login, is_bot: (.user.type == "Bot"), body}'
+# General discussion — extra key: body
+gh api "repos/{OWNER}/{REPO}/issues/{PR_NUMBER}/comments" --paginate --jq '<projection + extra keys above>'
 ```
 
 **Print after fetch:**
@@ -64,18 +59,11 @@ Inline comments: {N} | Block reviews: {N} | Discussion: {N}
 
 ## Step 3: Triage — build comment list
 
-For each comment across all sources:
+For each comment:
 
-1. **Skip** if: empty body, emoji-only, pure approval ("LGTM", "Looks good"), in_reply_to (thread reply — addressed via root comment)
+1. **Skip** if: empty body, emoji-only, pure approval ("LGTM", "Looks good"), `in_reply_to` set (thread reply — addressed via root)
 2. **Flag as bot**: `user.type == "Bot"` OR `user.login` ends with `[bot]`
-3. **Build normalized record**:
-
-```
-{
-  id, author, is_bot, type(inline/review/discussion),
-  file(path or null), line(or null), diff_hunk(or null), body
-}
-```
+3. **Build normalized record**: `{id, author, is_bot, type(inline/review/discussion), file, line, diff_hunk, body}`
 
 Print: `Analyzing {N} substantive comments...`
 
@@ -83,17 +71,17 @@ Print: `Analyzing {N} substantive comments...`
 
 ## Step 4: Evaluate each comment — THE SKEPTIC FRAMEWORK
 
-For **every** substantive comment, execute these steps:
-
 ### 4A: Read actual code (inline comments only)
 
 Before evaluating any inline suggestion:
-1. Read the full function/method containing the commented line — not just the `diff_hunk`
-2. If `diff_hunk` references deleted code, mark **SKIP-DONE** immediately
+1. Read the full function/method containing the commented line — not just `diff_hunk`
+2. If `diff_hunk` references deleted code → **SKIP-DONE**
 
-For review/discussion comments: read the PR diff (`gh pr diff {N} --repo {OWNER}/{REPO}`) to understand what was changed.
+For review/discussion: read PR diff (`gh pr diff {N} --repo {OWNER}/{REPO}`).
 
-### 4B: Apply the VERDICT matrix
+### 4B: Verdict matrix
+
+When in doubt, default to ⏭️ SKIP-NITPICK. Bot suggestions are not authoritative — Copilot can and does misread intent. Never apply without reading the full function first.
 
 | Verdict | When to use |
 |---|---|
@@ -105,20 +93,7 @@ For review/discussion comments: read the PR diff (`gh pr diff {N} --repo {OWNER}
 | ⏭️ **SKIP-SCOPE** | Valid concern but outside this PR's stated purpose |
 | ⏭️ **SKIP-TRADEOFF** | Valid alternative approach but current approach is intentional |
 
-### 4C: Skeptic rules (non-negotiable)
-
-1. **Never apply without reading full function first.** `diff_hunk` is context, not the full picture.
-2. **Bot suggestions are not automatically correct.** Copilot can and does misread code intent.
-3. **Naming changes**: only APPLY if current name is objectively misleading to a new reader. "I prefer X" = SKIP-OPINION.
-4. **Null/undefined checks**: APPLY only if the value can actually be null in a real execution path. If types guarantee non-null, SKIP-WRONG.
-5. **"Add a comment here"**: SKIP-NITPICK unless logic is genuinely non-obvious and a reader would be confused.
-6. **Error handling**: APPLY if there's a real unhandled error path. SKIP-DONE if error propagates correctly via existing mechanism.
-7. **Type changes**: APPLY if they prevent real bugs. SKIP-NITPICK if purely cosmetic (`string` vs `String`).
-8. **Performance**: APPLY only for clear algorithmic improvements (O(n²) → O(n)). SKIP-OPINION for micro-optimizations.
-9. **Extract function**: APPLY only if the block is ≥15 lines AND used in 2+ places. Otherwise SKIP-NITPICK.
-10. **Duplication concerns**: APPLY only if genuinely duplicated logic that diverges over time causes bugs.
-
-### 4D: Copilot-specific heuristics
+### 4C: Copilot-specific heuristics
 
 | Suggestion pattern | Default | Override to APPLY if |
 |---|---|---|
@@ -136,70 +111,27 @@ For review/discussion comments: read the PR diff (`gh pr diff {N} --repo {OWNER}
 
 ## Step 5: Apply accepted changes
 
-For each ✅ APPLY verdict:
+For each ✅ APPLY:
 
-1. Re-read the target file if not already in context
-2. Make the **minimal** change that addresses the suggestion
-3. Verify the change does not break: function signature, surrounding logic, imports
-4. Do NOT add inline comments explaining that you made the change
-5. Do NOT refactor beyond what the suggestion requests
+1. Re-read target file if not in context
+2. Make the **minimal** change addressing the suggestion
+3. Verify no break in: function signature, surrounding logic, imports
+4. Do NOT add inline comments explaining the change
+5. Do NOT refactor beyond the suggestion
 
-If applying a change creates a cascading issue (type error, import needed, etc.) — fix those too, but note them in the report as "cascading fix."
+If applying creates a cascading issue (type error, import) — fix it, note as "cascading fix" in report.
 
 ---
 
 ## Step 6: Report
 
-After all comments evaluated and changes applied, output:
+Output format (schema):
 
-```markdown
-# PR Review: {OWNER}/{REPO}#{PR_NUMBER}
-
-**PR**: {title}
-**Branch**: {headRefName} → {baseRefName}
-**Comments analyzed**: {total} ({bot_count} bot, {human_count} human)
-**Applied**: {apply_count} | **Skipped**: {skip_count}
-
----
-
-## ✅ Applied Changes ({apply_count})
-
-### `{file}:{line}` — @{author} {[BOT] if is_bot}
-> "{comment excerpt — first 120 chars}"
-
-**Verdict**: ✅ APPLY — {one-line rationale}
-**Change**: {what was changed, e.g., "added null check before accessing .id"}
-
----
-
-## ⏭️ Skipped Comments ({skip_count})
-
-### `{file}:{line}` — @{author} {[BOT] if is_bot}
-> "{comment excerpt — first 120 chars}"
-
-**Verdict**: ⏭️ {SKIP-reason} — {one-line rationale}
-
----
-
-## Summary
-
-| Category | Count |
-|---|---|
-| Files modified | {N} |
-| Bot comments analyzed | {N} |
-| Bot suggestions applied | {N} ({pct}%) |
-| Human comments analyzed | {N} |
-| Human suggestions applied | {N} ({pct}%) |
-
-{if apply_count > 0}
-**Files changed**: {list of modified files}
-Next step: `git diff` to review, then commit and push.
-{/if}
-
-{if apply_count == 0}
-No changes applied. All comments were skipped with rationale above.
-{/if}
-```
+- `# PR Review: {OWNER}/{REPO}#{PR_NUMBER}` — title, branch, comment counts (total, bot/human), applied/skipped counts
+- `## ✅ Applied Changes ({N})` — one entry per APPLY: `### {file}:{line} — @{author} [BOT?]`, comment excerpt (first 120 chars), Verdict line, Change line. Omit section if N=0.
+- `## ⏭️ Skipped Comments ({N})` — same record shape; Verdict + reason only. Omit if N=0.
+- `## Summary` — table: Files modified, Bot comments analyzed, Bot suggestions applied (count + %), Human comments analyzed, Human suggestions applied (count + %).
+- Footer: if applied>0 list modified files + "Next: `git diff` to review, then commit and push."; else "No changes applied. All comments skipped with rationale above."
 
 ---
 
@@ -210,20 +142,5 @@ No changes applied. All comments were skipped with rationale above.
 | `gh` not authenticated | Print: "Run `gh auth login` first" and stop |
 | PR not found (404) | Print: "PR #{N} not found in {OWNER}/{REPO}" and stop |
 | PR already merged/closed | Print warning, ask user to confirm before continuing |
-| File from comment not found locally | Note in report: "File {path} not found locally — skipping (run `gh pr checkout {N}` to apply changes)" |
+| File from comment not found locally | Note in report: "File {path} not found locally — run `gh pr checkout {N}` to apply" |
 | Rate limit hit | Print remaining rate limit, pause if needed |
-
----
-
-## Quick examples
-
-```bash
-# Full URL
-/codebase-intelligence:prp-pr-review https://github.com/arturgomes/my-app/pull/42
-
-# Short form
-/codebase-intelligence:prp-pr-review arturgomes/my-app#42
-
-# Number only (must be in the repo's directory)
-/codebase-intelligence:prp-pr-review 42
-```

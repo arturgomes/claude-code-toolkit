@@ -9,7 +9,7 @@ description: >
   "audit this design", "is this consistent with [book/principle]?", "review like a senior",
   "check against our architecture principles". This produces structured feedback with KB citations,
   not just generic code review.
-version: 2.0.0
+version: 2.0.1
 ---
 
 # consult-kb
@@ -38,9 +38,6 @@ uv run --directory ~/Documents/ai-tools/skills-mono-repo \
   --settings ~/Documents/ai-tools/skills-mono-repo/bookrag/config/settings.toml \
   --stdout
 ```
-
-**DB**: `~/Documents/ai-tools/skills-mono-repo/master-kb/domains/obsidian-vault/bookrag.db`  
-**Settings**: `~/Documents/ai-tools/skills-mono-repo/bookrag/config/settings.toml`
 
 Run 1-2 queries if the artifact spans multiple domains.
 
@@ -74,11 +71,7 @@ Categorize findings:
 - 🟢 **Aligned**: Explicitly matches a KB recommendation (worth noting)
 - 💡 **Suggestion**: KB has a better approach not currently used
 
-### Step 5 — Structure the Feedback
-
----
-
-## Output Format
+### Step 5 — Output Format
 
 ```
 ## Review of [Artifact Name/Type]
@@ -98,7 +91,7 @@ Categorize findings:
 
 ---
 
-### 🟡 Tensions (Worth Discussing)
+### 🟡 Tensions (Worth Discussing)  (include only if ≥1 tension)
 
 #### [Issue Title]
 **What I found**: [Description]  
@@ -109,7 +102,7 @@ Categorize findings:
 
 ---
 
-### 🟢 What's Well-Aligned
+### 🟢 What's Well-Aligned  (include only if ≥1 alignment worth noting)
 
 - [Principle followed] — *Source: [Book Title]*
 - [Pattern correctly applied] — *Source: [Book Title]*
@@ -118,7 +111,7 @@ Categorize findings:
 
 ---
 
-### 💡 Suggestions from KB
+### 💡 Suggestions from KB  (include only if KB has a better approach not currently used)
 
 #### [Suggestion Title]
 **Opportunity**: [What could be improved]  
@@ -153,14 +146,5 @@ Adapt depth to artifact type:
 
 - Be direct. This is a review, not a compliment session.
 - Every finding must cite a KB source. If you can't cite it, don't include it.
-- Separate KB-based findings from general engineering judgment. If you add something from general knowledge, prefix it: `[General best practice, not from KB]`
-- If the artifact is well-designed and KB-aligned, say so briefly — don't inflate feedback.
-
----
-
-## When There's Nothing Wrong
-If the artifact genuinely aligns with the KB:
-> "This design is well-aligned with your KB. [2-3 specific things done right with citations]. 
-> No violations found. One optional suggestion: [if any]."
-
-Don't manufacture criticism.
+- Prefix non-KB additions with `[General best practice, not from KB]`.
+- If the artifact is well-aligned, say so briefly with 2-3 cited examples — don't manufacture criticism.

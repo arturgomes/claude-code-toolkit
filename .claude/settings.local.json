@@ -6,7 +6,9 @@
       "mcp__plugin_context-mode_context-mode__ctx_search",
       "SlashCommand(/codebase-intelligence:prp-implement ~/Documents/Obsidian-Vault/02-Notes/Plans/marketplace-validation.plan.md)",
       "Bash(jq:*)",
-      "mcp__ultimate-obsidian__check_exists"
+      "mcp__ultimate-obsidian__check_exists",
+      "Bash(echo '{\"mcpServers\":{}}')",
+      "Bash(rtk read *)"
     ],
     "deny": [],
     "ask": []

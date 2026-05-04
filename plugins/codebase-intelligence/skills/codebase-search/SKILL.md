@@ -6,7 +6,7 @@ description: >
   findings back. Invoked automatically during prp-plan Phase 2 and prp-implement Phase 0.
   Also invoke manually when asked to "find", "locate", "search", "where is X", or
   "how does Y work" about the codebase.
-version: 2.0.0
+version: 2.0.1
 ---
 
 # codebase-search
@@ -17,15 +17,7 @@ Two-tier search over the codebase. Always checks session-memory before hitting t
 
 ## Tier 1 — Structural search via Serena MCP
 
-Use Serena for **precise, symbol-level** queries. Requires `serena` MCP configured.
-
-| Query type | Serena tool to use |
-|---|---|
-| Where is function/class X defined? | `find_symbol` |
-| Who calls function X? | `get_symbol_references` |
-| Files matching a regex or literal | `search_for_pattern` |
-| Files by name pattern | `find_files` |
-| Full definition of a symbol | `get_symbol_definition` |
+Use for **precise, symbol-level** queries. Requires `serena` MCP. Tools: `find_symbol`, `get_symbol_references`, `search_for_pattern`, `find_files`, `get_symbol_definition`.
 
 **Use Tier 1 when:** query contains a symbol name, type name, file path, import path, or regex.
 
@@ -33,13 +25,7 @@ Use Serena for **precise, symbol-level** queries. Requires `serena` MCP configur
 
 ## Tier 2 — Semantic search via SocratiCode MCP
 
-Use SocratiCode for **intent-based, natural language** queries. Requires `socraticode` MCP configured.
-
-| Query type | SocratiCode tool |
-|---|---|
-| "Where is auth validation handled?" | `semantic_search` |
-| "Find all payment processing logic" | `semantic_search` |
-| "Where do we transform API responses?" | `semantic_search` |
+Use `semantic_search` for **intent-based, natural language** queries (e.g. "where is auth validation handled"). Requires `socraticode` MCP.
 
 **Use Tier 2 when:** query describes behaviour, a concept, or intent rather than a concrete symbol.
 
@@ -47,18 +33,11 @@ Use SocratiCode for **intent-based, natural language** queries. Requires `socrat
 
 ## Execution flow
 
-```
-1. CHECK session-memory (session-memory skill → SESSION START)
-   ├─ Cache HIT  → Return cached findings, skip MCP calls, note "from memory"
-   └─ Cache MISS → Continue
+1. **Check** session-memory first (cache HIT → return cached findings, skip MCP).
+2. **Select tier**: symbol/path/regex → Tier 1; intent/behaviour → Tier 2; complex → Tier 1 first, fill gaps with Tier 2.
+3. **Write** findings back to session-memory at SESSION END.
 
-2. SELECT tier:
-   ├─ Symbol / path / regex  → Tier 1: Serena
-   ├─ Intent / behaviour     → Tier 2: SocratiCode
-   └─ Complex (both)         → Run Tier 1 first, fill gaps with Tier 2
-
-3. WRITE findings to session-memory (SESSION END append)
-```
+If either MCP is unavailable, fall back to the available tier and note the limitation in output. Caps: ≤10 Serena calls and ≤5 SocratiCode queries (top-3) per session.
 
 ---
 
@@ -75,43 +54,6 @@ If nothing found in either tier: state that explicitly — **never fabricate fil
 
 ---
 
-## Integration with prp-plan Phase 2
+## Integration
 
-During prp-plan EXPLORE phase, this skill runs **after** the built-in
-`codebase-intelligence:codebase-explorer` and `codebase-intelligence:codebase-analyst` agents. It enriches their
-discovery table with two additions:
-
-1. **Serena column** — exact file:line for every symbol they mentioned
-2. **SocratiCode column** — semantic neighbours not found by static analysis
-
-The merged result replaces the standard discovery table in the plan.
-
----
-
-## Integration with prp-implement Phase 0
-
-Before each task in the implementation loop, the skill checks session-memory for prior
-findings about the files involved. Cache hits avoid redundant Serena calls mid-implementation.
-
----
-
-## MCP requirements
-
-Both MCPs are registered once via `claude mcp add --scope user` (Claude Code terminal)
-and are then available globally across all projects. See the repo README for setup commands.
-
-| MCP | Transport | Purpose |
-|---|---|---|
-| `serena` | stdio (Docker) | LSP structural search |
-| `socraticode` | stdio (npx) | Semantic vector search |
-
-If either is unavailable, fall back to the available tier and note the limitation in output.
-
----
-
-## Token efficiency rules
-
-- Never read entire files — use symbol lookups and targeted reads
-- Max 10 Serena calls per planning session
-- Max 5 SocratiCode queries per planning session, top-3 results each
-- Summarise findings — do not dump raw content into the plan
+Auto-invoked by `prp-plan` Phase 2 (EXPLORE) and `prp-implement` Phase 0 (per-task pre-load). Findings merge into the discovery table or task pre-context as applicable — orchestration owned by the caller.

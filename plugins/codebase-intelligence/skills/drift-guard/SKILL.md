@@ -9,19 +9,14 @@ description: >
   "should we also do X?", or "does this still match the requirement?".
   The skill's job is to be an honest, blunt mirror — not to block progress, but to ensure
   every decision traces back to the stated requirement.
-version: 2.0.0
+version: 2.0.1
 ---
 
 # drift-guard
 
 **One job**: keep every decision tethered to the original requirement and acceptance criteria.
 
-Drift is not always intentional. It happens when:
-- A "quick improvement" is added because it's nearby
-- An architectural curiosity becomes a rabbit hole
-- The solution solves a more general problem than asked
-- External research introduces scope not in the original task
-- A refactor expands beyond the files the feature touches
+Drift causes: nearby "quick improvements", architectural rabbit holes, over-generalised solutions, research-introduced scope, scope-bleeding refactors.
 
 ---
 
@@ -126,44 +121,16 @@ When drift is detected, do this before continuing:
 
 ## Integration with prp-plan
 
-### Injected at Phase 2 EXPLORE gate
-
-Before finalising the discovery table, run drift check #1 and #5:
-> "Do all the files I found actually need to change to satisfy the AC? Remove any that don't."
-
-### Injected at Phase 5 ARCHITECT gate
-
-Before writing the "Files to Change" table, run the full seven questions against the proposed
-file list and approach. For every file listed, it must trace to at least one AC item.
-
-### Injected at Phase 6 GENERATE gate
-
-Before saving the plan file, run drift check #7:
-> "Every AC item must have at least one task. Check now."
-
-If any AC item has no corresponding task → add it before finishing the plan.
+- **Phase 2 EXPLORE** → run #1 + #5 against discovery table; drop files that don't trace to AC.
+- **Phase 5 ARCHITECT** → run full 7 against the proposed Files-to-Change list. Every file must trace to ≥1 AC item.
+- **Phase 6 GENERATE** → run #7. If any AC has no task, add it before saving the plan.
 
 ---
 
 ## Integration with prp-implement
 
-### Before each task (Phase 3.1)
-
-Run drift questions #1 and #4:
-```
-Before implementing task {N}:
-  - Which AC does this serve? → {state it}
-  - Am I about to add anything the AC doesn't ask for? → {yes/no}
-```
-
-If no AC maps to this task: pause and verify it's in the plan's "Files to Change" table.
-If it's not → skip it and flag for review.
-
-### Mid-task drift trigger
-
-If implementing a task takes more than ~2x the expected effort (e.g., a "simple update" turns
-into a refactor), stop and run the full seven questions. Complexity explosion is a leading
-indicator of drift.
+- **Before each task (Phase 3.1)** → run #1 + #4: state which AC the task serves; confirm nothing extra. If no AC maps and the task isn't in Files-to-Change, skip and flag.
+- **Mid-task** → if effort exceeds ~2× expected, stop and run the full 7. Complexity explosion is a drift leading indicator.
 
 ### Before any "while I'm here" change
 
@@ -194,10 +161,8 @@ session file at `02-Notes/Sessions/{TICKET}-{BRANCH}.md`:
 
 ## What drift-guard does NOT do
 
-- It does not block legitimate discovery. If Phase 2 search reveals the task is larger than
-  expected, that's information — update the plan, don't ignore it.
-- It does not enforce rigid adherence when reality differs from the plan. Deviations are fine
-  when documented with a rationale.
-- It does not replace engineering judgment. It's a checklist, not a constraint.
+- Does not block legitimate discovery — if Phase 2 reveals more scope, update the plan.
+- Does not enforce rigid plan adherence — documented deviations are fine.
+- Does not replace engineering judgment — it's a checklist, not a constraint.
 
-The goal is **intentional deviation**, not zero deviation.
+Goal: **intentional deviation**, not zero deviation.

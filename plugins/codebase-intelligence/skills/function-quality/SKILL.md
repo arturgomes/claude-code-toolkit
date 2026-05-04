@@ -6,7 +6,7 @@ description: >
   testability, DRY, and naming. Use when reviewing individual functions, after writing a function,
   or when asked "review this function", "check function quality", "run QCHECKF", or automatically
   in prp-implement after function creation. Produces detailed per-function score and recommendations.
-version: 2.0.0
+version: 2.0.1
 ---
 
 # function-quality
@@ -57,90 +57,16 @@ Run the complete 20-item Function Quality Checklist on each function added or si
 
 ## Output Format
 
-For each function reviewed:
+**Output schema** (single function):
+- `# Function Quality Review`
+- `## Function: <name> at <file:line>` — score `[X/20]`
+- `## Violations` — one entry per failing item: ID, issue, fix, before/after code (only if helpful)
+- `## Strengths` — items the function passes well (include only if any)
+- `## Overall Assessment` — buckets (sum to 20): Readability /3, Complexity /3, Design /3, Type Safety /3, Testability /3, DRY /2, Naming /3 — each with one-line assessment, then `**Total**: [X/20]`
+- `**Verdict**: ✅ APPROVED | ⚠️ NEEDS WORK | ❌ REWRITE`
 
-```markdown
-# Function Quality Review
-
-## Function: `functionName` at `file.ts:lineNumber`
-
-**Score**: [X/20]
-
----
-
-## Violations
-
-1. **Item #N**: [Check description]
-   - **Issue**: [What's wrong]
-   - **Fix**: [How to fix it]
-   - **Example**:
-     ```typescript
-     // ❌ Before
-     [problematic code]
-
-     // ✅ After
-     [fixed code]
-     ```
-
-2. **Item #N**: [Check description]
-   - **Issue**: [What's wrong]
-   - **Fix**: [How to fix it]
-
----
-
-## Strengths
-
-- **Item #N**: [What's done well]
-- **Item #N**: [What's done well]
-
----
-
-## Overall Assessment
-
-- **Readability**: [X/3] — [Brief assessment]
-- **Complexity**: [X/3] — [Brief assessment]
-- **Design**: [X/3] — [Brief assessment]
-- **Type Safety**: [X/3] — [Brief assessment]
-- **Testability**: [X/3] — [Brief assessment]
-- **DRY**: [X/2] — [Brief assessment]
-- **Naming**: [X/3] — [Brief assessment]
-
-**Total**: [X/20]
-
-**Verdict**: [✅ APPROVED | ⚠️ NEEDS WORK | ❌ REWRITE]
-```
-
----
-
-## Multi-Function Review
-
-When reviewing multiple functions in one file:
-
-```markdown
-# Function Quality Review: `file.ts`
-
-## Summary
-- **Functions reviewed**: [N]
-- **Average score**: [X.X/20]
-- **Functions passing (≥17/20)**: [N]
-- **Functions needing work (<17/20)**: [N]
-
----
-
-## Function: `functionA` (line X)
-**Score**: [X/20]
-**Issues**: [Brief list]
-
----
-
-## Function: `functionB` (line Y)
-**Score**: [X/20]
-**Issues**: [Brief list]
-
----
-
-## File-Level Recommendations
-
-1. [Recommendation affecting multiple functions]
-2. [Recommendation affecting multiple functions]
-```
+**Output schema** (multi-function in one file):
+- `# Function Quality Review: <file>`
+- `## Summary` — N reviewed, average /20, N passing (≥17), N needing work (<17)
+- One section per function — score, brief issue list (full schema only if score < 17)
+- `## File-Level Recommendations` — recurring issues across functions (include only if any)

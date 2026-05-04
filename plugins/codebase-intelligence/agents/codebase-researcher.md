@@ -31,14 +31,21 @@ From the task description, identify:
 - Related tests
 
 ### 3. Tier 1 — Serena structural search
-For every concrete symbol, file, or module implied by the task:
+For every concrete symbol, file, or module implied by the task.
+Skip `find_symbol` if the request already includes an explicit `file:line` — use directly.
+
 - `find_symbol` → definitions and files
 - `get_symbol_references` → all callers/consumers
 - `find_files` → related files by name pattern
 
 ### 4. Tier 2 — SocratiCode semantic search
-Run 3–5 natural language queries covering the behavioural intent.
-Take top-3 results per query. Skip areas already covered by Serena or memory.
+
+Run only if Tier 1 left coverage gaps, or the request mentions intent/behaviour
+("how does X work", "where is Y handled") rather than naming concrete symbols.
+Skip otherwise — annotate `SocratiCode: skipped (Tier 1 sufficient)`.
+
+When run: 3–5 natural language queries, top-3 per query.
+Skip areas already covered by Serena or memory.
 
 ### 5. Compose research report
 
@@ -47,45 +54,39 @@ Take top-3 results per query. Skip areas already covered by Serena or memory.
 Ticket: <JIRA-TICKET>   Branch: <branch>   Date: <ISO date>
 Memory reused: <yes — N findings / no>
 
-## Entry points
+## Entry points (mandatory)
 | File | Line | Role | Source |
 |------|------|------|--------|
 
-## Core logic
+## Core logic (mandatory)
 | File | Line | Description | Source |
 |------|------|-------------|--------|
 
-## Data models / types
+## Data models / types (include only if ≥1 row)
 | File | Line | Type name | Source |
 |------|------|-----------|--------|
 
-## Existing tests
+## Existing tests (include only if ≥1 row)
 | File | Covers | Source |
 |------|--------|--------|
 
-## External dependencies
+## External dependencies (include only if ≥1 row)
 | File | Line | Dependency | Source |
 |------|------|------------|--------|
 
-## Risk areas
+## Risk areas (include only if ≥1 item)
 - <file or area that looks fragile, complex, or poorly tested>
 
-## Recommended implementation order
+## Recommended implementation order (include only if ≥1 step)
 1. <first touch point>
 2. <second touch point>
-
-## Source legend
-- memory: loaded from Obsidian vault via session-memory skill
-- serena: Serena LSP MCP
-- socraticode: SocratiCode semantic MCP
 ```
 
 ### 6. Save to memory
 Append findings to session-memory (SESSION END protocol).
 
 ## Constraints
-- Never read entire files — use symbol lookups and targeted reads
-- Max 10 Serena calls per run
-- Max 5 SocratiCode queries per run
-- If a symbol is not found, state it — do not guess file paths
-- Complete in a single agent run
+
+**Limits**: 10 Serena calls, 5 SocratiCode queries per run.
+**Reads**: targeted only — symbol lookups, never whole files.
+**Missing symbols**: state them; never guess paths.

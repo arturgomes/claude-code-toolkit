@@ -14,22 +14,16 @@ allowed-tools:
   - Bash(git branch *)
   - Bash(gh pr create *)
   - Bash(gh pr view *)
-version: 2.0.0
+version: 2.0.1
 ---
 
 Ship the current changes through commit, push, and PR creation. Confirm with the user before each step using the AskUserQuestion tool.
 
 ## Step 1: Scan
 
-- Run `git status` to see all changed, staged, and untracked files
-- Run `git diff` to see what changed (staged + unstaged)
-- Run `git log --oneline -5` to see recent commit style
-- Present a clear summary to the user:
-  - Files modified
-  - Files added
-  - Files deleted
-  - Untracked files
-- If there are no changes, tell the user and stop
+- Run `git status`, `git diff`, `git log --oneline -5`
+- Summarise changes (modified / added / deleted / untracked)
+- If no changes, stop
 
 ## Step 2: Stage & Commit
 
@@ -54,7 +48,7 @@ Ship the current changes through commit, push, and PR creation. Confirm with the
 
 ## Step 4: Pull Request
 
-- Check if a PR already exists for this branch (`gh pr view` — if it exists, show the URL and stop)
+- Check if PR exists for this branch via `gh pr view`. If yes, show URL and stop.
 - Analyze ALL commits on this branch vs the base branch (not just the latest commit)
 - Draft a PR title (under 72 chars) and body with:
   - Summary: 2-4 bullet points
