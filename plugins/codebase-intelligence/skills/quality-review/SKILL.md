@@ -1,11 +1,8 @@
 ---
 name: quality-review
 description: >
-  Comprehensive code quality review covering function quality, test quality, and best practices.
-  Acts as a skeptical senior software engineer to catch violations before merge. Use after
-  major changes, before committing, or when asked "review my code", "check quality", "run QCHECK",
-  or automatically after prp-implement tasks. Runs Function Quality Checklist, Test Quality Checklist,
-  and Implementation Best Practices checks. Produces structured feedback with file:line references.
+  Comprehensive quality review: Function Quality (20 items) + Test Quality (16 items) + best practices; produces file:line findings.
+  Trigger after major changes or on "review my code", "run QCHECK".
 version: 2.0.1
 ---
 

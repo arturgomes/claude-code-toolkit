@@ -1,13 +1,8 @@
 ---
 name: web-researcher
 description: >
-  Enhanced web-researcher. Extends prp-core:web-researcher with: KB pre-check (consults
-  personal knowledge base before any web search — KB-covered topics skip web entirely),
-  Context7 pre-check (verifies library API signatures before searching for usage patterns),
-  and drift-guard question #5 (flags any research findings that introduce scope not in the
-  original task). Use when you need information beyond training data — same purpose as
-  prp-core:web-researcher but KB and Context7 run first to minimise unnecessary web calls
-  and prevent hallucinated API usage.
+  Web researcher with KB + Context7 pre-checks (covered topics skip web) and drift-guard question #5 on findings.
+  Use when information is beyond training data — KB and Context7 run first to minimize unnecessary web calls.
 model: sonnet
 color: magenta
 ---

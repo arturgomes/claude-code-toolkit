@@ -1,12 +1,8 @@
 ---
 name: prp-socraticode-plan
 description: >
-  prp-plan variant with explicit SocratiCode tool calls in proper order: preflight
-  (codebase_status → codebase_index/update), Phase 2C enrichment (codebase_search →
-  codebase_context_search → codebase_flow → codebase_symbols), and Phase 5 impact
-  analysis (codebase_impact). Use exactly as prp-plan — pass a feature description,
-  Jira ticket, or .prd.md path. Prefer over prp-plan when SocratiCode is indexed and
-  available.
+  prp-plan variant with explicit SocratiCode tool calls (preflight → Phase 2C enrichment → Phase 5 impact analysis).
+  Prefer over prp-plan when SocratiCode is indexed. Same arguments: feature description, JIRA-TICKET, or path/to/prd.md.
 argument-hint: <feature description | JIRA-TICKET | path/to/prd.md>
 ---
 

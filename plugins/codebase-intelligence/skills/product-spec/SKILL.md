@@ -1,12 +1,8 @@
 ---
 name: product-spec
 description: >
-  Generate comprehensive Product Requirement Documents (PRDs) from feature ideas.
-  Acts as a Product Owner to define feature scope, user stories, acceptance criteria,
-  and technical constraints before planning begins. Use when starting a new feature,
-  defining requirements for a proposal, or when asked "create a PRD", "define product spec",
-  "act as product owner", or "what should this feature include?". Produces structured
-  artifacts ready for technical planning (QPLAN) and QA test generation (QUX).
+  Generate a structured PRD (user stories, AC, technical constraints) from a feature idea.
+  Trigger on "create a PRD", "define product spec", "act as product owner".
 version: 2.0.1
 ---
 

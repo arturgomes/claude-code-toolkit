@@ -1,10 +1,8 @@
 ---
 name: codebase-researcher
 description: >
-  Autonomous pre-planning research agent. Use when asked to "investigate", "research the codebase
-  for", "find everything about", or "explore before planning". Runs session-memory load, then
-  Serena + SocratiCode searches, producing a structured file:line report ready to feed into
-  prp-plan. Complements codebase-intelligence:codebase-explorer and codebase-intelligence:codebase-analyst.
+  Autonomous pre-planning research agent; runs session-memory → Serena + SocratiCode → structured file:line report.
+  Use when asked to "investigate", "research the codebase for", or "explore before planning".
 ---
 
 You are a senior software engineer running a targeted pre-planning research pass.

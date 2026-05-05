@@ -1,11 +1,8 @@
 ---
 name: codebase-search
 description: >
-  Two-tier codebase search using Serena (LSP/structural) and SocratiCode (semantic/vector).
-  Follows a cache-aside pattern: check session-memory first, search only on a miss, always write
-  findings back. Invoked automatically during prp-plan Phase 2 and prp-implement Phase 0.
-  Also invoke manually when asked to "find", "locate", "search", "where is X", or
-  "how does Y work" about the codebase.
+  Two-tier codebase search (Serena LSP + SocratiCode semantic) with session-memory cache-aside.
+  Auto-invoked by prp-plan/prp-implement; trigger manually on "find", "locate", "where is X", "how does Y work".
 version: 2.0.1
 ---
 

@@ -1,11 +1,8 @@
 ---
 name: benchmark-kb
 description: >
-  Run bookrag retrieval quality benchmark against the obsidian-vault knowledge base.
-  Execute /codebase-intelligence:benchmark-kb [domain] to benchmark semantic and hybrid
-  retrieval modes and display MRR/Recall@5/Recall@10/Precision@5 metrics per mode.
-  Optionally compare against a saved baseline to detect regressions. Domain argument:
-  software-craft | functional-programming | all (default: all).
+  Benchmark bookrag retrieval on the obsidian-vault KB; reports MRR/Recall@5/Recall@10/Precision@5 per mode
+  with optional regression check against a saved baseline. Domain: software-craft | functional-programming | all.
 argument-hint: "[software-craft | functional-programming | all]"
 version: 1.0.1
 ---

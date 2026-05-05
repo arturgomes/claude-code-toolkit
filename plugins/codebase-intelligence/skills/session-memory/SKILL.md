@@ -1,11 +1,8 @@
 ---
 name: session-memory
 description: >
-  Persist and restore investigation findings, implementation decisions, and QA failure notes
-  to Obsidian vault with frontmatter, wikilinks, and BM25 search. Replaces task-memory with
-  vault-based architecture. Invoked automatically by prp-plan and prp-implement, or manually
-  when asked to "save progress", "load context for PROJ-NNN", "what did we find last time",
-  or when resuming after a QA failure.
+  Persist and restore findings, decisions, and QA failures to Obsidian vault with BM25 search.
+  Auto-invoked by prp-plan/prp-implement; invoke manually on "save progress", "load context for PROJ-NNN", "resume after QA failure".
 version: 2.0.1
 ---
 

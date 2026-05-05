@@ -1,14 +1,8 @@
 ---
 name: drift-guard
 description: >
-  Continuously anchors planning and implementation work to the original task requirements
-  and acceptance criteria. Prevents scope creep, gold-plating, and architectural drift.
-  Invoked automatically at every phase gate in prp-plan and prp-implement.
-  Also invoke manually when something "feels off", when a task is taking longer than expected,
-  when a new idea emerges mid-implementation, or when asked "am I drifting?", "is this in scope?",
-  "should we also do X?", or "does this still match the requirement?".
-  The skill's job is to be an honest, blunt mirror — not to block progress, but to ensure
-  every decision traces back to the stated requirement.
+  Anchors every planning and implementation decision to the original AC via seven drift questions.
+  Auto-invoked at every phase gate; invoke manually on "am I drifting?", "is this in scope?", or when a task exceeds expected complexity.
 version: 2.0.1
 ---
 

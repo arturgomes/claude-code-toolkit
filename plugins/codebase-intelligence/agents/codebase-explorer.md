@@ -1,12 +1,8 @@
 ---
 name: codebase-explorer
 description: >
-  Enhanced codebase-explorer. Extends prp-core:codebase-explorer with: memory pre-fill
-  (skips re-searching areas already cached in session-memory), Serena LSP symbol resolution
-  for exact file:line references, SocratiCode semantic search for intent-based discovery,
-  and KB pattern lookup for the feature domain. Use when you need to locate files,
-  understand directory structure, and extract actual code patterns — the same as
-  prp-core:codebase-explorer but with codebase-intelligence sources wired in.
+  Locates WHERE code lives and extracts implementation patterns via Serena LSP + SocratiCode semantic + session-memory pre-fill.
+  Use to find files, map structure, and extract code patterns with file:line references.
 model: sonnet
 color: cyan
 ---

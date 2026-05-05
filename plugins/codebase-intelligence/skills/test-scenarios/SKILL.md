@@ -1,12 +1,8 @@
 ---
 name: test-scenarios
 description: >
-  Generate comprehensive test scenarios from feature descriptions, PRDs, or acceptance criteria.
-  Acts as a QA engineer to produce prioritized test cases covering happy paths, edge cases,
-  error conditions, performance, and security. Use when planning testing strategy, before
-  writing tests, or when asked "what should I test?", "generate QA scenarios", "test cases
-  for this feature", or automatically after prp-plan Phase 5 (ARCHITECT). Produces structured
-  test tables ready for implementation.
+  Generate prioritized test scenarios (happy paths, edge cases, errors, performance, security) from a feature description, PRD, or AC.
+  Trigger on "what should I test?", "generate QA scenarios", "test cases for this feature".
 version: 2.0.1
 ---
 

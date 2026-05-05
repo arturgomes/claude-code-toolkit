@@ -1,12 +1,8 @@
 ---
 name: prp-pr-review
 description: >
-  Fetch and address GitHub PR comments (especially GitHub Copilot) without requiring
-  prp-plan or prp-implement. Execute /prp-pr-review <PR_URL> to immediately fetch all
-  PR comments, evaluate each skeptically using the SKEPTIC verdict framework, apply only
-  valid suggestions as code changes, and report every decision with one-line rationale.
-  Use when Copilot or reviewers leave comments on an open PR and you want to address them
-  systematically without a full planning cycle.
+  Fetch and triage GitHub PR comments via the SKEPTIC framework; applies only valid suggestions with one-line rationale per decision.
+  Run as "/prp-pr-review <PR_URL>" when Copilot or reviewers leave comments on an open PR.
 argument-hint: <github-pr-url | owner/repo#number | PR-number>
 version: 1.0.1
 ---

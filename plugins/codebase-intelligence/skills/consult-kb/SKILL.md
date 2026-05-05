@@ -1,14 +1,8 @@
 ---
 name: consult-kb
 description: >
-  Review code, RFCs, architecture decisions, or ideas against a personal knowledge base of
-  validated principles and patterns. Use this skill when the user asks for a review, critique,
-  or audit of something they've written — code snippets, design docs, ADRs, RFCs, API designs,
-  or system diagrams — especially when they want consistency with documented standards.
-  Trigger phrases: "review this against my KB", "does this follow our patterns?", "critique this RFC",
-  "audit this design", "is this consistent with [book/principle]?", "review like a senior",
-  "check against our architecture principles". This produces structured feedback with KB citations,
-  not just generic code review.
+  Review code, RFCs, ADRs, or designs against the personal KB for violations, tensions, and aligned patterns.
+  Trigger on "review this against my KB", "does this follow our patterns?", "audit this design".
 version: 2.0.1
 ---
 

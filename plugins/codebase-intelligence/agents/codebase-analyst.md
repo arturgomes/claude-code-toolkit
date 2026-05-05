@@ -1,11 +1,8 @@
 ---
 name: codebase-analyst
 description: >
-  Enhanced codebase-analyst. Extends prp-core:codebase-analyst with: memory pre-fill
-  (restores prior data-flow findings), Serena LSP for precise symbol resolution of every
-  entry point and caller identified, and drift-guard question #2 (scope boundary check)
-  applied to the integration points mapped. Use proactively to understand HOW code works —
-  same purpose as prp-core:codebase-analyst but with LSP-verified file:line references.
+  Traces HOW code works — entry points, data flow, contracts — with Serena LSP for exact file:line resolution and session-memory pre-fill.
+  Use proactively to understand HOW code works — same purpose as prp-core:codebase-analyst but with LSP-verified references.
 model: sonnet
 color: cyan
 ---

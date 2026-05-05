@@ -1,12 +1,8 @@
 ---
 name: context7-research
 description: >
-  Fetch accurate, version-specific library documentation via the Context7 MCP before
-  writing any code that uses an external dependency. Invoked automatically during
-  prp-plan Phase 3 RESEARCH and prp-implement Phase 3 when a task involves a library.
-  Also invoke manually when asked "how does X work in version Y", "what's the API for Z",
-  "look up the docs for", or any question about a library's current interface.
-  Prevents hallucinated API calls by grounding every library usage in live documentation.
+  Fetch version-specific library docs via Context7 MCP before writing any external API call.
+  Auto-invoked by prp-plan/prp-implement; trigger manually on "what's the API for X", "look up docs for Y".
 version: 2.0.1
 ---
 

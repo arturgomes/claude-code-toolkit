@@ -1,11 +1,8 @@
 ---
 name: test-quality
 description: >
-  Run the 16-item Test Quality Checklist on test files. Acts as a skeptical senior engineer
-  reviewing test code for structure, quality, coverage, property testing, and integration.
-  Use when reviewing test files, after writing tests, or when asked "review my tests",
-  "check test quality", "run QCHECKT", or automatically in prp-implement after test creation.
-  Produces detailed per-test-file score and recommendations.
+  Run the 16-item Test Quality Checklist (structure, coverage, property testing, integration) on test files.
+  Trigger after writing tests or on "review my tests", "run QCHECKT".
 version: 2.0.1
 ---
 

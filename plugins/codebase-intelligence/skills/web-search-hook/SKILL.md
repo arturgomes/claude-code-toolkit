@@ -1,10 +1,8 @@
 ---
 name: web-search-hook
 description: >
-  Search local web cache before performing expensive web searches to reduce token consumption.
-  Use this skill proactively when the user asks questions that might be answered from previously
-  cached web content. Trigger on queries like "search for...", "find information about...",
-  "what does the web say about...". Always check the cache FIRST before using WebSearch.
+  Check local web cache before any WebSearch call to avoid redundant requests and token cost.
+  Trigger proactively on "search for...", "find information about...", "what does the web say about...".
 version: 2.0.1
 ---
 

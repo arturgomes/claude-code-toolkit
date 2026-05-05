@@ -1,9 +1,8 @@
 ---
 name: prp-plan
 description: >
-  Enhanced prp-plan. Extends prp-core:prp-plan with: cross-session memory (session-memory),
-  Jira context injection (Atlassian MCP), session-memory skill,
-  personal knowledge base consultation (ask-kb + consult-kb), verified library docs (Context7), and continuous requirements grounding (drift-guard). Use exactly as prp-core:prp-plan — pass a feature description, Jira ticket, or .prd.md path.
+  Transforms a feature description, Jira ticket, or PRD into an implementation plan with session memory, Jira injection, KB consultation, Context7 verification, and drift-guard at every phase gate.
+  Pass a feature description, JIRA-TICKET, or path/to/prd.md.
 argument-hint: <feature description | JIRA-TICKET | path/to/prd.md>
 ---
 
@@ -48,45 +47,17 @@ CLAUDE.md rules: @CLAUDE.md
 
 ## Pre-Phase I: MEMORY — Restore prior context
 
-Execute the session-memory skill to restore or create session context:
+`Skill(codebase-intelligence:session-memory)` → SESSION START protocol.
 
-```
-Skill(session-memory)
-```
-
-Follow the skill's SESSION START protocol:
-1. Extract ticket ID from branch name or `$ARGUMENTS`
-2. Load existing session from Obsidian vault (if exists)
-3. Create new session with frontmatter (if new)
-4. Report session status and ask user for next action
-
-The skill handles:
-- Vault-based session persistence at using Obsidian MCP `~/Documents/Obsidian-Vault/02-Notes/Sessions/`
-- Frontmatter metadata (ticket, branch, date, phase, keywords, tags)
-- FTS5 search index at `~/.claude/memory/{TICKET}/session_index.db`
-
-**PRE-PHASE-I CHECKPOINT:**
-- [ ] session-memory skill executed
-- [ ] Session context loaded or created
-- [ ] User confirmed next action
+**PRE-PHASE-I CHECKPOINT:** session loaded/created · user confirmed next action
 
 ---
 
 ## Pre-Phase II: JIRA — Inject ticket context
 
-If Atlassian MCP is available and a ticket ID was found:
+If Atlassian MCP available and ticket ID found: `get_issue(ticket_id)` → extract summary, description, AC, labels, priority. Scan comments for: fail, reject, QA, blocked, doesn't pass. Print QA failures as `⚠️ QA failure ({date}): {summary}`. If unavailable: note and skip.
 
-1. `get_issue(ticket_id)` → full issue
-2. Extract: summary, description, acceptance criteria, labels, priority, story points
-3. Scan all comments for: fail, reject, QA, blocked, doesn't pass, acceptance criteria
-4. QA failures found → print: "⚠️ QA failure detected ({date}): {one-line summary}"
-
-If unavailable: skip silently, note "Jira context unavailable" in plan.
-
-**PRE-PHASE-II CHECKPOINT:**
-- [ ] Jira ticket context fetched (or skipped with note)
-- [ ] Acceptance criteria captured
-- [ ] QA failures identified
+**PRE-PHASE-II CHECKPOINT:** Jira fetched (or skipped) · AC captured · QA failures noted
 
 ---
 
@@ -143,7 +114,6 @@ If PRD detected: read file, find next pending phase with dependencies complete, 
 **PHASE_0_CHECKPOINT:**
 - [ ] Input type determined
 - [ ] Feature description ready
-- [ANCHOR] {ticket} — AC: {AC list}
 
 ---
 
@@ -164,7 +134,6 @@ So that <benefit/value>
 - [ ] Problem statement specific and testable
 - [ ] User story maps to ≥1 AC item
 - [ ] Complexity has rationale
-- [ANCHOR] {ticket} — AC: {AC list}
 
 **GATE**: AMBIGUOUS requirements → STOP and ask before proceeding.
 
@@ -248,7 +217,6 @@ Remove rows that don't trace to any AC. Label them "Removed — out of scope."
 - [ ] KB consulted (result documented)
 - [ ] Discovery table has Source column
 - [ ] **DRIFT**: Every file in table traces to ≥1 AC
-- [ANCHOR] {ticket} — AC: {AC list}
 
 ---
 
@@ -308,7 +276,6 @@ If yes → label "Future consideration: {topic}", do NOT include in the plan.
 - [ ] KB consulted for research topics
 - [ ] Web researcher run for remaining gaps only
 - [ ] **DRIFT**: No research-introduced scope in plan
-- [ANCHOR] {ticket} — AC: {AC list}
 
 ---
 
@@ -356,7 +323,6 @@ Verdict MUST be ✅ ON TRACK before proceeding.
 - [ ] NOT_BUILDING is explicit
 - [ ] TASK ANCHOR boundaries updated
 - [ ] **DRIFT**: Full seven-question check → ✅ ON TRACK
-- [ANCHOR] {ticket} — AC: {AC list}
 
 ---
 
@@ -462,79 +428,17 @@ Completion Checklist · Risks and Mitigations
 
 ## Post-Phase: SAVE — Persist to session-memory
 
-Execute the session-memory skill to save the planning session:
-
-```
-Skill(session-memory)
-```
-
-Follow the skill's SESSION END protocol to append this planning session:
-
-```markdown
-## Session: {ISO date} — Planning
-
-### Investigated
-{file:line findings from discovery table}
-
-### Decisions
-{APPROACH_CHOSEN, scope exclusions}
-
-### KB findings
-{violations, tensions, principles applied, consult-kb results}
-
-### Context7 findings
-{confirmed library signatures}
-
-### Implementation status
-- [ ] Plan saved via `mcp__ultimate-obsidian__create_or_update_note` to `02-Notes/Plans/{feature}.plan.md`
-- [ ] Implementation not started
-
-### Drift decisions
-{any drift detected and resolved — or "none"}
-
-### Next steps
-- /codebase-intelligence:prp-implement ~/Documents/Obsidian-Vault/02-Notes/Plans/{feature}.plan.md
-```
-
-The skill will:
-- Append session to `~/Documents/Obsidian-Vault/02-Notes/Sessions/{TICKET}-{BRANCH}.md`
-- Extract and update keywords in frontmatter
-- Rebuild FTS5 index at `~/.claude/memory/{TICKET}/session_index.db`
+`Skill(codebase-intelligence:session-memory)` → SESSION END protocol. Include: Investigated (file:line findings), Decisions (APPROACH_CHOSEN + scope exclusions), KB findings (violations/tensions/principles), Context7 findings (confirmed signatures), Drift decisions, Implementation status (plan path + "not started"), Next steps (prp-implement command).
 
 </post_generation>
 
 <o>
-**OUTPUT_FILE**: `~/Documents/Obsidian-Vault/02-Notes/Plans/{kebab-case-feature-name}.plan.md`
+**OUTPUT_FILE**: `~/Documents/Obsidian-Vault/02-Notes/Plans/{kebab-case-feature-name}.plan.md` (saved via Obsidian MCP)
 
 If PRD input: update phase status to `in-progress`, link plan.
 
-**REPORT_TO_USER**:
-
-```markdown
-## Plan Created ✅
-
-**File**: using Obsidian MCP `~/Documents/Obsidian-Vault/02-Notes/Plans/{feature-name}.plan.md`
-**Ticket**: {JIRA-TICKET} — {summary}
-
-### Requirements grounding
-- AC items: {N} captured ✅
-- AC traceability: all items covered ✅
-- Drift checks passed: {N} gates ✅
-- Drift removals: {N} items removed from scope
-
-### Knowledge sources
-- 📁 Memory: {N} cached findings
-- 🔬 Serena: {N} symbols resolved
-- 🧠 SocratiCode: {N} semantic matches
-- 📚 KB ask-kb: {N} principles applied
-- 📚 KB consult-kb: {violations}/{tensions} found
-- 📖 Context7: {N} libraries, {N} signatures confirmed
-- 🌐 Web researcher: {N} gap topics
-
-**Complexity**: {LOW/MEDIUM/HIGH} · **Confidence**: {score}/10
-
-**Next**: `/codebase-intelligence:prp-implement ~/Documents/Obsidian-Vault/02-Notes/Plans/{feature-name}.plan.md`
-```
+**REPORT_TO_USER**: Report plan file path, ticket, complexity/confidence score, AC count, drift gates passed, source counts (Memory/Serena/SocratiCode/KB/Context7/Web), and next command:
+`/codebase-intelligence:prp-implement ~/Documents/Obsidian-Vault/02-Notes/Plans/{feature-name}.plan.md`
 </o>
 
 <verification>

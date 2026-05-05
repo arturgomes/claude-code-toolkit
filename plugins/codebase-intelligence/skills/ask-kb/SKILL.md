@@ -1,14 +1,8 @@
 ---
 name: ask-kb
 description: >
-  Query a personal knowledge base built from books, ebooks, and validated principles to answer
-  technical or strategic questions. Use this skill whenever the user asks "how should I...",
-  "what's the pattern for...", "what does [book] say about...", "according to my KB...", or
-  any question that should be answered from documented principles rather than improvised.
-  Also trigger when the user says "consult my KB", "check my knowledge base", "what do my
-  books say about X", or references specific sources like "Clean Code", "DDIA", "Playing to Win".
-  Prefer this over answering from general knowledge when the user has a KB configured —
-  consistent, source-backed answers beat improvised ones.
+  Query the personal knowledge base (books + validated principles) for technical or strategic questions.
+  Trigger on "how should I...", "what's the pattern for...", "what does [book] say about...", "consult my KB".
 version: 2.0.1
 ---
 

@@ -1,11 +1,8 @@
 ---
 name: function-quality
 description: >
-  Run the 20-item Function Quality Checklist on specific functions. Acts as a skeptical senior
-  engineer reviewing function-level code for readability, complexity, design, type safety,
-  testability, DRY, and naming. Use when reviewing individual functions, after writing a function,
-  or when asked "review this function", "check function quality", "run QCHECKF", or automatically
-  in prp-implement after function creation. Produces detailed per-function score and recommendations.
+  Run the 20-item Function Quality Checklist (readability, complexity, DRY, naming, type safety) on specific functions.
+  Trigger after writing a function or on "review this function", "run QCHECKF".
 version: 2.0.1
 ---
 

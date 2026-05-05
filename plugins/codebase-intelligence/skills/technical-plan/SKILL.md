@@ -1,12 +1,8 @@
 ---
 name: technical-plan
 description: >
-  Validate technical plans against codebase patterns to ensure consistency, minimal changes,
-  code reuse, DRY principles, and early returns. Use when reviewing implementation plans,
-  design documents, or before starting implementation. Triggers on "review my plan",
-  "validate this approach", "check plan consistency", "does this follow our patterns?",
-  or automatically after prp-plan Phase 4 (DESIGN). Prevents architectural drift by ensuring
-  plans leverage existing patterns rather than introducing new abstractions unnecessarily.
+  Validate implementation plans against codebase patterns for code reuse, DRY, and minimal changes.
+  Trigger on "review my plan", "validate this approach", "does this follow our patterns?".
 version: 2.0.1
 ---
 

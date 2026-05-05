@@ -1,7 +1,8 @@
 ---
 name: prp-implement
 description: >
-  Enhanced prp-implement. Extends prp-core:prp-implement with: cross-session memory restored before execution, Context7 library verification before each task that calls external APIs, KB consultation for implementation decisions, and continuous drift-guard checks that anchor every task to the original acceptance criteria. Use exactly as prp-core:prp-implement — pass the path to a .plan.md file.
+  Implements a .plan.md end-to-end: restores session memory, verifies library APIs via Context7 before each task, consults KB for pattern decisions, and runs drift-guard before every task.
+  Pass path/to/plan.md.
 argument-hint: <path/to/plan.md> [--base <branch>]
 ---
 
@@ -35,29 +36,9 @@ Fix issues immediately. Working implementation, not just existing code.
 
 ## Pre-Phase I: MEMORY — Restore prior context
 
-Execute the session-memory skill to restore implementation context:
+`Skill(codebase-intelligence:session-memory)` → SESSION START protocol. Extract ticket from branch or plan's "Intelligence Context". Restore implementation status checkboxes and GOTCHA notes from prior sessions.
 
-```
-Skill(session-memory)
-```
-
-Follow the skill's SESSION START protocol:
-1. Extract ticket ID from branch name or plan's "Intelligence Context"
-2. Load existing implementation session from Obsidian vault using Obsidian MCP (if exists)
-3. Create new session with frontmatter (if new)
-4. Restore prior implementation status and task progress
-
-The skill handles:
-- Vault-based session at `~/Documents/Obsidian-Vault/02-Notes/Sessions/{TICKET}-{BRANCH}.md` check using Obsidian MCP
-- Frontmatter restoration (ticket, branch, date, phase: implementation)
-- Implementation status checkboxes from prior session
-- GOTCHA notes for files listed in the plan
-- Git log verification of completed tasks
-
-**PRE-PHASE-I CHECKPOINT:**
-- [ ] session-memory skill executed
-- [ ] Session context loaded or created
-- [ ] Prior task state restored (if continuing)
+**PRE-PHASE-I CHECKPOINT:** session loaded/created · prior task state restored (if continuing)
 
 ---
 
@@ -209,7 +190,6 @@ Before starting task {N}:
 ```
 AC this task serves: {state it from AC Traceability table}
 Am I about to add anything the AC doesn't require? {yes → remove it / no → proceed}
-[ANCHOR] {ticket} — AC: {AC list}
 ```
 
 If the task has NO corresponding AC entry → pause, verify it's legitimately in scope,
@@ -272,31 +252,7 @@ Any thought starting with:
 
 ### Step 3.8 — Memory save per milestone
 
-Every 3 tasks (or after any significant discovery), use the session-memory skill to append interim progress:
-
-```markdown
-## Session: {ISO date} — Implementation (task {N}/{total})
-
-### Investigated
-- {file:line} — {what changed}
-
-### Decisions
-- {any deviation from plan and why}
-
-### Context7 findings (new)
-- {any API verified mid-implementation}
-
-### Implementation status
-- [x] Task 1: {desc}
-- [x] Task 2: {desc}
-- [ ] Task 3: {desc} ← current
-
-### Drift decisions
-- {any "while I'm here" thoughts discarded}
-
-### Next steps
-- Continue from Task {N+1}: {file}
-```
+Every 3 tasks (or after any significant discovery): `Skill(codebase-intelligence:session-memory)` → SESSION END protocol. Include: tasks completed (with AC mapping), plan deviations, new Context7 findings, drift decisions, next task to resume from.
 
 ### Step 3.9 — Track progress
 
@@ -473,52 +429,7 @@ mcp__ultimate-obsidian__move_note({
 
 ### 5.5 Final memory save
 
-Execute the session-memory skill to save the final implementation session:
-
-```
-Skill(session-memory)
-```
-
-Follow the skill's SESSION END protocol to append:
-
-```markdown
-## Session: {ISO date} — Implementation Complete
-
-### Investigated
-{all file:line findings}
-
-### Decisions
-{deviations and rationale}
-
-### Context7 findings
-{all library API confirmations — reusable in future sessions}
-
-### KB patterns applied
-{what was used and where}
-
-### Quality review
-- Functions: {N} reviewed, avg score {X/20}
-- Tests: {N} reviewed, avg score {X/16}
-- Violations fixed: {list critical issues fixed}
-- Status: {✅ PASS | ⚠️ NEEDS WORK}
-
-### Implementation status
-- [x] All {N} tasks complete
-- [x] Type-check ✅ lint ✅ tests ✅ build ✅
-- [x] All AC items verified ✅
-- [x] Quality review ✅
-- [x] Report: .claude/PRPs/reports/{name}-report.md
-
-### Drift decisions
-{what was kept out of scope and why — or "none"}
-
-### QA / Failures
-{any implementation failures and resolutions — or "none"}
-
-### Next steps
-- Review report, create PR: /prp-pr
-- If QA rejects: run /codebase-intelligence:prp-plan "fix {TICKET} QA failures" — memory is saved
-```
+`Skill(codebase-intelligence:session-memory)` → SESSION END protocol. Include: all file:line findings, decisions + deviations, all Context7 API confirmations (reusable), KB patterns applied, quality review scores (functions N avg X/20, tests N avg X/16, violations fixed), all tasks complete + AC verified + quality review status, next steps (PR command + QA failure recovery path).
 
 **PHASE_5_CHECKPOINT:**
 - [ ] Report with Intelligence Summary created
@@ -531,38 +442,7 @@ Follow the skill's SESSION END protocol to append:
 
 ## Phase 6: OUTPUT - Report to User
 
-```markdown
-## Implementation Complete ✅
-
-**Plan**: `$ARGUMENTS`
-**Branch**: `{branch}`
-**Ticket**: {JIRA-TICKET}
-
-### Validation
-| Check | Result |
-|---|---|
-| Type check | ✅ |
-| Lint | ✅ |
-| Tests | ✅ ({N} passed) |
-| Build | ✅ |
-| AC coverage | ✅ all {N} criteria verified |
-
-### Intelligence
-- Memory: {N} sessions loaded · {N} saves · {N} cache hits
-- Context7: {N} library APIs verified
-- KB: {N} patterns applied
-- Drift: {N} checks · {N} scope removals
-
-### Artifacts
-- Report: `.claude/PRPs/reports/{name}-report.md`
-- Plan archived: `.claude/PRPs/plans/completed/`
-- Session: `~/Documents/Obsidian-Vault/02-Notes/Sessions/{TICKET}-{BRANCH}.md`
-
-### Next
-1. Review report
-2. `/prp-pr` to create PR
-3. If QA rejects later: `/codebase-intelligence:prp-plan "fix {TICKET} QA failures"` — memory is ready
-```
+Report: plan path, branch, ticket, validation table (type-check/lint/tests/build/AC coverage — all ✅), intelligence counts (Memory sessions/saves/hits, Context7 verifications, KB patterns, drift checks/removals), artifact paths (report, archived plan, session vault path), and next steps (review report → `/prp-pr` → if QA rejects: `/codebase-intelligence:prp-plan "fix {TICKET} QA failures"`).
 
 ---
 

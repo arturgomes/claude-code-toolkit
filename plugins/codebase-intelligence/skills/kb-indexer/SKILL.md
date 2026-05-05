@@ -1,13 +1,8 @@
 ---
 name: kb-indexer
 description: >
-  Extract and index knowledge from ebooks, PDFs, and documents into a structured knowledge base
-  compatible with ask-kb and consult-kb. Use this skill when the user wants to add a book to
-  their KB, extract principles from a PDF, index an ebook, populate kb-registry.yaml, or
-  build/maintain their knowledge base from source materials.
-  Trigger phrases: "add this book to my KB", "extract principles from this PDF", "index this ebook",
-  "add to knowledge base", "extract from this document", "update my KB with this", "catalog this book".
-  This is the ingestion pipeline for the KB system.
+  Ingest ebooks, PDFs, and documents into the KB (bookrag DB + kb-registry.yaml) for use by ask-kb/consult-kb.
+  Trigger on "add this book to my KB", "extract principles from this PDF", "index this ebook".
 version: 2.0.1
 ---
 
