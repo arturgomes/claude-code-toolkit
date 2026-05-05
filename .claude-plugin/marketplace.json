@@ -7,7 +7,7 @@
   "metadata": {
     "description": "Codebase intelligence layer for prp-core: adds cross-session memory keyed by Jira ticket + branch, and Jira context injection directly into the prp-plan and prp-implement workflow phases.",
     "homepage": "https://github.com/arturgomes/claude-code-toolkit",
-    "version": "2.0.1"
+    "version": "3.0.0"
   },
   "plugins": [
     {
