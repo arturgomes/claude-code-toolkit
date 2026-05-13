@@ -312,6 +312,11 @@ Inside a Claude Code session:
 | `ask-kb` | Query personal KB for patterns and principles |
 | `consult-kb` | Review architecture decisions against KB |
 | `kb-indexer` | Ingest books/PDFs into the KB |
+| `skillify` | Extract a reusable SKILL.md draft from a completed plan + report pair (writes to `~/skill-drafts/`, never directly into the plugin) |
+| `doubt-driven` | Mid-flight adversarial review with a fresh-context sub-agent that falsifies load-bearing claims via grep; hooked into `prp-implement` Step 3.7b (one-shot at task ⌈N/2⌉) |
+| `claude-md-init` | Scaffold a 12-rule CLAUDE.md (Karpathy 1–4 + Mnilax 5–12) with anti-rationalization table and tool-routing tail; refuses to overwrite an existing ≥50-line CLAUDE.md without `--append` |
+| `ship` | Scan → commit → push → parallel review fan-out (function/test/security) → PR; skip rule for tiny PRs (≤2 files, <50 LOC, no `auth\|payment\|migration\|secret\|token\|crypto` path) |
+| `token-audit` | 9-pattern token-economy audit (CLAUDE.md bloat, history re-reads, hook injection, cache-miss sleeps, skill auto-load FPs, MCP idle cost, extended-thinking default, wrong-direction generation, plugin churn) → structured report in `02-Notes/Reports/` |
 
 ### Tools
 
