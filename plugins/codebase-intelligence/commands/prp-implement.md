@@ -250,6 +250,10 @@ Any thought starting with:
 → STOP. Run drift questions #4 (gold-plate) and #2 (scope boundary).
 → If not in AC: note it as a future improvement, do NOT implement now.
 
+### Step 3.7b — Mid-flight adversarial review (one-shot)
+
+At task `⌈total_tasks/2⌉` (skip if `total_tasks < 4`), invoke once: `Skill(codebase-intelligence:doubt-driven)`. Halts implementation only on HIGH-severity mismatches; otherwise logs findings and continues.
+
 ### Step 3.8 — Memory save per milestone
 
 Every 3 tasks (or after any significant discovery): `Skill(codebase-intelligence:session-memory)` → SESSION END protocol. Include: tasks completed (with AC mapping), plan deviations, new Context7 findings, drift decisions, next task to resume from.
