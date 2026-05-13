@@ -1,6 +1,6 @@
 ---
 name: ship
-description: Scan changes, commit, push, and create a PR — with confirmation at each step
+description: Scan changes, commit, push, run parallel review fan-out (function/test/security), and create a PR — with confirmation at each step
 argument-hint: "[optional commit message or PR title]"
 disable-model-invocation: true
 allowed-tools:
@@ -12,9 +12,10 @@ allowed-tools:
   - Bash(git push *)
   - Bash(git checkout *)
   - Bash(git branch *)
+  - Bash(git merge-base *)
   - Bash(gh pr create *)
   - Bash(gh pr view *)
-version: 2.0.1
+version: 2.1.0
 ---
 
 Ship the current changes through commit, push, and PR creation. Confirm with the user before each step using the AskUserQuestion tool.
@@ -46,6 +47,55 @@ Ship the current changes through commit, push, and PR creation. Confirm with the
 - **ASK the user to confirm** before pushing
 - Only after confirmation: push to remote
 
+## Step 3b: Review fan-out (parallel)
+
+Run after push, before PR draft. Three parallel adversarial reviewers in one message.
+
+### Scope + skip rule
+
+```bash
+BASE=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
+MERGE_BASE=$(git merge-base HEAD "origin/$BASE")
+FILES=$(git diff --name-only "$MERGE_BASE"..HEAD | wc -l)
+LOC=$(git diff --shortstat "$MERGE_BASE"..HEAD | awk '{print $4+$6}')
+SENSITIVE=$(git diff --name-only "$MERGE_BASE"..HEAD | grep -E 'auth|payment|migration|secret|token|crypto' | head -1)
+```
+
+**Skip fan-out** when ALL hold:
+- `FILES ≤ 2`
+- `LOC < 50`
+- `SENSITIVE` empty
+
+On skip, emit one line for the PR body: `Skipped: tiny PR ({FILES} files, {LOC} LOC, no sensitive paths)`.
+
+### Otherwise — three parallel reviewers
+
+In a single message, launch three `Agent(general-purpose)` calls. Each gets one prompt block from `REVIEWER_PROMPTS.md` plus the diff range `{MERGE_BASE}..HEAD`. Reviewers are independent — no shared context.
+
+| Reviewer | Lens | Prompt block |
+|---|---|---|
+| function | Function-Quality 20-item checklist | `REVIEWER_PROMPTS.md#function` |
+| test | Test-Quality 16-item checklist | `REVIEWER_PROMPTS.md#test` |
+| security | Security 12-item checklist | `REVIEWER_PROMPTS.md#security` |
+
+Each reviewer returns: verdict (`GO` / `NO-GO`), top-3 findings (file:line + one-line description), one-line rollback note if applicable.
+
+### Synthesis
+
+After all three reviewers return:
+
+```
+Aggregate verdict:
+  - GO if all three say GO
+  - NO-GO if any reviewer says NO-GO
+
+Top-3 blockers (highest severity across reviewers, dedup by file:line)
+
+Rollback note (longest single suggestion across reviewers)
+```
+
+Surface the synthesis to the user before Step 4 drafts the PR body.
+
 ## Step 4: Pull Request
 
 - Check if PR exists for this branch via `gh pr view`. If yes, show URL and stop.
@@ -53,6 +103,18 @@ Ship the current changes through commit, push, and PR creation. Confirm with the
 - Draft a PR title (under 72 chars) and body with:
   - Summary: 2-4 bullet points
   - Test plan: how to verify
+  - **Review fan-out** section (mandatory):
+    ```
+    ## Review fan-out
+    - Function: {GO|NO-GO} — {top finding or "—"}
+    - Test:     {GO|NO-GO} — {top finding or "—"}
+    - Security: {GO|NO-GO} — {top finding or "—"}
+
+    Aggregate: {GO|NO-GO}
+    {Top-3 blockers list, or "None"}
+    {Rollback note, or "—"}
+    ```
+    Or, if skipped: `Skipped: tiny PR (N files, M LOC, no sensitive paths)`.
 - **ASK the user to confirm or edit** the title and body
 - Only after confirmation: create the PR with `gh pr create`
 - Show the PR URL when done
