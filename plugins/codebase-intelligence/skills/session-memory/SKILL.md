@@ -14,13 +14,13 @@ with frontmatter metadata, wikilinks, and BM25 full-text search via SQLite FTS5 
 ## Memory file path
 
 ```
-~/Documents/Obsidian-Vault/02-Notes/Sessions/<TICKET>-<BRANCH>.md
+~/Documents/Obsidian-Vault/02-Notes/Sessions/<TICKET>-<SUFFIX>.md
 ```
 
 Examples:
-- `~/Documents/Obsidian-Vault/02-Notes/Sessions/PROJ-421-feature-pdf-export.md`
+- `~/Documents/Obsidian-Vault/02-Notes/Sessions/PROJ-421-pdf-export.md`
 - `~/Documents/Obsidian-Vault/02-Notes/Sessions/PROJ-388-bugfix-auth-timeout.md`
-- `~/Documents/Obsidian-Vault/02-Notes/Sessions/PROJ-512-main.md` ← fallback when branch has no ticket prefix
+- `~/Documents/Obsidian-Vault/02-Notes/Sessions/my-project-add-pdf-export.md` ← fallback: {project-root-name}-{feature-slug}
 
 **Index location**: `~/.claude/memory/<TICKET>/session_index.db`
 
@@ -35,28 +35,41 @@ git branch --show-current
 
 # 2. Extract ticket ID from branch (e.g. feature/PROJ-421-pdf → PROJ-421)
 # Match pattern [A-Z]+-[0-9]+ in branch name, or use $ARGUMENTS if provided.
-# If no match, use "GENERAL" as ticket.
+# If no match, derive project root folder name:
+#   basename $(git rev-parse --show-toplevel 2>/dev/null || pwd)
+# e.g. /Users/artur/Documents/ai-tools/claude-code-toolkit → "claude-code-toolkit"
+# → store result as {TICKET}
 
-# 3. Build vault-relative path
-VAULT_REL="02-Notes/Sessions/{TICKET}-{BRANCH}.md"
+# 3. Build filename suffix {SUFFIX}:
+# Non-descriptive branches (main, master, develop, development, HEAD, trunk):
+#   → slugify feature description to kebab-case (3–5 words from $ARGUMENTS or task context)
+#   e.g. "add project root tag fallback" → "project-root-tag-fallback"
+# Descriptive branches (feature/PROJ-421-pdf-export, fix-auth-timeout, etc.):
+#   → strip ticket prefix if present, use remainder as suffix
+#   e.g. "feature/PROJ-421-pdf-export" → "pdf-export"
+#   e.g. "fix-auth-timeout" → "fix-auth-timeout"
+# Fallback (no description, generic branch): use "session"
+
+# 4. Build vault-relative path
+VAULT_REL="02-Notes/Sessions/{TICKET}-{SUFFIX}.md"
 ```
 
 **HIERARCHY CHECK** (run once per new session before Step 4):
 ```
 mcp__ultimate-obsidian__list_vault({ path: "02-Notes/Sessions" })
 ```
-Confirms Sessions folder exists; verify new filename `{TICKET}-{BRANCH}.md` is not a duplicate.
+Confirms Sessions folder exists; verify new filename `{TICKET}-{SUFFIX}.md` is not a duplicate (SUFFIX = feature slug or branch).
 
 **Step 4 — Check for prior session:**
 ```
-mcp__ultimate-obsidian__check_exists({ filepath: "02-Notes/Sessions/{TICKET}-{BRANCH}.md" })
+mcp__ultimate-obsidian__check_exists({ filepath: "02-Notes/Sessions/{TICKET}-{SUFFIX}.md" })
 ```
 
 **If EXISTS** (`exists: true`):
 ```
-mcp__ultimate-obsidian__read_note({ filepath: "02-Notes/Sessions/{TICKET}-{BRANCH}.md" })
+mcp__ultimate-obsidian__read_note({ filepath: "02-Notes/Sessions/{TICKET}-{SUFFIX}.md" })
 ```
-- Print: `📂 Memory loaded for {TICKET} ({BRANCH})`
+- Print: `📂 Memory loaded for {TICKET} ({SUFFIX})`
 - Display: frontmatter keywords, last session date, implementation status
 - Search capability: call `search_sessions` with relevant keywords
 
@@ -66,10 +79,10 @@ mcp__ultimate-obsidian__read_note({ filepath: "02-Notes/Sessions/{TICKET}-{BRANC
 
 ```
 mcp__ultimate-obsidian__create_or_update_note({
-  filepath: "02-Notes/Sessions/{TICKET}-{BRANCH}.md",
+  filepath: "02-Notes/Sessions/{TICKET}-{SUFFIX}.md",
   mode: "overwrite",
   content: `---
-title: "Session: {TICKET} / {BRANCH}"
+title: "Session: {TICKET} / {SUFFIX}"
 ticket: {TICKET}
 branch: {BRANCH}
 date: {YYYY-MM-DD}
@@ -79,7 +92,7 @@ keywords: []
 tags: [#session, #{TICKET}]
 ---
 
-# Session Memory: [[{TICKET}]] / {BRANCH}
+# Session Memory: [[{TICKET}]] / {SUFFIX}
 
 **Created**: {ISO-8601 datetime}
 **Ticket**: {Jira URL if available, or TICKET value}
@@ -96,7 +109,7 @@ tags: [#session, #{TICKET}]
 **Step 1 — Append session block:**
 ```
 mcp__ultimate-obsidian__create_or_update_note({
-  filepath: "02-Notes/Sessions/{TICKET}-{BRANCH}.md",
+  filepath: "02-Notes/Sessions/{TICKET}-{SUFFIX}.md",
   mode: "append",
   content: `
 ## Session: {ISO-8601 datetime}
@@ -123,7 +136,7 @@ mcp__ultimate-obsidian__create_or_update_note({
 **Step 2 — Index + extract keywords:**
 ```
 mcp__ultimate-obsidian__index_note({
-  vault_path: "~/Documents/Obsidian-Vault/02-Notes/Sessions/{TICKET}-{BRANCH}.md"
+  vault_path: "~/Documents/Obsidian-Vault/02-Notes/Sessions/{TICKET}-{SUFFIX}.md"
 })
 ```
 `index_note` updates frontmatter `keywords:` (top 10 by term frequency from Investigated/Decisions/Implementation status) and rebuilds the FTS5 index in `~/.claude/memory/{TICKET}/session_index.db` in one call.
@@ -161,7 +174,7 @@ Queries `~/.claude/memory/*/session_index.db` (SQLite FTS5), returns BM25-ranked
 
 ```
 # 1. Load memory (SESSION START above)
-mcp__ultimate-obsidian__read_note({ filepath: "02-Notes/Sessions/{TICKET}-{BRANCH}.md" })
+mcp__ultimate-obsidian__read_note({ filepath: "02-Notes/Sessions/{TICKET}-{SUFFIX}.md" })
 
 # 2. Read "Implementation status" and "QA / Failures" sections from returned content
 
@@ -187,7 +200,7 @@ mcp__ultimate-obsidian__search_sessions({ query: "{ticket} QA failure", limit: 3
 - **Load**: Read frontmatter + last session only (first 50 lines)
 - **Search**: Return top 5 BM25-ranked results, not all sessions
 - **Write**: Store file:line refs, not code snippets — one line per finding
-- **Wikilinks**: Use [[TICKET-BRANCH]] for cross-references (Obsidian clickable)
+- **Wikilinks**: Use [[TICKET-SUFFIX]] for cross-references (Obsidian clickable)
 - **Keywords**: Auto-extracted, not manually curated
 - Never store secrets, tokens, or credentials
 

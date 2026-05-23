@@ -38,7 +38,28 @@ Fix issues immediately. Working implementation, not just existing code.
 
 `Skill(codebase-intelligence:session-memory)` → SESSION START protocol. Extract ticket from branch or plan's "Intelligence Context". Restore implementation status checkboxes and GOTCHA notes from prior sessions.
 
-**PRE-PHASE-I CHECKPOINT:** session loaded/created · prior task state restored (if continuing)
+```
+Skill(session-memory)
+```
+
+Follow the skill's SESSION START protocol:
+1. Extract ticket ID from branch name or plan's "Intelligence Context". If no ticket found, derive from git root: `basename $(git rev-parse --show-toplevel 2>/dev/null || pwd)`
+2. Build session filename suffix: if branch is non-descriptive (main/master/develop/development/HEAD/trunk), derive suffix from plan filename stem (already kebab-case). e.g. `project-root-tag-fallback.plan.md` → suffix = `project-root-tag-fallback`. Else use branch name (strip ticket prefix).
+3. Load existing implementation session from Obsidian vault using Obsidian MCP (if exists)
+4. Create new session with frontmatter (if new)
+5. Restore prior implementation status and task progress
+
+The skill handles:
+- Vault-based session at `~/Documents/Obsidian-Vault/02-Notes/Sessions/{TICKET}-{SUFFIX}.md` check using Obsidian MCP
+- Frontmatter restoration (ticket, branch, date, phase: implementation)
+- Implementation status checkboxes from prior session
+- GOTCHA notes for files listed in the plan
+- Git log verification of completed tasks
+
+**PRE-PHASE-I CHECKPOINT:**
+- [ ] session-memory skill executed
+- [ ] Session context loaded or created
+- [ ] Prior task state restored (if continuing)
 
 ---
 
@@ -364,16 +385,18 @@ mcp__ultimate-obsidian__create_or_update_note({
 })
 ```
 
+**PROJECT_ROOT_NAME**: derive via `basename $(git rev-parse --show-toplevel 2>/dev/null || pwd)` and use as `{project-root-name}` below.
+
 **FRONTMATTER_TEMPLATE**: Include at the start of every report file:
 ```yaml
 ---
 title: {plan-name}-report
 created: {YYYY-MM-DD}
 source: Implementation session
-project: claude-code-toolkit
+project: {project-root-name}
 tags:
   - prp
-  - claude-code-toolkit
+  - {project-root-name}
   - report
   - implementation
 plan: "[[{plan-name}]]"

@@ -491,16 +491,18 @@ mcp__ultimate-obsidian__create_or_update_note({
 })
 ```
 
+**PROJECT_ROOT_NAME**: derive via `basename $(git rev-parse --show-toplevel 2>/dev/null || pwd)` and use as `{project-root-name}` below.
+
 **FRONTMATTER_TEMPLATE**: Include at the start of every plan file:
 ```yaml
 ---
 title: {kebab-case-feature-name}
 created: {YYYY-MM-DD}
 source: Planning session (vault-native)
-project: claude-code-toolkit
+project: {project-root-name}
 tags:
   - prp
-  - claude-code-toolkit
+  - {project-root-name}
   - plan
   - {feature-category}
 ---

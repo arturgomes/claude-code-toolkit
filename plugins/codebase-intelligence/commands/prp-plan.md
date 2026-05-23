@@ -49,7 +49,26 @@ CLAUDE.md rules: @CLAUDE.md
 
 `Skill(codebase-intelligence:session-memory)` → SESSION START protocol.
 
-**PRE-PHASE-I CHECKPOINT:** session loaded/created · user confirmed next action
+```
+Skill(session-memory)
+```
+
+Follow the skill's SESSION START protocol:
+1. Extract ticket ID from branch name or `$ARGUMENTS`. If no ticket found, derive from git root: `basename $(git rev-parse --show-toplevel 2>/dev/null || pwd)`
+2. Build session filename suffix: if branch is non-descriptive (main/master/develop/development/HEAD/trunk), slugify $ARGUMENTS → first 4–5 words, kebab-case (e.g. "add pdf export" → "add-pdf-export"). Else use branch name (strip ticket prefix).
+3. Load existing session from Obsidian vault (if exists)
+4. Create new session with frontmatter (if new)
+5. Report session status and ask user for next action
+
+The skill handles:
+- Vault-based session persistence at using Obsidian MCP `~/Documents/Obsidian-Vault/02-Notes/Sessions/`
+- Frontmatter metadata (ticket, branch, date, phase, keywords, tags)
+- FTS5 search index at `~/.claude/memory/{TICKET}/session_index.db`
+
+**PRE-PHASE-I CHECKPOINT:**
+- [ ] session-memory skill executed
+- [ ] Session context loaded or created
+- [ ] User confirmed next action
 
 ---
 
@@ -342,16 +361,18 @@ mcp__ultimate-obsidian__create_or_update_note({
 })
 ```
 
+**PROJECT_ROOT_NAME**: derive via `basename $(git rev-parse --show-toplevel 2>/dev/null || pwd)` and use as `{project-root-name}` below.
+
 **FRONTMATTER_TEMPLATE**: Include at the start of every plan file:
 ```yaml
 ---
 title: {kebab-case-feature-name}
 created: {YYYY-MM-DD}
 source: Planning session (vault-native)
-project: claude-code-toolkit
+project: {project-root-name}
 tags:
   - prp
-  - claude-code-toolkit
+  - {project-root-name}
   - plan
   - {feature-category}
 ---
