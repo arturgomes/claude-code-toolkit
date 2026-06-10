@@ -3,7 +3,8 @@ name: session-memory
 description: >
   Persist and restore findings, decisions, and QA failures to Obsidian vault with BM25 search.
   Auto-invoked by prp-plan/prp-implement; invoke manually on "save progress", "load context for PROJ-NNN", "resume after QA failure".
-version: 2.0.1
+  Provides the Loop Ledger append protocol for prp-loop.
+version: 2.1.0
 ---
 
 # session-memory
@@ -140,6 +141,51 @@ mcp__ultimate-obsidian__index_note({
 })
 ```
 `index_note` updates frontmatter `keywords:` (top 10 by term frequency from Investigated/Decisions/Implementation status) and rebuilds the FTS5 index in `~/.claude/memory/{TICKET}/session_index.db` in one call.
+
+---
+
+## LOOP LEDGER — append protocol (used by prp-loop)
+
+Optional section. Only present in sessions driven by `prp-loop`; SESSION START/END are
+unchanged whether or not it exists.
+
+**Step 1 — First attempt only**: append the table header after the LOOP CONTRACT block
+(the contract is appended by the `loop-contract` skill):
+
+```
+mcp__ultimate-obsidian__create_or_update_note({
+  filepath: "02-Notes/Sessions/{TICKET}-{SUFFIX}.md",
+  mode: "append",
+  content: `
+## Loop Ledger
+
+| n | timestamp | gate | verifier | diff summary | next move |
+|---|---|---|---|---|---|
+`
+})
+```
+
+**Step 2 — Every attempt** (including drift-failed and gate-failed attempts): append one row:
+
+```
+mcp__ultimate-obsidian__create_or_update_note({
+  filepath: "02-Notes/Sessions/{TICKET}-{SUFFIX}.md",
+  mode: "append",
+  content: `| {n} | {ISO-8601} | {PASS exit 0 | FAIL exit N | not-run} | {PASS | FAIL | —} | {files +N/-N, one-line gist} | {next move} |
+`
+})
+```
+
+**Step 3 — On loop exit**: run SESSION END (above) as normal, then `index_note` — ledger
+rows are indexed and searchable like any session content.
+
+**Restore rule** (SESSION START in a prp-loop run): if the loaded session contains
+`## LOOP CONTRACT` + `## Loop Ledger`, report the last row's `n` and `next move` —
+the loop resumes at iteration `n + 1` and must not retry approaches the ledger shows failed.
+
+Rationale: the ledger is durable loop state in the vault (KB: Checkpointer Pattern /
+Persistence in AI Workflows) — "DISCOVER on run 47 knows everything runs 1 through 46
+already tried."
 
 ---
 

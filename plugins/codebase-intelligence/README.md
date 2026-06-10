@@ -2,6 +2,8 @@
 
 Intelligence layer for prp-core. Adds memory, KB, Context7, and drift-guard to
 `prp-plan` and `prp-implement` without removing any original prp-core logic.
+v3.3.0 adds `prp-loop`: a bounded closed-loop runner with contract-mandated stop
+rules and an independent verifier.
 
 ---
 
@@ -66,6 +68,41 @@ Phase 5.2 report:
 
 Phase 5.5      → session-memory: final save (Context7 + KB findings preserved for future sessions)
 ```
+
+## Loop capability — prp-loop (v3.3.0)
+
+Closed-loop runner: re-attempts a goal until an executable gate passes AND an
+independent fresh-context verifier confirms it — or a hard stop fires. Design
+grounded in the loop-engineering corpus (`02-Notes/Telegram-Inbox/2026-06-10-*`):
+minimum viable loop = one skill + one state file + one gate, maker-checker split,
+hard stops mandatory.
+
+```
+Pre-Phase I    → session-memory: restore LOOP CONTRACT + Loop Ledger (resume at n+1)
+Pre-Phase II   → loop-contract: 4-condition pre-check + contract (GATE: 🔴 NO GATE = refuse)
+Pre-Phase III  → anchor: AC from plan's Intelligence Context, or contract Objective
+
+Phase L (per attempt):
+  L.1          → drift-guard Q#1,4 — drift counts as a FAILED attempt (consumes budget)
+  L.2          → contract reread (constraints decay across iterations)
+  L.3          → ATTEMPT (prp-implement task conventions; ledger-aware: never retry
+                 what attempts 1..n-1 already failed)
+  L.4          → GATE: contract's executable command, binary exit code
+  L.5          → VERIFY: fresh-context sub-agent; sees contract + gate output + diff
+                 ONLY — never the maker's reasoning; checks vacuous passes + gamed gates
+  L.6          → session-memory: Loop Ledger row (durable state in vault)
+  L.7          → DECIDE: success | MAX_ITER (default 5) | NO_PROGRESS (2 identical
+                 failures) | CONTEXT_CAP (40%) | HUMAN_GATE (irreversible actions)
+
+Phase R        → loop report (full ledger + honest exit status) + session-memory save
+```
+
+**When to use**: closed, binary-gated work — make failing tests pass, fix lint/build,
+QA-failure retry, gate-verified refactors.
+**When NOT to use** (loop-contract refuses or human stays in the chair): architecture,
+auth/payments, deploys, judgment-call "done", diffs nobody will read.
+**Not included by design**: scheduling/cron (loop must earn trust manually first),
+fleet orchestration, auto-invocation from prp-implement.
 
 ---
 
