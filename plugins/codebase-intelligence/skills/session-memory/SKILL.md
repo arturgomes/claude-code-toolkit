@@ -189,6 +189,48 @@ already tried."
 
 ---
 
+## LOOP CONSTRAINTS — append protocol (used by prp-loop L.6b)
+
+Optional section. The ledger records *what happened*; Loop Constraints record *rules the loop
+must not violate again* — promoted from recurring failures or verifier gate-gaming findings.
+The self-improving piece: a lesson learned once becomes a durable rule re-read every later
+iteration, so the loop stops re-deriving the same mistake.
+
+**Step 1 — First promotion only**: append the block header after the Loop Ledger:
+
+```
+mcp__ultimate-obsidian__create_or_update_note({
+  filepath: "02-Notes/Sessions/{TICKET}-{SUFFIX}.md",
+  mode: "append",
+  content: `
+## Loop Constraints
+
+`
+})
+```
+
+**Step 2 — Each promotion**: append one imperative rule line. **Dedupe first** — read the
+existing block; if a rule already says the same thing, do not append a near-duplicate.
+
+```
+mcp__ultimate-obsidian__create_or_update_note({
+  filepath: "02-Notes/Sessions/{TICKET}-{SUFFIX}.md",
+  mode: "append",
+  content: `- {imperative rule}  (promoted at attempt {n}: {one-line cause})
+`
+})
+```
+
+Constraints **inform** attempts only — they never widen the contract Boundaries or weaken the
+gate. Changing those is a new contract, not a constraint.
+
+**Restore rule** (SESSION START in a prp-loop run): if the loaded session contains a
+`## Loop Constraints` block, surface it alongside the contract — every attempt's L.2 reread
+must honor these rules. The `Subagent ATTEMPT:` line lives in the `## LOOP CONTRACT` block
+(written by `loop-contract` / prp-loop Pre-Phase IV), not here.
+
+---
+
 ## SEARCH SESSIONS — keyword search across all sessions
 
 When user asks: "Search sessions for {keyword}", "What did we decide about {topic}", "Find sessions about {feature}":

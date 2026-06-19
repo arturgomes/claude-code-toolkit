@@ -63,8 +63,12 @@ Evidence Standard:
   every attempt records: file:line refs, command output (verbatim tail), diff summary
 
 Verifier:
-  fresh-context sub-agent; inputs = this contract + gate output + diff ONLY
-  (never the maker's reasoning)
+  fresh-context sub-agent; inputs = this contract + gate output + diff + attempt n ONLY
+  (never the maker's reasoning); scrutiny rises with n (anti gate-overfit)
+
+Subagent ATTEMPT: enabled | disabled
+  (set once at prp-loop Pre-Phase IV; enabled → each L.3 attempt runs in a fresh-context
+   sub-agent for context isolation. A single delegate, never a fan-out. Default disabled.)
 ```
 
 This contract is **FIXED** for the loop's lifetime. Changing the objective or
@@ -131,3 +135,4 @@ Keep a human in the chair for (*agentic-loops-in-ai-development.md*,
 - `drift-guard/SKILL.md` — fixed anchor block + verdict levels → adapted to contract + contract verdict.
 - Workflow Contract — objective/boundaries/role map/evidence standard/stop rule (`02-Notes/Telegram-Inbox/2026-06-10-claude-code-dynamic-workflows-for-ai-agent-coordination.md`).
 - 4-condition test + objective-gates-only (`02-Notes/Telegram-Inbox/2026-06-10-loop-engineering-roadmap.md`).
+- Subagent ATTEMPT toggle (context isolation) + escalating verifier scrutiny (`02-Notes/Telegram-Inbox/2026-06-18-kimi-k2-6-self-improving-loop.md`, `2026-06-18-loop-engineering-for-trading-strategies.md`).

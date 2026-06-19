@@ -3,7 +3,10 @@
 Intelligence layer for prp-core. Adds memory, KB, Context7, and drift-guard to
 `prp-plan` and `prp-implement` without removing any original prp-core logic.
 v3.3.0 adds `prp-loop`: a bounded closed-loop runner with contract-mandated stop
-rules and an independent verifier.
+rules and an independent verifier. v3.4.0 makes the loop self-improving: an optional
+context-isolating subagent for each attempt (toggled per session), promotion of recurring
+or gamed failures to durable `## Loop Constraints`, and a verifier that escalates scrutiny
+with attempt count (grounded in `02-Notes/Telegram-Inbox/2026-06-18-*`).
 
 ---
 
@@ -69,7 +72,7 @@ Phase 5.2 report:
 Phase 5.5      → session-memory: final save (Context7 + KB findings preserved for future sessions)
 ```
 
-## Loop capability — prp-loop (v3.3.0)
+## Loop capability — prp-loop (v3.4.0)
 
 Closed-loop runner: re-attempts a goal until an executable gate passes AND an
 independent fresh-context verifier confirms it — or a hard stop fires. Design
@@ -78,19 +81,22 @@ minimum viable loop = one skill + one state file + one gate, maker-checker split
 hard stops mandatory.
 
 ```
-Pre-Phase I    → session-memory: restore LOOP CONTRACT + Loop Ledger (resume at n+1)
+Pre-Phase I    → session-memory: restore LOOP CONTRACT + Loop Ledger + Loop Constraints (resume at n+1)
 Pre-Phase II   → loop-contract: 4-condition pre-check + contract (GATE: 🔴 NO GATE = refuse)
 Pre-Phase III  → anchor: AC from plan's Intelligence Context, or contract Objective
+Pre-Phase IV   → subagent mode: ask once (enable/disable attempt delegation), persist to contract
 
 Phase L (per attempt):
   L.1          → drift-guard Q#1,4 — drift counts as a FAILED attempt (consumes budget)
-  L.2          → contract reread (constraints decay across iterations)
+  L.2          → contract + Loop Constraints reread (both decay across iterations)
   L.3          → ATTEMPT (prp-implement task conventions; ledger-aware: never retry
-                 what attempts 1..n-1 already failed)
+                 what attempts 1..n-1 already failed; optional fresh-context subagent if enabled)
   L.4          → GATE: contract's executable command, binary exit code
-  L.5          → VERIFY: fresh-context sub-agent; sees contract + gate output + diff
-                 ONLY — never the maker's reasoning; checks vacuous passes + gamed gates
+  L.5          → VERIFY: fresh-context sub-agent; sees contract + gate output + diff + attempt n
+                 ONLY — never the maker's reasoning; checks vacuous passes, gamed gates, overfit;
+                 scrutiny rises with n
   L.6          → session-memory: Loop Ledger row (durable state in vault)
+  L.6b         → PROMOTE: recurring/gamed failure → durable Loop Constraints (self-improving)
   L.7          → DECIDE: success | MAX_ITER (default 5) | NO_PROGRESS (2 identical
                  failures) | CONTEXT_CAP (40%) | HUMAN_GATE (irreversible actions)
 
