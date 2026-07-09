@@ -30,6 +30,15 @@ Fix issues immediately. Working implementation, not just existing code.
 
 ---
 
+## Model capability (read first)
+
+This skill is model-agnostic. Read `CI_MODEL_TIER` (values: `frontier` | `standard` | `light`; default `standard` when unset or unknown).
+- `frontier`: treat numbered sub-steps as intent; skip redundant per-step narration.
+- `standard` / `light`: follow every numbered step verbatim.
+Invariants are mandatory at EVERY tier and never skipped: executable gates, the AC anchor, drift checks, write-before-stop, the independent blind verifier, and blast-radius routing.
+
+---
+
 <!-- ═══════════════════════════════════════════════════════════════════
      PRE-PHASES — codebase-intelligence
      ═══════════════════════════════════════════════════════════════════ -->
@@ -199,6 +208,8 @@ If the plan has a `Context7 Library Facts` section:
 - Load confirmed signatures into working memory now
 - These replace any API calls made from training-data memory during implementation
 
+**Load strategy (context-budget aware):** when the context budget comfortably fits, load the full plan + all Context7 facts + all relevant memory before Task 1 (single up-front load, fewer round-trips). Otherwise fall back to per-task load (Step 3.2) — read only the MIRROR/IMPORTS and facts each task needs, when it needs them. Neither strategy skips any invariant; this only controls *when* context is pulled, not *whether* gates run.
+
 ---
 
 **For each task in the plan's Step-by-Step Tasks:**
@@ -215,6 +226,14 @@ Am I about to add anything the AC doesn't require? {yes → remove it / no → p
 
 If the task has NO corresponding AC entry → pause, verify it's legitimately in scope,
 document the justification, then proceed (or skip if not justified).
+
+**Prior-incident scan (S6):** query `mcp__ultimate-obsidian__search_sessions` (scoped to the "## Open Failures", "## Lessons", and "## Loop Constraints" sections) for the file(s) this task changes. If a prior failure matches one of those files, print:
+```
+⚠️ prior incident: <session:date> — <one-line summary>
+```
+and require this attempt to explicitly address the prior incident (state how, or why it no longer applies) before implementing. If `search_sessions` is unavailable, note it and proceed (no-op).
+
+**Effort matching (S9):** if the runtime exposes a reasoning-effort or extended-thinking control, match it to the plan's complexity for this task (higher effort for architectural/high-risk tasks, lower for mechanical edits); if no such control exists, this is a no-op.
 
 ### Step 3.2 — Read context with memory
 
@@ -244,6 +263,8 @@ Follow skill: `codebase-intelligence:ask-kb`.
 If KB has a recommendation → follow it and cite it in the implementation comment.
 If KB is silent → use the codebase's existing pattern (from MIRROR) and continue.
 
+**Advisor-tier consult (S3, consume):** at genuine decision points only (a pattern/architecture choice, or a drift escalation), the implementer MAY consult the advisor tier **once per task** using the Model Routing block defined in `prp-plan`. Bulk edits, renames, and mechanical changes stay on the executor tier — do not route them to the advisor. **Single-tier no-op:** if only one model tier is available (no routing configured), skip the advisor hop and proceed on the single tier; this is never blocking.
+
 ### Step 3.5 — Implement
 
 1. Make the change exactly as specified in the task
@@ -256,6 +277,8 @@ If KB is silent → use the codebase's existing pattern (from MIRROR) and contin
 
 Run the type-check command from the plan's Validation Commands after EVERY file change.
 Do not proceed to the next task until type-check passes.
+
+**Behavioral gate (PI2):** type-check alone is not enough. Before Step 3.9 may mark this task done, the task's AC-mapped test (from the AC Traceability table) must pass — or, if no test exists yet, a minimal repro that exercises the task's behavior must pass. Run it now and confirm exit code `0`. Do NOT defer this behavioral proof to Phase 4: a task whose behavioral test/repro has not passed stays open (not done). Gate predicate: `type-check exit 0 AND AC-mapped-test-or-repro exit 0`.
 
 ### Step 3.7 — Mid-task drift check
 
@@ -279,6 +302,18 @@ At task `⌈total_tasks/2⌉` (skip if `total_tasks < 4`), invoke once: `Skill(c
 
 Every 3 tasks (or after any significant discovery): `Skill(codebase-intelligence:session-memory)` → SESSION END protocol. Include: tasks completed (with AC mapping), plan deviations, new Context7 findings, drift decisions, next task to resume from.
 
+**Failure logging (PI4):** when a validation, test, or behavioral gate fails, write it to the session's "## Open Failures" section with a **required `Verify:` field** — either a repro command (exact string) or a root-cause `file:line`. A failure with an empty `Verify:` field stays in "## Open Failures" only; it is copied to "## General Rules" **only once its `Verify:` field is filled** (repro reproduces, or root cause pinned). No Rule is promoted to "## General Rules" without a filled `Verify:` entry.
+
+### Step 3.8b — Lessons capture (symptom → rule)
+
+On any **non-obvious fix, GOTCHA hit, or drift correction** during this task, append exactly one line to session-memory in the form:
+```
+symptom → rule
+```
+(e.g. `type error on retry() call → verify library signature via Context7 before writing external calls`). One line per incident; keep it terse and reusable.
+
+**Tier gating (PI3):** first-class extraction of these lessons into reusable artifacts (the skillify pass, Step 5.6) is gated to the `frontier` tier. `standard` / `light` tiers still record the raw `symptom → rule` lines and **consume** any existing lessons/artifacts — they are never blocked from proceeding when extraction is unavailable.
+
 ### Step 3.9 — Track progress
 
 ```
@@ -293,6 +328,8 @@ to clear the session and restart in another one.
 **PHASE_3_CHECKPOINT:**
 - [ ] All tasks executed in order
 - [ ] Each task passed type-check immediately
+- [ ] Each task passed its behavioral gate (AC-mapped test or minimal repro, exit 0) before being marked done
+- [ ] Prior-incident scan run per task; matched incidents addressed
 - [ ] Drift check run before every task
 - [ ] Context7 verified for all library calls
 - [ ] KB consulted for pattern decisions
@@ -328,13 +365,25 @@ Run integration tests per plan instructions for API/server changes.
 
 ### 4.5 AC Verification
 
-For each AC item in the plan, explicitly verify:
+For each AC item in the plan, explicitly verify. Each AC row MUST include the **verbatim command that was run**, its **exit code**, and the **proving output line** (the actual line from the transcript that demonstrates the AC holds):
 ```
-AC 1: "{verbatim AC}" → {test that covers it} → {result}
-AC 2: "{verbatim AC}" → {test that covers it} → {result}
+AC 1: "{verbatim AC}"
+  cmd:    {verbatim command run}
+  exit:   {exit code, e.g. 0}
+  proof:  {the pasted output line that proves it}
+AC 2: "{verbatim AC}"
+  cmd:    {verbatim command run}
+  exit:   {exit code}
+  proof:  {the pasted output line that proves it}
 ```
 
+**GATE:** a narrative claim without pasted command output does not count as verified. An AC row missing its verbatim command, exit code, or pasted proving output line is NOT green.
+
 All AC items must be green before marking implementation complete.
+
+**Verified Invariants persistence (PL4):** when an AC turns green, append its exact validation command to a "## Verified Invariants" block in session-memory (`Skill(codebase-intelligence:session-memory)`). This block accumulates the exact commands that prove each AC, so a later session can re-run them verbatim.
+
+**Transcript capture (PI1):** retain the actual test-run transcript (command + exit code + output) for inclusion verbatim in the Phase 5 report AC coverage table.
 
 ### 4.6 Quality Review
 
@@ -357,12 +406,27 @@ If ❌ BLOCKED:
 
 Document quality score for inclusion in implementation report.
 
+### 4.7 Redaction pre-write (S4)
+
+Before writing ANY validation output, AC transcript, or command transcript into the report (Phase 5) or session-memory, scan it for secrets and sensitive data:
+- API keys / access tokens
+- bearer tokens / `Authorization:` headers
+- `.env` values
+- connection strings (DB URLs with credentials)
+- third-party service / vendor names that shouldn't leak
+
+Replace every match with the marker `[REDACTED]` before the write. This runs on both Phase 4 (session-memory) and Phase 5 (report) writes. Redaction never removes the *proof* — replace only the sensitive substring, keeping the surrounding proving output line intact.
+
 **PHASE_4_CHECKPOINT:**
 - [ ] Type-check passes
 - [ ] Lint passes
 - [ ] Tests pass
 - [ ] Build succeeds
 - [ ] **Every AC item verified with a specific test** ← drift-guard final gate
+- [ ] Every AC row has verbatim command + exit code + pasted proving output (no narrative-only claims)
+- [ ] Green AC commands appended to "## Verified Invariants" in session-memory
+- [ ] no Rule promoted without a Verify entry
+- [ ] Redaction pre-write run — secrets replaced with [REDACTED] before any write
 - [ ] Quality review run on all changed files
 - [ ] All 🔴 violations fixed
 - [ ] Quality score documented
@@ -434,10 +498,21 @@ Include all standard report sections plus:
 - 🟡 Tensions noted: {N}
 
 ### AC coverage
-| AC Item | Test | Result |
-|---|---|---|
-| {AC 1} | {test name} | ✅ |
-| {AC 2} | {test name} | ✅ |
+Each row carries the verbatim command, its exit code, and the pasted proving output line (the actual test-run transcript captured in Phase 4.5). A narrative claim without pasted command output does not count as verified.
+
+| AC Item | Command (verbatim) | Exit | Proof (pasted output) | Result |
+|---|---|---|---|---|
+| {AC 1} | `{cmd}` | 0 | `{pasted line}` | ✅ |
+| {AC 2} | `{cmd}` | 0 | `{pasted line}` | ✅ |
+
+### Test-run transcript
+```
+{paste the actual command transcript captured in Phase 4.5 — redacted per Step 4.7}
+```
+
+## Lessons (mistake → rule)
+One line per non-obvious fix / GOTCHA / drift correction encountered (from Step 3.8b), in `symptom → rule` form:
+- {symptom} → {rule}
 ```
 
 ### 5.3 Update Source PRD (if applicable)
@@ -458,9 +533,18 @@ mcp__ultimate-obsidian__move_note({
 
 `Skill(codebase-intelligence:session-memory)` → SESSION END protocol. Include: all file:line findings, decisions + deviations, all Context7 API confirmations (reusable), KB patterns applied, quality review scores (functions N avg X/20, tests N avg X/16, violations fixed), all tasks complete + AC verified + quality review status, next steps (PR command + QA failure recovery path).
 
+### 5.6 Skillify pass (opt-in, PI3)
+
+Optionally invoke the existing `Skill(codebase-intelligence:skillify)` on the plan + report pair to extract a reusable SKILL.md draft from what was just done.
+
+**Tier gating:** first-class extraction (running skillify to mint a new reusable artifact) is gated to the `frontier` tier. On `standard` / `light` tiers this step is skipped for extraction but those tiers still **consume** any lessons and artifacts already present — this step is never blocking at any tier. Skip silently if the user did not opt in.
+
 **PHASE_5_CHECKPOINT:**
 - [ ] Report with Intelligence Summary created
-- [ ] AC coverage table in report — all ✅
+- [ ] AC coverage table in report — all ✅, each row with verbatim command + exit + pasted proof
+- [ ] Test-run transcript pasted in report (redacted per Step 4.7)
+- [ ] "## Lessons (mistake → rule)" section present in report
+- [ ] no Rule promoted without a Verify entry
 - [ ] PRD updated (if applicable)
 - [ ] Plan archived
 - [ ] Final session saved via session-memory skill to vault
@@ -474,6 +558,10 @@ Report: plan path, branch, ticket, validation table (type-check/lint/tests/build
 ---
 
 ## Handling Failures
+
+### Failure logging protocol (PI4)
+
+Every failure is first written to session-memory under "## Open Failures" with a **required `Verify:` field** — a repro command (exact string) or a root-cause `file:line`. A failure is copied to "## General Rules" **only once its `Verify:` field is filled** (the repro reproduces, or the root cause is pinned). Checkpoint: **no Rule promoted without a Verify entry.** An Open Failure with an empty `Verify:` field must not graduate to a General Rule.
 
 ### Type Check Fails
 Fix, re-run, don't proceed. Check Context7 facts for the affected library — type error often

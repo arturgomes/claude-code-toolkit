@@ -49,7 +49,7 @@ If fewer than 3 such claims exist, the session is too shallow to doubt — skip 
 
 ### Step 2 — EXTRACT
 
-For each claim, pull the file:line reference that grounds it. Format:
+For each claim, pull the file:line reference that grounds it. Order matters: collect file:line evidence before forming a conclusion — evidence gathered under a conclusion is contaminated. Format:
 
 ```
 CLAIM 1: "X is the only consumer of Y"
@@ -110,11 +110,13 @@ Severity rubric:
 
 ### Step 5 — STOP
 
-Decide based on the highest severity:
+Decide based on the highest severity, and emit exactly ONE verdict line as the first line of the STOP decision block. The verdict line MUST begin with one of the tokens `HALT:`, `CONTINUE:`, or `PASS:` — this is the `^(HALT|CONTINUE|PASS):` contract that the Validation section greps for. No other prefix is valid, and the line is written verbatim into the report file so `grep -E '^(HALT|CONTINUE|PASS):'` matches it.
 
-- **Any HIGH** → halt implementation. Surface mismatch table to user. Do not proceed until user acknowledges and updates the plan or directs override. Append decision to session-memory.
-- **MEDIUM only** → continue, but log mismatches in session-memory under `### Doubt-driven findings` and adjust affected tasks.
-- **LOW only or all confirmed** → continue. Append one-line note: `Doubt check passed at task N/2 (3 claims confirmed)`.
+- **Any HIGH** → emit a line starting `HALT:` and halt implementation. Example: `HALT: 1 HIGH mismatch (claim 1 falsified at tests/foo.spec.ts:14) — implementation stopped`. Surface the mismatch table to the user. Do not proceed until the user acknowledges and updates the plan or directs override. Append the decision to session-memory.
+- **MEDIUM only** → emit a line starting `CONTINUE:` and continue. Example: `CONTINUE: 2 MEDIUM mismatches logged — affected tasks adjusted`. Log mismatches in session-memory under `### Doubt-driven findings` and adjust affected tasks.
+- **LOW only or all confirmed** → emit a line starting `PASS:` and continue. Example: `PASS: doubt check passed at task N/2 (3 claims confirmed)`. Append the same one-line note to session-memory.
+
+The emitted token (`HALT` / `CONTINUE` / `PASS`) is the machine-checkable STOP verdict; the Validation grep fails the run if none of the three appears at line-start in the report.
 
 Always write the result to `02-Notes/Reports/{TICKET}-{BRANCH}-doubt-{YYYY-MM-DD}.md`:
 

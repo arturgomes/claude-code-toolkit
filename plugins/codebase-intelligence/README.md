@@ -7,6 +7,17 @@ rules and an independent verifier. v3.4.0 makes the loop self-improving: an opti
 context-isolating subagent for each attempt (toggled per session), promotion of recurring
 or gamed failures to durable `## Loop Constraints`, and a verifier that escalates scrutiny
 with attempt count (grounded in `02-Notes/Telegram-Inbox/2026-06-18-*`).
+v3.5.0 folds in 27 model-agnostic techniques mined from the `x-intel-2026-07` KB (52 sources),
+making every skill work without Fable-5. Highlights: an UNKNOWNS discovery gate and a Model
+Routing block in `prp-plan`; pasted-proof AC verification and per-task behavioral gates in
+`prp-implement`; budget / wall-clock / accept-rate stops, a `green|yellow|red` blast-radius tier
+(red always routes to a human gate), a deterministic drift pre-scan, dual-grade OUTCOME/TRAJECTORY
+verdicts, and re-verified `## Verified Invariants` in `prp-loop`; and 5-stage segmented memory with
+a write-before-stop gate plus an executable pre-write secret scrub in `session-memory`. Every
+model-tier / effort / routing / worktree feature is capability-gated with a documented single-tier
+no-op fallback — no single model is a dependency. Read `CI_MODEL_TIER` (`frontier|standard|light`,
+default `standard`) to trade instruction verbosity for capability while keeping all invariants
+mandatory at every tier.
 
 ---
 

@@ -16,7 +16,7 @@ one-pass implementation success.
 The drift-guard skill enforces this at every phase gate. When in doubt, do less — not more.
 
 **Execution Order**:
-MEMORY → JIRA → ANCHOR → SOCRATICODE-PREFLIGHT → DETECT → PARSE → EXPLORE → KB → CONTEXT7 → RESEARCH → DESIGN → ARCHITECT → GENERATE
+MEMORY → JIRA → ANCHOR → SOCRATICODE-PREFLIGHT → DETECT → PARSE → UNKNOWNS → EXPLORE → KB → CONTEXT7 → RESEARCH → DESIGN → ARCHITECT → GENERATE
 
 **Skill + Agent roster**:
 - `codebase-intelligence:session-memory` — prior session context
@@ -44,6 +44,13 @@ MEMORY → JIRA → ANCHOR → SOCRATICODE-PREFLIGHT → DETECT → PARSE → EX
 6. `codebase_symbols` — symbol enumeration; only for files found by search
 7. `codebase_impact` — impact analysis; only in Phase 5 against proposed file list
 </objective>
+
+## Model capability (read first)
+
+This skill is model-agnostic. Read `CI_MODEL_TIER` (values: `frontier` | `standard` | `light`; default `standard` when unset or unknown).
+- `frontier`: treat numbered sub-steps as intent; skip redundant per-step narration.
+- `standard` / `light`: follow every numbered step verbatim.
+Invariants are mandatory at EVERY tier and never skipped: executable gates, the AC anchor, drift checks, write-before-stop, the independent blind verifier, and blast-radius routing.
 
 <context>
 CLAUDE.md rules: @CLAUDE.md
@@ -212,6 +219,52 @@ So that <benefit/value>
 - [ANCHOR] {ticket} — AC: {AC list}
 
 **GATE**: AMBIGUOUS requirements → STOP and ask before proceeding.
+
+---
+
+## Phase 1.5: UNKNOWNS - Resolve before you explore
+
+Runs between PARSE and EXPLORE. You cannot plan around a fact you have not established.
+Enumerate every unknown that could change the shape of the plan, then route each to a
+resolution channel. Do NOT proceed to EXPLORE with unresolved blocking unknowns.
+
+**Step 1 — Enumerate unknowns.** List every open question the plan depends on:
+- External library / API behaviour or exact version (→ Context7 / RESEARCH)
+- Documented pattern, principle, or prior decision (→ ask-kb / session-memory)
+- Product intent, acceptance-criteria ambiguity, or business rule (→ ask the user / STOP)
+- Codebase location or integration point not yet confirmed (→ defer to Phase 2 EXPLORE)
+
+**Step 2 — Route each unknown** to exactly one channel:
+
+| Unknown type | Route to | Fallback if channel absent |
+|---|---|---|
+| Library / API / version | `codebase-intelligence:context7-research` | Note "Context7 unavailable"; verify in Phase 3; mark assumption |
+| Documented pattern / principle | `codebase-intelligence:ask-kb` | Note "KB silent"; continue — no-op when absent |
+| Product / AC / business intent | STOP — ask the user | If no answer available, log as explicit assumption and flag risk |
+| Codebase location | defer to Phase 2 EXPLORE | none needed — Phase 2 always runs |
+
+**Step 3 — STOP predicate (executable):** an unknown is *blocking* if resolving it either way
+would change the AC set, the file list, or the chosen approach. If any blocking unknown targets
+the "ask the user" route and is unresolved → **STOP and ask the user before EXPLORE.** This is a
+NO-GATE refusal: do not silently guess a product decision.
+
+**Step 4 — Log unresolved non-blocking unknowns as assumptions.** For each one that does not
+block, write a line to an `## Assumptions` list carried into the plan:
+```
+ASSUMPTION: {statement} — unverified because {channel} {unavailable | silent}; risk if wrong: {impact}
+```
+Every assumption must be revisited at its routed phase (Context7 in Phase 3, KB in Phase 2D/5).
+
+**DRIFT CHECK (drift-guard questions #1, #5)**:
+"Does resolving this unknown serve an AC item, or is it scope creep?" Drop unknowns that trace
+to no AC — label them "Out of scope — not investigated."
+
+**PHASE_1.5_CHECKPOINT:**
+- [ ] Unknowns enumerated (or explicitly "none — requirements fully specified")
+- [ ] Each unknown routed to Context7 / ask-kb / STOP / defer-to-EXPLORE
+- [ ] No unresolved *blocking* unknown on the ask-the-user route (else STOPPED)
+- [ ] Unresolved non-blocking unknowns logged under `## Assumptions`
+- [ANCHOR] {ticket} — AC: {AC list}
 
 ---
 
