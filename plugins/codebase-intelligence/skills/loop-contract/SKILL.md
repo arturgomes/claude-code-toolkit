@@ -106,6 +106,11 @@ Objective Gate (binary, executable — the ONLY definition of done):
   command:        {exact shell command}
   expected exit:  {0 | non-zero}
   expected output (optional): {grep-able assertion on stdout}
+  hold-out inputs (optional, recommended when the gate has separable inputs):
+    {reserve a subset of test inputs/cases that the maker (L.3) does NOT see and that run
+     ONLY at verify (L.5). Passing on data it never saw is the one step that separates a real
+     fix from automated curve-fitting — loop-engineering-for-trading-strategies.md. Omit when
+     the gate has no separable inputs.}
 
 Stop Rule (ALL mandatory):
   max_iterations:    {default 5}
@@ -197,7 +202,7 @@ Keep a human in the chair for (*agentic-loops-in-ai-development.md*,
 ## Integration with prp-loop
 
 - **Pre-Phase II** → run Step 0 + write the contract + emit verdict. 🔴 → command exits before iteration 1.
-- **Every iteration step 3.2** → re-read the contract verbatim from session-memory before acting (anti-drift reread: "'don't do X' constraints disappear at turn 47", *loops-in-ai-coding.md*).
+- **Every iteration (prp-loop L.2)** → re-read the contract verbatim from session-memory before acting (anti-drift reread: "'don't do X' constraints disappear at turn 47", *loops-in-ai-coding.md*).
 - **DECIDE step** → stop-rule values come from this contract, never improvised.
 
 ---
