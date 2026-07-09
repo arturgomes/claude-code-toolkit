@@ -224,6 +224,7 @@ step 3). The subagent receives **only**:
 - the LOOP CONTRACT + the `## Loop Constraints` block
 - the next incomplete task(s) and their MIRROR patterns
 - the ledger's one-line "what failed before" for attempts 1..n-1
+- **plus the full plan/spec + re-injected AC anchor when re-feed mode is on** (see above) — re-feed is the one documented exception to this "only" list
 
 and returns **only** the diff summary + the gate-relevant output (not its full reasoning).
 If `disabled` (default), run the attempt in this context as above.
@@ -435,6 +436,19 @@ runs re-check). This is what L.2's `## Verified Invariants` re-verification and 
 read on later runs, so a goal proven green here becomes a regression guard everywhere. Record
 it under the session-memory `## Verified Invariants` section as an executable predicate (the
 gate command + expected exit), never as an adjective like "works".
+
+**Determinism re-check before ✅ SUCCESS (flaky-gate guard).** A single green gate can be a
+non-deterministic fluke. Before declaring SUCCESS, re-run the gate command once more; declare
+✅ SUCCESS only if it is green **both** times (a known-flaky suite may set the contract to
+require N consecutive greens). A pass that does not reproduce is a gate FAIL, not SUCCESS —
+consistency is the edge, not a lucky single reading (*loop-engineering-for-trading-strategies.md*).
+Model-agnostic and cheap: one extra gate run, on the final iteration only.
+
+**Capture the workflow (offer `skillify`).** On ✅ SUCCESS, **offer**
+`Skill(codebase-intelligence:skillify)` on the plan + report pair — a gate-verified loop is
+exactly the reusable workflow worth caching as a skill (*kimi-k2-6-self-improving-loop.md*,
+steps 6/9). Offer only; never auto-create, and never promote the loop to a scheduled/background
+agent (step 10 stays rejected).
 
 **PHASE_L_CHECKPOINT:**
 - [ ] Every attempt has a ledger row (blast radius, gate, OUTCOME, TRAJECTORY, accepted?, accept-rate)

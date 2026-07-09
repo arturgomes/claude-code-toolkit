@@ -269,8 +269,8 @@ mcp__ultimate-obsidian__create_or_update_note({
   content: `
 ## Loop Ledger
 
-| n | timestamp | gate | verifier | diff summary | next move |
-|---|---|---|---|---|---|
+| n | timestamp | blast | gate | OUTCOME | TRAJECTORY | accepted? | diff summary | next move |
+|---|---|---|---|---|---|---|---|---|
 `
 })
 ```
@@ -291,7 +291,7 @@ grep -qE "^\| *${n} *\|" "$VAULT_ABS" && echo "row ${n} exists — SKIP append" 
 mcp__ultimate-obsidian__create_or_update_note({
   filepath: "02-Notes/Sessions/{TICKET}-{SUFFIX}.md",
   mode: "append",
-  content: `| {n} | {ISO-8601} | {PASS exit 0 | FAIL exit N | not-run} | {PASS | FAIL | —} | {files +N/-N, one-line gist} | {next move} |
+  content: `| {n} | {ISO-8601} | {green|yellow|red} | {PASS exit 0 | FAIL exit N | not-run} | {PASS|FAIL|—} | {PASS|FAIL|—} | {yes|no} | {files +N/-N, one-line gist} | {next move} |
 `
 })
 ```
@@ -353,6 +353,51 @@ gate. Changing those is a new contract, not a constraint.
 `## Loop Constraints` block, surface it alongside the contract — every attempt's L.2 reread
 must honor these rules. The `Subagent ATTEMPT:` line lives in the `## LOOP CONTRACT` block
 (written by `loop-contract` / prp-loop Pre-Phase IV), not here.
+
+---
+
+## VERIFIED INVARIANTS — append protocol (used by prp-implement Phase 4.5, prp-loop L.2 / L.14)
+
+Optional section. Records **standing goals as re-verifiable predicates**: each acceptance
+criterion that has been proven green gets its exact validation command stored here, so a later
+task or loop iteration can re-run it and catch a regression. "A goal you only verify once is an
+assumption with a timestamp."
+
+**Step 1 — First promotion only**: append the block header (after SESSION END content, or after
+the Loop Ledger in a prp-loop run):
+
+```
+mcp__ultimate-obsidian__create_or_update_note({
+  filepath: "02-Notes/Sessions/{TICKET}-{SUFFIX}.md",
+  mode: "append",
+  content: `
+## Verified Invariants
+
+| AC | predicate (exact shell command) | first verified |
+|---|---|---|
+`
+})
+```
+
+**Step 2 — Each promotion** (prp-implement Phase 4.5 when an AC turns green; prp-loop L.14 on
+SUCCESS): append one row. **Idempotency key = the predicate command** — read the existing block
+first and SKIP if the same command is already present (compare-and-set), so re-verifying an AC
+never duplicates a row.
+
+```
+mcp__ultimate-obsidian__create_or_update_note({
+  filepath: "02-Notes/Sessions/{TICKET}-{SUFFIX}.md",
+  mode: "append",
+  content: `| {AC id} | {exact command, e.g. \`npm test -- foo\`} | {ISO-8601} |
+`
+})
+```
+
+**Re-verify rule** (prp-loop L.2): before a new attempt, re-run every predicate in this block.
+Any that now fails is a **regression** → the attempt's gate is FAIL and the ledger records it.
+A predicate here is an invariant; breaking it is drift (drift-guard). Predicates must be
+executable shell commands — never adjectives. Same single-writer rule as the Loop Ledger:
+only the orchestrator appends.
 
 ---
 
