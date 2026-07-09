@@ -1,7 +1,7 @@
 ---
 name: codebase-researcher
 description: >
-  Autonomous pre-planning research agent; runs session-memory → Serena + SocratiCode → structured file:line report.
+  Autonomous pre-planning research agent; runs session-memory → Serena → structured file:line report.
   Use when asked to "investigate", "research the codebase for", or "explore before planning".
 ---
 
@@ -28,7 +28,7 @@ From the task description, identify:
 - Data shapes (types, interfaces, DTOs, DB models)
 - Related tests
 
-### 3. Tier 1 — Serena structural search
+### 3. Serena structural search (LSP)
 For every concrete symbol, file, or module implied by the task.
 Skip `find_symbol` if the request already includes an explicit `file:line` — use directly.
 
@@ -36,16 +36,7 @@ Skip `find_symbol` if the request already includes an explicit `file:line` — u
 - `get_symbol_references` → all callers/consumers
 - `find_files` → related files by name pattern
 
-### 4. Tier 2 — SocratiCode semantic search
-
-Run only if Tier 1 left coverage gaps, or the request mentions intent/behaviour
-("how does X work", "where is Y handled") rather than naming concrete symbols.
-Skip otherwise — annotate `SocratiCode: skipped (Tier 1 sufficient)`.
-
-When run: 3–5 natural language queries, top-3 per query.
-Skip areas already covered by Serena or memory.
-
-### 5. Compose research report
+### 4. Compose research report
 
 ```markdown
 # Research Report: <task description>
@@ -80,11 +71,11 @@ Memory reused: <yes — N findings / no>
 2. <second touch point>
 ```
 
-### 6. Save to memory
+### 5. Save to memory
 Append findings to session-memory (SESSION END protocol).
 
 ## Constraints
 
-**Limits**: 10 Serena calls, 5 SocratiCode queries per run.
+**Limits**: 10 Serena calls per run.
 **Reads**: targeted only — symbol lookups, never whole files.
 **Missing symbols**: state them; never guess paths.

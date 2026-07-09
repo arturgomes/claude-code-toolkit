@@ -21,7 +21,7 @@ MEMORY → JIRA → ANCHOR → DETECT → PARSE → EXPLORE → KB → CONTEXT7 
 **Skill + Agent roster**:
 - `codebase-intelligence:session-memory` — prior session context
 - `codebase-intelligence:drift-guard` — requirements anchor, enforced at every gate
-- `codebase-intelligence:codebase-search` — Serena (LSP) + SocratiCode (semantic)
+- `codebase-intelligence:codebase-search` — Serena (LSP structural)
 - `codebase-intelligence:ask-kb` — personal KB patterns and principles
 - `codebase-intelligence:consult-kb` — KB review of proposed architecture
 - `codebase-intelligence:context7-research` — verified library docs, no hallucination
@@ -218,12 +218,11 @@ Document with precise file:line references. No suggestions or improvements.
 
 ---
 
-### Step 2C — Two-tier enrichment
+### Step 2C — Serena enrichment
 
 Follow `codebase-intelligence:codebase-search` → Execution flow steps 2–3.
 
-- **Serena (Tier 1)**: resolve all agent-mentioned symbols to exact file:line via `find_symbol`, `get_symbol_references`
-- **SocratiCode (Tier 2)**: 3 semantic queries for intent/behaviour areas, top-3 results each
+- **Serena (LSP)**: resolve all agent-mentioned symbols to exact file:line via `find_symbol`, `get_symbol_references`
 
 ---
 
@@ -249,11 +248,11 @@ Gather raw evidence ONLY — File:Lines, Code Snippet, Source. NO conclusions, N
 | NAMING | `src/X/service.ts:10` | `export function createThing()` | explorer |
 | ERRORS | `src/X/errors.ts:5` | `class ThingNotFoundError` | serena |
 | FLOW | `src/X/service.ts:40` | `input→validate→persist` | analyst |
-| SEMANTIC | `src/Y/handler.ts:80` | `validateToken(req)` | socraticode |
+| SEMANTIC | `src/Y/handler.ts:80` | `validateToken(req)` | serena |
 | MEMORY | `src/Z/service.ts:30` | `parseDocument()` entry | memory |
 | KB | — | "Prefer explicit error types" | ask-kb |
 
-Source values: `explorer` · `analyst` · `serena` · `socraticode` · `memory` · `ask-kb`
+Source values: `explorer` · `analyst` · `serena` · `memory` · `ask-kb`
 
 ### Step 2E-ii — Interpret
 
@@ -264,7 +263,7 @@ Only now interpret the collected evidence. Add a Pattern Description and a drift
 | NAMING | `src/X/service.ts:10` | camelCase functions | in-scope | explorer |
 | ERRORS | `src/X/errors.ts:5` | Custom error classes | in-scope | serena |
 | FLOW | `src/X/service.ts:40` | Transform chain | in-scope | analyst |
-| SEMANTIC | `src/Y/handler.ts:80` | Related auth logic | in-scope | socraticode |
+| SEMANTIC | `src/Y/handler.ts:80` | Related auth logic | in-scope | serena |
 | KB | — | Principle | in-scope | ask-kb |
 
 ---
@@ -276,7 +275,7 @@ Remove rows that don't trace to any AC. Label them "Removed — out of scope."
 **PHASE_2_CHECKPOINT:**
 - [ ] Memory pre-fill checked
 - [ ] Both codebase-intelligence agents completed in parallel
-- [ ] Serena + SocratiCode enrichment done
+- [ ] Serena enrichment done
 - [ ] KB consulted (result documented)
 - [ ] Discovery table has Source column
 - [ ] **DRIFT**: Every file in table traces to ≥1 AC
@@ -566,7 +565,7 @@ Completion Checklist · Risks and Mitigations
 
 If PRD input: update phase status to `in-progress`, link plan.
 
-**REPORT_TO_USER**: Report plan file path, ticket, complexity/confidence score, AC count, drift gates passed, source counts (Memory/Serena/SocratiCode/KB/Context7/Web), and next command:
+**REPORT_TO_USER**: Report plan file path, ticket, complexity/confidence score, AC count, drift gates passed, source counts (Memory/Serena/KB/Context7/Web), and next command:
 `/codebase-intelligence:prp-implement ~/Documents/Obsidian-Vault/02-Notes/Plans/{feature-name}.plan.md`
 </o>
 
