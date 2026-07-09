@@ -4,13 +4,20 @@ description: >
   Persist and restore findings, decisions, and QA failures to Obsidian vault with BM25 search.
   Auto-invoked by prp-plan/prp-implement; invoke manually on "save progress", "load context for PROJ-NNN", "resume after QA failure".
   Provides the Loop Ledger append protocol for prp-loop.
-version: 2.1.0
+version: 2.2.0
 ---
 
 # session-memory
 
 Cross-session memory in Obsidian vault (`~/Documents/Obsidian-Vault/02-Notes/Sessions/`)
 with frontmatter metadata, wikilinks, and BM25 full-text search via SQLite FTS5 index.
+
+## Model capability (read first)
+
+This skill is model-agnostic. Read `CI_MODEL_TIER` (values: `frontier` | `standard` | `light`; default `standard` when unset or unknown).
+- `frontier`: treat numbered sub-steps as intent; skip redundant per-step narration.
+- `standard` / `light`: follow every numbered step verbatim.
+Invariants are mandatory at EVERY tier and never skipped: executable gates, the AC anchor, drift checks, write-before-stop, the independent blind verifier, and blast-radius routing.
 
 ## Memory file path
 
@@ -24,6 +31,55 @@ Examples:
 - `~/Documents/Obsidian-Vault/02-Notes/Sessions/my-project-add-pdf-export.md` ← fallback: {project-root-name}-{feature-slug}
 
 **Index location**: `~/.claude/memory/<TICKET>/session_index.db`
+
+---
+
+## Pre-write scrub & write-scope (mandatory before every vault write)
+
+### Pre-write scrub
+
+Before ANY `create_or_update_note` / append call, run a **pre-write scrub** over the content
+about to be written. Scan for and replace with the redaction marker `[REDACTED]`:
+- API keys, access keys, secret keys, bearer/auth tokens, session tokens
+- passwords, connection strings (e.g. `postgres://…`, `mongodb+srv://…`), private keys
+- `.env` file contents or any `KEY=value` line sourced from an env file
+- third-party service/vendor names that would leak internal integrations
+
+Executable predicate (must return no hits, or the offending text must be `[REDACTED]` first):
+```bash
+grep -nEi '(api[_-]?key|secret|token|password|passwd|BEGIN [A-Z ]*PRIVATE KEY|[a-z]+://[^ ]*:[^ ]*@|\.env|AKIA[0-9A-Z]{16})' <<<"$CONTENT" \
+  && echo "SCRUB REQUIRED: redact to [REDACTED] before write" || echo "scrub clean"
+```
+**Never transmit captured output (logs, env, command output) to any external service.** The scrub
+runs locally; redacted values never leave the machine and never reach the vault un-redacted.
+
+### Write-scope
+
+This skill's write-scope is **exactly**: `02-Notes/Sessions/`, `02-Notes/Plans/`, `02-Notes/Reports/`.
+- NEVER write outside these three paths.
+- NEVER write secrets or third-party vendor names (see pre-write scrub → `[REDACTED]`).
+- The default posture is **read-only** outside these paths. Widening from read-only to write
+  (any new path) requires an **explicit note** in the session (`### Lessons` or a `Widened write-scope:`
+  line) stating the path and the reason — silent widening is forbidden.
+
+Executable predicate:
+```bash
+# every write target must sit under one of the three allowed prefixes
+case "$WRITE_PATH" in
+  02-Notes/Sessions/*|02-Notes/Plans/*|02-Notes/Reports/*) echo "in write-scope" ;;
+  *) echo "OUT OF WRITE-SCOPE: $WRITE_PATH — needs explicit widening note" ;;
+esac
+```
+
+### Stale-session re-audit (30-day rule)
+
+When a restored session's frontmatter `date:` is **more than 30 days old**, print a re-audit
+prompt before trusting its Verified Facts — the codebase may have drifted:
+```bash
+# $RESTORED_DATE = frontmatter date (YYYY-MM-DD); $TODAY = current date
+AGE_DAYS=$(( ( $(date -j -f %Y-%m-%d "$TODAY" +%s) - $(date -j -f %Y-%m-%d "$RESTORED_DATE" +%s) ) / 86400 ))
+[ "$AGE_DAYS" -gt 30 ] && echo "⚠️ RE-AUDIT: restored session is ${AGE_DAYS}d old (>30) — re-verify Verified Facts against current code before relying on them"
+```
 
 ---
 
@@ -107,7 +163,37 @@ tags: [#session, #{TICKET}]
 
 ## SESSION END — exact steps to execute
 
-**Step 1 — Append session block:**
+### WRITE-BEFORE-STOP gate (mandatory)
+
+SESSION END is a **hard gate**: it MUST run before ANY exit path — normal completion, error,
+user interrupt, hand-off, AND context-cap termination (`CONTEXT_CAP`). No agent may stop, yield,
+or return a summary until the segmented session block below has been written to the vault.
+
+Executable predicate (must pass before stopping):
+```bash
+# The current session's block must exist in the file since this session started.
+grep -q "## Session: ${SESSION_STARTED_AT}" "$VAULT_ABS" || echo "WRITE-BEFORE-STOP VIOLATED: run SESSION END now"
+```
+If the grep prints the violation line, you have NOT satisfied WRITE-BEFORE-STOP — run Step 1 first.
+On `CONTEXT_CAP`: write at minimum a `## Last-Session State (resume here)` section with the exact
+resume `file:line` before terminating; a truncated write beats no write.
+
+### READ-AT-START gate (mandatory)
+
+SESSION START (above) MUST load the prior `## Last-Session State (resume here)` section before
+any new work begins. Executable predicate:
+```bash
+# If a prior session file exists, its Last-Session State must have been read this session.
+mcp__ultimate-obsidian__check_exists → if exists:true, the read_note call MUST have returned
+"## Last-Session State (resume here)" content and it MUST be echoed to the user.
+```
+If the file exists but Last-Session State was not loaded, STOP and load it — do not start fresh work.
+
+**Step 1 — Append segmented session block:**
+
+The session body is segmented into fixed sections (no more flat dumps). Emit every section
+header even when its body is `- none` so restores and greps are deterministic:
+
 ```
 mcp__ultimate-obsidian__create_or_update_note({
   filepath: "02-Notes/Sessions/{TICKET}-{SUFFIX}.md",
@@ -115,24 +201,29 @@ mcp__ultimate-obsidian__create_or_update_note({
   content: `
 ## Session: {ISO-8601 datetime}
 
-### Investigated
-- {file:line} — {one-line finding}
+### Verified Facts
+- {file:line} — {fact confirmed this session, with evidence: passing test / grep hit / run output}
 
-### Decisions
-- {decision and rationale}
+### General Rules (distilled)
+- {reusable, ticket-agnostic rule learned this session — this is the FIRST retrieval target for ask-kb/consult-kb}
 
-### Implementation status
-- [x] {completed item}
-- [ ] {pending item}
+### Open Failures
+- {what still fails, test name or error, exact file:line — or "none"}
 
-### QA / Failures
-- {what failed, test name or error — or "none"}
+### Lessons
+- {mistake made + how to avoid it next time — or "none"}
 
-### Next steps
-- {exact file:line to resume from}
+### Last-Session State (resume here)
+- Resume at: {exact file:line}
+- In-flight task: {task id / description, or "none"}
+- Next move: {single next action}
 `
 })
 ```
+
+**Retrieval routing:** `ask-kb` / `consult-kb` (and any KB restore) MUST query the
+**General Rules (distilled)** section FIRST — distilled rules are ticket-agnostic and reusable —
+before falling back to Verified Facts or raw session bodies.
 
 **Step 2 — Index + extract keywords:**
 ```
@@ -140,7 +231,26 @@ mcp__ultimate-obsidian__index_note({
   vault_path: "~/Documents/Obsidian-Vault/02-Notes/Sessions/{TICKET}-{SUFFIX}.md"
 })
 ```
-`index_note` updates frontmatter `keywords:` (top 10 by term frequency from Investigated/Decisions/Implementation status) and rebuilds the FTS5 index in `~/.claude/memory/{TICKET}/session_index.db` in one call.
+`index_note` updates frontmatter `keywords:` (top 10 by term frequency from Verified Facts/General Rules/Last-Session State) and rebuilds the FTS5 index in `~/.claude/memory/{TICKET}/session_index.db` in one call.
+
+**Step 3 — Upsert the sessions index (`_index.md`):**
+
+SESSION END maintains `02-Notes/Sessions/_index.md` — one line per session (ticket + status +
+wikilink). Read it first; if a line for this `{TICKET}-{SUFFIX}` already exists, update that line
+in place (upsert), otherwise append a new line:
+
+```
+mcp__ultimate-obsidian__create_or_update_note({
+  filepath: "02-Notes/Sessions/_index.md",
+  mode: "append",   // or in-place patch when the line already exists
+  content: `- {TICKET} — {status: planning|in-progress|blocked|done} — [[{TICKET}-{SUFFIX}]] ({YYYY-MM-DD})
+`
+})
+```
+
+**Restore reads the index first:** SESSION START and QA-failure restore MUST read
+`02-Notes/Sessions/_index.md` before opening any individual session file — the index is the
+cheap lookup layer (one line per session) that points to the right session note via wikilink.
 
 ---
 
@@ -165,7 +275,17 @@ mcp__ultimate-obsidian__create_or_update_note({
 })
 ```
 
-**Step 2 — Every attempt** (including drift-failed and gate-failed attempts): append one row:
+**Step 2 — Every attempt** (including drift-failed and gate-failed attempts): append one row.
+
+**Idempotency key = attempt number `n`.** Each row is keyed by `n`; `n` is the compare-and-set
+key. Before appending, **read the existing Loop Ledger block and check whether a row for this `n`
+already exists** — if it does, SKIP the append (do not write a duplicate row). Only append when
+no row with this `n` is present:
+
+```bash
+# compare-and-set on idempotency key n
+grep -qE "^\| *${n} *\|" "$VAULT_ABS" && echo "row ${n} exists — SKIP append" || echo "no row ${n} — append"
+```
 
 ```
 mcp__ultimate-obsidian__create_or_update_note({
@@ -175,6 +295,11 @@ mcp__ultimate-obsidian__create_or_update_note({
 `
 })
 ```
+
+**single-writer: only the prp-loop orchestrator appends ledger rows; delegates return summaries.**
+Delegates (verifier, implementer, drift-guard sub-agents) return summaries to the orchestrator and
+NEVER write ledger rows themselves. This keeps the idempotency key monotonic and prevents
+interleaved duplicate `n`s.
 
 **Step 3 — On loop exit**: run SESSION END (above) as normal, then `index_note` — ledger
 rows are indexed and searchable like any session content.
@@ -261,10 +386,13 @@ Queries `~/.claude/memory/*/session_index.db` (SQLite FTS5), returns BM25-ranked
 ## QA FAILURE resume protocol
 
 ```
+# 0. Read the sessions index first (cheap lookup → right session note)
+mcp__ultimate-obsidian__read_note({ filepath: "02-Notes/Sessions/_index.md" })
+
 # 1. Load memory (SESSION START above)
 mcp__ultimate-obsidian__read_note({ filepath: "02-Notes/Sessions/{TICKET}-{SUFFIX}.md" })
 
-# 2. Read "Implementation status" and "QA / Failures" sections from returned content
+# 2. Read "Open Failures" and "Last-Session State (resume here)" sections from returned content
 
 # 3. Search related sessions for context
 mcp__ultimate-obsidian__search_sessions({ query: "{ticket} QA failure", limit: 3 })
@@ -285,12 +413,13 @@ mcp__ultimate-obsidian__search_sessions({ query: "{ticket} QA failure", limit: 3
 
 ## Token efficiency rules
 
-- **Load**: Read frontmatter + last session only (first 50 lines)
+- **Load**: Read `02-Notes/Sessions/_index.md` first, then frontmatter + last session only (first 50 lines)
 - **Search**: Return top 5 BM25-ranked results, not all sessions
 - **Write**: Store file:line refs, not code snippets — one line per finding
+- **One finding per bullet**: each bullet carries its own `file:line` plus a `[[wikilink]]` — never bundle multiple findings into one bullet
 - **Wikilinks**: Use [[TICKET-SUFFIX]] for cross-references (Obsidian clickable)
 - **Keywords**: Auto-extracted, not manually curated
-- Never store secrets, tokens, or credentials
+- **Pre-write scrub (mandatory)**: never store secrets, tokens, credentials, connection strings, `.env` contents, or third-party vendor names — redact to `[REDACTED]` before writing (see "Pre-write scrub & write-scope"); never transmit captured output to any external service
 
 ---
 

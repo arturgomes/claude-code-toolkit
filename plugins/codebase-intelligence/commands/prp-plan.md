@@ -21,7 +21,7 @@ MEMORY → JIRA → ANCHOR → DETECT → PARSE → EXPLORE → KB → CONTEXT7 
 **Skill + Agent roster**:
 - `codebase-intelligence:session-memory` — prior session context
 - `codebase-intelligence:drift-guard` — requirements anchor, enforced at every gate
-- `codebase-intelligence:codebase-search` — Serena (LSP) + SocratiCode (semantic)
+- `codebase-intelligence:codebase-search` — Serena (LSP structural)
 - `codebase-intelligence:ask-kb` — personal KB patterns and principles
 - `codebase-intelligence:consult-kb` — KB review of proposed architecture
 - `codebase-intelligence:context7-research` — verified library docs, no hallucination
@@ -29,6 +29,15 @@ MEMORY → JIRA → ANCHOR → DETECT → PARSE → EXPLORE → KB → CONTEXT7 
 - `codebase-intelligence:codebase-analyst` — HOW integration points work, data flow
 - `codebase-intelligence:web-search-hook` — external docs (runs AFTER Context7 + KB, gaps only)
 </objective>
+
+## Model capability (read first)
+
+This skill is model-agnostic. Read `CI_MODEL_TIER` (values: `frontier` | `standard` | `light`; default `standard` when unset or unknown).
+- `frontier`: treat numbered sub-steps as intent; skip redundant per-step narration.
+- `standard` / `light`: follow every numbered step verbatim.
+Invariants are mandatory at EVERY tier and never skipped: executable gates, the AC anchor, drift checks, write-before-stop, the independent blind verifier, and blast-radius routing.
+
+Evidence-first: wherever a step asks you to justify or explain a choice, do not narrate open-ended reasoning — state which AC this serves + file:line proof. Keep all structured verdicts (drift verdicts, 🔴/🟡/🟢/💡, ✅ ON TRACK) intact.
 
 <context>
 CLAUDE.md rules: @CLAUDE.md
@@ -158,6 +167,27 @@ So that <benefit/value>
 
 ---
 
+## Phase 1.5: UNKNOWNS - Enumerate and route open questions
+
+Before any exploration, enumerate EVERY open question the AC does not resolve. For each unknown, classify and route it:
+
+| Unknown type | Route |
+|---|---|
+| Library / API behaviour or signature | Context7 verification (Phase 3A) |
+| Codebase pattern / "how do we do X here" | ask-kb (Step 2D) + codebase search (Phase 2) |
+| Requirement / product intent (what should it do) | STOP + ask the user — do not guess |
+
+Anything still unresolved after routing is logged **verbatim** as an explicit assumption in the `## Intelligence Context` section (Phase 6) under the "Assumptions (unresolved unknowns)" list. Never silently resolve an unknown by inventing an answer.
+
+**GATE**: A requirement-type unknown is blocking → STOP and ask the user before proceeding to Phase 2.
+
+**PHASE_1.5_CHECKPOINT:**
+- [ ] Every unknown enumerated
+- [ ] Each unknown routed (library/API→Context7 · pattern→ask-kb · requirement→STOP+ask user)
+- [ ] every unknown resolved or logged as assumption
+
+---
+
 ## Phase 2: EXPLORE - Codebase Intelligence
 
 ### Step 2A — Memory pre-fill
@@ -188,12 +218,11 @@ Document with precise file:line references. No suggestions or improvements.
 
 ---
 
-### Step 2C — Two-tier enrichment
+### Step 2C — Serena enrichment
 
 Follow `codebase-intelligence:codebase-search` → Execution flow steps 2–3.
 
-- **Serena (Tier 1)**: resolve all agent-mentioned symbols to exact file:line via `find_symbol`, `get_symbol_references`
-- **SocratiCode (Tier 2)**: 3 semantic queries for intent/behaviour areas, top-3 results each
+- **Serena (LSP)**: resolve all agent-mentioned symbols to exact file:line via `find_symbol`, `get_symbol_references`
 
 ---
 
@@ -210,18 +239,32 @@ If KB is silent → note "KB not consulted for this domain" and continue.
 
 ---
 
-### Step 2E — Merge into unified discovery table
+### Step 2E-i — Collect evidence
 
-| Category | File:Lines | Pattern Description | Code Snippet | Source |
+Gather raw evidence ONLY — File:Lines, Code Snippet, Source. NO conclusions, NO pattern naming, NO drift verdicts at this step.
+
+| Category | File:Lines | Code Snippet | Source |
+|---|---|---|---|
+| NAMING | `src/X/service.ts:10` | `export function createThing()` | explorer |
+| ERRORS | `src/X/errors.ts:5` | `class ThingNotFoundError` | serena |
+| FLOW | `src/X/service.ts:40` | `input→validate→persist` | analyst |
+| SEMANTIC | `src/Y/handler.ts:80` | `validateToken(req)` | serena |
+| MEMORY | `src/Z/service.ts:30` | `parseDocument()` entry | memory |
+| KB | — | "Prefer explicit error types" | ask-kb |
+
+Source values: `explorer` · `analyst` · `serena` · `memory` · `ask-kb`
+
+### Step 2E-ii — Interpret
+
+Only now interpret the collected evidence. Add a Pattern Description and a drift verdict per row (do not add rows that were not collected in 2E-i).
+
+| Category | File:Lines | Pattern Description | Drift verdict | Source |
 |---|---|---|---|---|
-| NAMING | `src/X/service.ts:10` | camelCase functions | `export function createThing()` | explorer |
-| ERRORS | `src/X/errors.ts:5` | Custom error classes | `class ThingNotFoundError` | serena |
-| FLOW | `src/X/service.ts:40` | Transform chain | `input→validate→persist` | analyst |
-| SEMANTIC | `src/Y/handler.ts:80` | Related auth logic | `validateToken(req)` | socraticode |
-| MEMORY | `src/Z/service.ts:30` | Prior finding | `parseDocument()` entry | memory |
-| KB | — | Principle | "Prefer explicit error types" | ask-kb |
-
-Source values: `explorer` · `analyst` · `serena` · `socraticode` · `memory` · `ask-kb`
+| NAMING | `src/X/service.ts:10` | camelCase functions | in-scope | explorer |
+| ERRORS | `src/X/errors.ts:5` | Custom error classes | in-scope | serena |
+| FLOW | `src/X/service.ts:40` | Transform chain | in-scope | analyst |
+| SEMANTIC | `src/Y/handler.ts:80` | Related auth logic | in-scope | serena |
+| KB | — | Principle | in-scope | ask-kb |
 
 ---
 
@@ -232,7 +275,7 @@ Remove rows that don't trace to any AC. Label them "Removed — out of scope."
 **PHASE_2_CHECKPOINT:**
 - [ ] Memory pre-fill checked
 - [ ] Both codebase-intelligence agents completed in parallel
-- [ ] Serena + SocratiCode enrichment done
+- [ ] Serena enrichment done
 - [ ] KB consulted (result documented)
 - [ ] Discovery table has Source column
 - [ ] **DRIFT**: Every file in table traces to ≥1 AC
@@ -331,6 +374,11 @@ Then document:
 - `ALTERNATIVES_REJECTED` with specific reasons
 - `NOT_BUILDING` — explicit scope exclusions (update TASK ANCHOR boundaries now)
 
+### Danger-zone paths
+
+If any file in Files-to-Change lives under an **auth / payments / api / deploy** path, emit a line recommending a **localized CLAUDE.md** (or an inline warning comment) at that path documenting the constraint. Surface this recommendation as a **GOTCHA** on the relevant task so prp-implement loads it at its Step 3.0 (danger zone). Example:
+> GOTCHA (danger zone): `src/payments/charge.ts` — add/update a localized CLAUDE.md here; idempotency keys required, never retry a charge blindly.
+
 **DRIFT CHECK — full seven questions (drift-guard)**:
 Run all seven questions against the proposed approach and file list.
 Verdict MUST be ✅ ON TRACK before proceeding.
@@ -346,6 +394,8 @@ Verdict MUST be ✅ ON TRACK before proceeding.
 ---
 
 ## Phase 6: GENERATE - Implementation Plan File
+
+**GATE (blocking unknown)**: GENERATE refuses to produce the plan while any blocking (requirement-type) unknown from Phase 1.5 remains open. Resolve it with the user, or log it verbatim as an explicit assumption, before generating.
 
 **HIERARCHY CHECK** — Before saving, list the target folder to confirm placement:
 ```
@@ -399,13 +449,20 @@ tags:
 ### Hard boundaries (NOT in scope)
 - {item from NOT_BUILDING}
 
+### Assumptions (unresolved unknowns)
+- {unknown logged verbatim from Phase 1.5 — or "none"}
+
 ### KB Principles applied
 - {principle} — *Source: {book/section}*
 - {KB violation or tension noted} — *Source: {book/section}*
 
 ### Context7 Library Facts
+
+**Constraint**: This section — and any KB signature block — may present ONLY Phase-3-confirmed signatures. Any API you need but did NOT verify in Phase 3 must be written literally as "UNVERIFIED — confirm at implement time". Never invent a signature and never present an unverified one as confirmed.
+
 #### {library}@{version}
 - `functionName(param: Type): ReturnType` — confirmed ✅
+- `maybeOtherApi(...)` — UNVERIFIED — confirm at implement time
 - Gotcha: {gotcha from docs}
 
 ### Prior session decisions
@@ -437,6 +494,56 @@ Any task without an AC mapping → remove it or justify it explicitly.
 
 ---
 
+### Task template (Step-by-Step Tasks)
+
+**Core Principle**: the plan is one complete brief — every task is self-contained and assumes NO unlogged chat context. An executor reading only this file must be able to complete the task.
+
+Each task MUST carry:
+- **Why (AC + intent):** which AC this task serves + the intent behind it (not just the mechanical step).
+- **MIRROR:** the existing pattern / `file:line` to imitate.
+- **IMPORTS:** the exact imports/modules required.
+- **AC mapping:** the AC item id(s) this task satisfies.
+- **Expected gate command:** the executable command that verifies this task passes (e.g. `pnpm test path/to.spec.ts`, `grep -q "symbol" file`).
+- **Gotchas:** known traps, danger-zone warnings, ordering constraints.
+- **Steps:** explicit, numbered implementation steps.
+
+By default, keep explicit, detailed, prescriptive steps. If the executor is a confirmed top-tier long-horizon model (per Model Routing, below), tasks MAY be expressed as goal+constraints instead of prescriptive micro-steps; otherwise keep explicit steps.
+
+**Parallel execution note**: prp-loop lanes are single-writer-per-file — no two parallel tasks may write the same file. Assign each file to exactly one lane.
+
+```
+task:
+  id: T{n}
+  title: {imperative summary}
+  why: {AC-id + intent}          # Why (AC + intent)
+  ac_mapping: [AC-1, AC-3]
+  mirror: `src/X/service.ts:10` — {pattern}
+  imports: [ ... ]
+  expected_gate: `{executable command}`
+  gotchas: [ {trap or danger zone} ]
+  steps:
+    1. ...
+    2. ...
+```
+
+---
+
+### Model Routing
+
+**This is the CANONICAL definition of Model Routing.** Other codebase-intelligence files reference this block by name; do not redefine it there.
+
+Routing maps each task's blast radius to an executor tier via `CI_MODEL_TIER` (`frontier` | `standard` | `light`, default `standard`). Tag every task with its blast radius:
+
+Blast radius: green|yellow|red
+
+- **green** (isolated, low-risk, well-mirrored) → `light` or `standard`; keep explicit steps.
+- **yellow** (cross-module, moderate risk) → `standard`; keep explicit steps.
+- **red** (auth/payments/api/deploy, high blast radius / danger zone) → `frontier` if available; a confirmed top-tier long-horizon model MAY take goal+constraints tasks (still gated on Model Routing).
+
+**Fallback (single-tier mode)**: routing is advisory, never a required dependency. When `CI_MODEL_TIER` is unset/unknown, or only one model is available, run in **single-tier mode** — treat every task at `standard`, keep explicit steps, and run serial. No specific model id and no specific effort value is ever required for this plan to execute.
+
+---
+
 Then all standard plan sections:
 User Story · Problem Statement · Solution Statement · Metadata · UX Design (before/after ASCII) ·
 Mandatory Reading · Patterns to Mirror · Files to Change · NOT Building · Step-by-Step Tasks ·
@@ -458,7 +565,7 @@ Completion Checklist · Risks and Mitigations
 
 If PRD input: update phase status to `in-progress`, link plan.
 
-**REPORT_TO_USER**: Report plan file path, ticket, complexity/confidence score, AC count, drift gates passed, source counts (Memory/Serena/SocratiCode/KB/Context7/Web), and next command:
+**REPORT_TO_USER**: Report plan file path, ticket, complexity/confidence score, AC count, drift gates passed, source counts (Memory/Serena/KB/Context7/Web), and next command:
 `/codebase-intelligence:prp-implement ~/Documents/Obsidian-Vault/02-Notes/Plans/{feature-name}.plan.md`
 </o>
 
@@ -471,6 +578,10 @@ If PRD input: update phase status to `in-progress`, link plan.
 - [ ] NOT Building is specific and non-empty
 - [ ] All patterns from agents are ACTUAL code snippets (not invented)
 - [ ] Every task has an executable validation command
+- [ ] Each task carries Why (AC + intent), MIRROR, IMPORTS, AC mapping, expected gate command, and gotchas
+- [ ] Brief-completeness: no task assumes unlogged chat context.
+- [ ] no unverified API signature presented as confirmed.
+- [ ] Every blocking unknown from Phase 1.5 is resolved or logged as an assumption
 - [ ] Drift guard: seven-question check ✅ ON TRACK at Phase 5
 - [ ] Session saved via session-memory skill to vault
 - [ ] Return REPORT_TO_USER with the next command so the user knows what to do next when clearing the session.

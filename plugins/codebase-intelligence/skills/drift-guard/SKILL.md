@@ -12,6 +12,13 @@ version: 2.0.1
 
 Drift causes: nearby "quick improvements", architectural rabbit holes, over-generalised solutions, research-introduced scope, scope-bleeding refactors.
 
+## Model capability (read first)
+
+This skill is model-agnostic. Read `CI_MODEL_TIER` (values: `frontier` | `standard` | `light`; default `standard` when unset or unknown).
+- `frontier`: treat numbered sub-steps as intent; skip redundant per-step narration.
+- `standard` / `light`: follow every numbered step verbatim.
+Invariants are mandatory at EVERY tier and never skipped: executable gates, the AC anchor, drift checks, write-before-stop, the independent blind verifier, and blast-radius routing.
+
 ---
 
 ## The Anchor Document
@@ -50,6 +57,38 @@ Run this check **automatically** at:
 - Whenever a new idea or addition is introduced
 - When a task runs significantly over expected complexity
 
+## Mechanical checks (run FIRST)
+
+Before you touch the seven judgment questions, run a deterministic gate. This is an
+executable predicate, not a matter of opinion — it either matches or it does not.
+
+1. **Derive the forbidden-path glob from the anchor.** Read the TASK ANCHOR's
+   `Hard boundaries (NOT in scope)` block (the plan's "NOT Building" section). Turn each
+   excluded area into a path glob. Example: an exclusion of "billing service" and
+   "auth middleware" yields the pattern `src/billing/*` and `src/middleware/auth/*`.
+   Persist the derived globs so the check is reproducible.
+
+2. **Run `git diff --name-only` against the forbidden glob.** Any changed file matching a
+   forbidden glob is a deterministic 🔴 — no judgment call, no "but it was harmless":
+
+   ```bash
+   # forbidden_glob is derived from the anchor Boundaries / NOT-Building section
+   git diff --name-only | grep -E "$FORBIDDEN_GLOB_REGEX" && echo "🔴 DRIFT: touched forbidden path"
+   ```
+
+   If any line prints, the verdict is 🔴 DRIFTING immediately. STOP and re-anchor before
+   running the seven questions — a boundary violation is drift regardless of how the seven
+   judgment questions would score.
+
+**Evidence discipline (evidence phase):** run this mechanical gate and collect its
+`file:line` evidence BEFORE forming any interpretation — evidence collected under a
+conclusion is contaminated — collect file:line evidence before interpreting. Record the
+`git diff --name-only` output verbatim first, then judge.
+
+Fallback: if no `Hard boundaries` / "NOT Building" section exists in the anchor, this gate
+is a no-op (nothing to forbid) and you proceed directly to the seven questions — but note
+in the log that no forbidden-path glob was available.
+
 ### The Seven Drift Questions
 
 For the work being done right now, answer each question honestly:
@@ -82,7 +121,17 @@ For the work being done right now, answer each question honestly:
 7. AC COVERAGE
    "Which acceptance criteria does NOT yet have a corresponding task?"
    → If any: add the missing task before adding anything else
+
+8. PRIOR-FAILURE REPEAT
+   "Does this repeat a documented prior failure?"
+   → Check session-memory / the Loop Ledger for a recorded prior failure with the same
+     shape. If yes: STOP — do not re-run the failing approach; apply the recorded fix or
+     escalate.
 ```
+
+> Note: a previously-verified AC is an invariant; breaking it is drift. If a change would
+> regress an acceptance criterion already recorded under "## Verified Invariants", treat it
+> as a 🔴 the same way a forbidden-path hit is — re-verified goals do not silently revert.
 
 ### Drift Verdict
 
@@ -143,7 +192,13 @@ These phrases are the most common entry point for drift.
 
 Append to session-memory (Obsidian vault) whenever drift is detected and resolved.
 Use `mcp__ultimate-obsidian__create_or_update_note(mode: 'append')` on the active
-session file at `02-Notes/Sessions/{TICKET}-{BRANCH}.md`:
+session file at `02-Notes/Sessions/{SUFFIX}.md`.
+
+`{SUFFIX}` is the SAME suffix the invoking command derives — do NOT hardcode
+`{TICKET}-{BRANCH}.md`. Consume the `{SUFFIX}` passed in by prp-plan / prp-implement so the
+Drift Log lands in the same session file as every other note. Fallback when no ticket is
+present: `{SUFFIX}` derives from the plan-stem (the plan filename without its `.plan.md`
+extension), matching the command's own plan-stem fallback:
 
 ```markdown
 ### Drift decisions — Session <date>

@@ -30,6 +30,15 @@ Ralph Wiggum failure.
 
 ---
 
+## Model capability (read first)
+
+This skill is model-agnostic. Read `CI_MODEL_TIER` (values: `frontier` | `standard` | `light`; default `standard` when unset or unknown).
+- `frontier`: treat numbered sub-steps as intent; skip redundant per-step narration.
+- `standard` / `light`: follow every numbered step verbatim.
+Invariants are mandatory at EVERY tier and never skipped: executable gates, the AC anchor, drift checks, write-before-stop, the independent blind verifier, and blast-radius routing.
+
+---
+
 ## Pre-Phase I: MEMORY — Restore context
 
 `Skill(codebase-intelligence:session-memory)` → SESSION START protocol.
@@ -105,8 +114,15 @@ Subagent ATTEMPT: enabled | disabled
 
 No answer / unclear → default **disabled** and state that you defaulted.
 
+**Reasoning-effort match (capability-gated).** If the runtime exposes a reasoning-effort
+control, match it to plan complexity once here and carry it into L.3: a multi-file / high-risk
+plan warrants higher effort; a one-line fix warrants low. Do **not** hardcode any specific
+effort value (e.g. `xhigh`) as required — it is an optional dial. **If the runtime exposes no
+reasoning-effort control, this is a no-op** and the loop runs identically at the default effort.
+
 **PRE-PHASE-IV CHECKPOINT:**
 - [ ] `Subagent ATTEMPT:` line present in the contract (asked, or restored on resume)
+- [ ] Reasoning-effort matched to complexity if the runtime exposes one (else no-op)
 
 ---
 
@@ -128,7 +144,17 @@ about to do:
 AC this attempt serves: {state it}
 Files about to touch inside contract Boundaries? {yes/no}
 Adding anything the AC doesn't require? {yes → strip it}
+Blast radius: green|yellow|red
 ```
+
+Classify the **Blast radius** of what attempt `n` is about to do, using the literal field
+`Blast radius: green|yellow|red`:
+- **green** — reversible, local, test/impl edits inside Boundaries; auto-exit eligible.
+- **yellow** — wider surface (shared modules, schema-adjacent, config); proceed but flag in the ledger.
+- **red** — merge/deploy/dependency/irreversible/security-sensitive next action. A red
+  action can NEVER auto-exit ✅ SUCCESS (enforced at L.7 — routes to ⏸ HUMAN_GATE).
+
+Carry the classification into the L.6 ledger row and into L.7.
 
 🔴 DRIFTING → this counts as a **failed attempt**: record a ledger row
 (`gate: not-run`, `next move: re-anchor`), increment `n`, go to L.7.
@@ -145,6 +171,19 @@ earlier attempts (L.6b). These are binding for attempt `n`: a failure the loop a
 learned must not be repeated. The reread includes the `Subagent ATTEMPT:` line so L.3 knows
 this session's mode.
 
+**Re-verify prior invariants (regression guard).** Re-run the predicates recorded under the
+session-memory `## Verified Invariants` section (goals proven green in earlier attempts/runs).
+Each is an executable predicate (a shell/grep command with a binary exit), not an adjective.
+Any one that now goes **red** is a regression: it makes THIS attempt's gate **FAIL** for
+attempt `n` regardless of the L.4 gate result, and the failing predicate is recorded in the
+L.6 ledger row as the failure reason. A loop that greens the new gate while breaking a
+`## Verified Invariants` predicate has not made progress — it has traded one failure for another.
+
+**Prior-incident check (S6).** Query `mcp__ultimate-obsidian__search_sessions` for prior
+incidents on the files attempt `n` is about to touch. On a hit, print `⚠️ prior incident`
+with the file and a one-line summary, and carry it into L.3 as context (do not silently
+repeat a past mistake). No hit → proceed. Missing search backend → skip (no-op), state it.
+
 ### L.3 — ATTEMPT
 
 - Plan input → execute the next incomplete task(s) per prp-implement Phase 3 conventions
@@ -153,6 +192,27 @@ this session's mode.
 - Free-form goal → implement the smallest change that could make the gate pass
 - On attempt n>1: read the ledger rows for attempts 1..n-1 first. State in one line what
   this attempt does **differently**. Identical retry of a failed approach = no-progress.
+
+**Briefing contract (passed to whoever runs the attempt — this context or the L.3 delegate).**
+The briefing always carries:
+
+- **Change budget: one logical change per iteration.** Each attempt makes exactly one
+  logical change aimed at the gate. Bundling several changes hides which one moved the gate
+  and inflates the verifier's diff — split them across iterations.
+- the re-injected TASK ANCHOR (verbatim AC + NOT-in-scope) from Pre-Phase III, and the
+  reasoning-effort dial resolved in Pre-Phase IV (no-op if the runtime exposes none).
+
+**Opt-in "re-feed full spec" mode (default off).** By default the briefing carries only the
+task(s) + prior-failure lines (lean context). When a loop is expected to run long — tie the
+trigger to **iteration-count or context-budget**, not a fixed turn number; **recommend on for
+loops expected to exceed ~5 iterations** — switch to **re-feed** mode: the fresh-context
+delegate receives the **full plan/spec verbatim each iteration** plus the re-injected AC
+anchor, so a blank-context delegate never drifts from a spec it never fully saw. State when
+you enable it and why (which trigger fired).
+
+**Advisor tier consult (S3, capability-gated).** At decision points inside the attempt, L.3
+MAY consult a stronger advisor tier if `CI_MODEL_TIER` and the runtime expose more than one.
+**In single-tier mode this is a no-op** — the attempt proceeds on the only tier available.
 
 **Optional: delegate the attempt** (only if the contract's `Subagent ATTEMPT:` line is
 `enabled`). Spawn **one** `Agent(general-purpose)` subagent for this attempt — a single
@@ -168,19 +228,85 @@ step 3). The subagent receives **only**:
 and returns **only** the diff summary + the gate-relevant output (not its full reasoning).
 If `disabled` (default), run the attempt in this context as above.
 
+### L.3b — No-op guard
+
+The no-op guard runs immediately after the ATTEMPT: run `git diff --stat`. If the diff is
+**empty**, OR the attempt response is **refusal-shaped / empty** (the delegate declined or
+produced nothing), the attempt changed nothing — there is nothing to gate:
+
+- **Skip L.4 and L.5** (no gate, no verifier — running them on an empty diff wastes budget).
+- Record a ledger row with `gate: not-run, reason: no-change/refusal`.
+- This does **NOT** increment `no_progress_limit` — a no-op is not a distinct failed approach,
+  so it must not be counted toward NO_PROGRESS (that counter is for identical *failing* attempts).
+- **Reroute to a fallback model only if one is configured** (a different `CI_MODEL_TIER` is
+  available); otherwise count it as an **ordinary failed attempt** (`n += 1`, go to L.7).
+
+**Raw-API refusal branch (gated).** Only when running against the raw API and the response
+carries `stop_reason: "refusal"` do you treat it as a hard refusal signal; in harness/tool
+mode there is no such field, so detect refusal by the empty/refusal-shaped diff above. Never
+require the `stop_reason` field to exist.
+
 ### L.4 — GATE
 
 Run the contract's gate command(s). Capture exit code + output tail (verbatim, ≤20 lines).
 
+**Redaction pre-write step (S4).** Before recording the captured output tail into the ledger
+or session-memory, scan it for secrets (API keys, tokens, passwords, connection strings) and
+third-party / customer names, and replace each with the marker `[REDACTED]`. Never transmit
+captured output externally. The ledger stores the redacted tail only.
+
 - Exit ≠ expected → gate FAIL. Skip L.5 (verifier runs only on green gates — "reserve
   self-consistency for high-stakes tasks and optimize the number of iterations").
-- Exit = expected (+ output assertion matches) → gate PASS → L.5.
+- Exit = expected (+ output assertion matches) → gate PASS → L.4b.
+
+### L.4b — Gate-gaming pre-scan (on git diff)
+
+Before the green gate reaches the verifier, run an executable pre-scan over `git diff` for the
+common ways a diff games the gate. Each is a grep/predicate, not a judgment call:
+
+```
+git diff | grep -nE '\.skip|\.only|xit\(|xdescribe\('        # skipped/focused tests
+git diff --diff-filter=D --name-only | grep -E 'test|spec'    # deleted test/spec files
+git diff | grep -nE '^\-.*(assert|expect|should)'             # removed/weakened assertions
+git diff | grep -nE '^\+.*(assert|expect).*(==|===).*[0-9"'\'']'  # hardcoded literal expectations
+```
+
+Any hit → **automatic verifier FAIL** for this attempt (do not even spawn L.5); record the
+matching `grep` line **as the evidence** in the ledger. This is a cheap deterministic floor
+under the verifier, not a replacement for it — a clean pre-scan still goes to L.5.
 
 ### L.5 — VERIFY (independent, fresh context)
 
 Spawn via `Agent(general-purpose)` — mirrors `doubt-driven` Step 3. The verifier gets
 **only**: the LOOP CONTRACT, the gate command + captured output, and the diff
-(`git diff --stat` + the full diff if <300 lines). **Never the maker's reasoning.**
+(`git diff --stat` + the full diff if ≤300 lines). **Never the maker's reasoning.**
+
+**The fresh-context verifier is a hard floor at EVERY `CI_MODEL_TIER` — `frontier` included.**
+"The model is smart enough to check itself" is **never** a valid reason to drop the
+maker–checker split. A **self-critique / self-audit fallback is explicitly forbidden**: if no
+second context can be spawned, the loop does not substitute self-review — it reports the
+verifier as unavailable and stops rather than self-declaring done.
+
+**Verifier model diversity (S3).** When more than one model tier is available, run the
+verifier on a **different** model from the maker — an independent model is a stronger check.
+**In single-tier mode** (only one model available) this is a no-op: keep the maker–checker
+split but achieve independence through **instruction diversity** (the blind artifact-only
+prompt below) rather than model diversity.
+
+**Verifier worktree (S8, capability-gated).** Spawn the verifier in its **own git worktree**
+(`EnterWorktree` / `--worktree`) so its checkout cannot collide with the maker's working tree.
+Never parallelize lanes that touch the same files — a red action or same-file overlap must
+run one lane at a time. **If worktree support is unavailable, run serial**: the verifier reads
+the same working tree after the attempt settles (no concurrent lane), which preserves the
+independence guarantee without worktrees.
+
+**Large diffs (>300 lines, PL7).** When the diff exceeds the **300**-line threshold, do NOT
+feed the verifier `git diff --stat` alone — a stat line hides added/removed logic and lets
+gate-gaming slip through. Instead feed the diff **in chunks**, or a **hunk-level summary** that
+preserves the actual added/removed logic per hunk (not just counts). State the token
+trade-off explicitly: chunked/hunk review costs more tokens than `--stat` but is the only way
+the verifier can judge concerns 3–4 (gaming/overfitting) on a large diff; `--stat` alone would
+force a blind PASS, which is not allowed.
 
 Verifier prompt template:
 
@@ -205,11 +331,13 @@ ATTEMPT NUMBER matters: scrutiny rises with n. On later attempts the maker has h
 more chances to shape the diff toward the gate — treat a late green gate with more
 suspicion, not less, and look harder at concern 4.
 
-Report under 150 words:
-  VERDICT: PASS | FAIL
+Report under 150 words, splitting the verdict into two axes:
+  OUTCOME: PASS | FAIL      # does the gate output genuinely prove the Objective is met (concerns 1–2)?
+  TRAJECTORY: PASS | FAIL   # was the Objective reached honestly, not by gaming/overfitting (concerns 3–4)?
+  VERDICT: PASS | FAIL      # PASS only if BOTH OUTCOME and TRAJECTORY are PASS
   EVIDENCE: {file:line or output line for each concern; "none" if clean}
 
-Default to FAIL if uncertain.
+Default every axis to FAIL if uncertain.
 
 CONTRACT: {paste}
 ATTEMPT NUMBER: {n} of {max_iterations}
@@ -220,13 +348,23 @@ DIFF: {paste}
 VERDICT: FAIL → treat as gate failure (record evidence in ledger, continue loop).
 The maker never argues with the verifier; it addresses the evidence.
 
+Record **both** axes (`OUTCOME` and `TRAJECTORY`) in the L.6 ledger. L.7 requires **both**
+PASS for ✅ SUCCESS: a green gate with `TRAJECTORY: FAIL` (gamed/overfit) is a verifier FAIL,
+not a success, no matter how clean the OUTCOME looks.
+
 ### L.6 — RECORD
 
 `Skill(codebase-intelligence:session-memory)` → Loop Ledger append protocol. One row:
 
 ```
-| {n} | {ISO timestamp} | {gate: PASS/FAIL + exit code} | {verifier: PASS/FAIL/— } | {diff summary, files +/-} | {next move} |
+| {n} | {ISO timestamp} | {blast: green|yellow|red} | {gate: PASS/FAIL + exit code} | {OUTCOME: PASS/FAIL/—} | {TRAJECTORY: PASS/FAIL/—} | {accepted?: yes/no} | {diff summary, files +/-} | {next move} |
 ```
+
+- **accepted?** = `yes` only when the verifier returned `VERDICT: PASS` (both OUTCOME and
+  TRAJECTORY PASS) for this attempt; `no` otherwise (gate FAIL, verifier FAIL, no-op, drift).
+- **Running accept-rate** = accepted rows ÷ attempts that reached the gate (exclude L.3b
+  no-op/refusal rows, which are `gate: not-run`). Recompute and print it each iteration — it
+  feeds the L.7 LOW_YIELD stop.
 
 The ledger is the loop's spine: attempt n+1 reads it so the loop never re-derives
 what attempts 1..n already tried.
@@ -255,20 +393,55 @@ Evaluate in order — first match wins:
 
 | Condition | Exit | Action |
 |---|---|---|
-| Gate PASS ∧ Verifier PASS | ✅ SUCCESS | → Phase R |
+| Next action's `Blast radius` (`green\|yellow\|red`) is **red** (merge/deploy/deps/irreversible/security) | ⏸ HUMAN_GATE | surface to user, stop — **even if Gate PASS ∧ Verifier PASS**. A red action can NEVER auto-exit ✅ SUCCESS. |
+| Gate PASS ∧ Verifier PASS (**both** OUTCOME ∧ TRAJECTORY) ∧ next action not red | ✅ SUCCESS | append gate to invariants file → Phase R |
+| `elapsed > wall_clock_cap` | 🛑 TIME_CAP | → Phase R (honest failure) |
+| `cumulative tokens/$ > budget` | 🛑 BUDGET_CAP | → Phase R (advisory only if no telemetry available) |
+| `n ≥ 3 ∧ accept_rate < min_accept_rate` | 🛑 LOW_YIELD | → Phase R (honest failure) |
 | `n ≥ max_iterations` (contract) | 🛑 MAX_ITER | → Phase R (honest failure) |
-| Last `no_progress_limit` gate failures identical | 🛑 NO_PROGRESS | → Phase R (honest failure) |
+| `n ≥ 3` attempts reached a **green gate but failed the verifier** (ping-pong) | 🛑 VERIFIER_STALL | → Phase R (honest failure) |
+| Last `no_progress_limit` gate failures identical | 🛑 NO_PROGRESS | escalation check below, else → Phase R (honest failure) |
 | Context usage > 40% | 🛑 CONTEXT_CAP | ledger + session saved → report resume command, stop |
 | Next action hits human_gate (merge/deploy/deps/irreversible) | ⏸ HUMAN_GATE | surface to user, stop |
 | Otherwise | — | `n += 1`, → L.1 |
+
+**TIME_CAP / BUDGET_CAP / LOW_YIELD are evaluated BEFORE MAX_ITER** — a loop that is burning
+wall-clock, budget, or producing accepted changes below `min_accept_rate` should stop early
+rather than grind to the iteration ceiling. `wall_clock_cap`, `budget`, and `min_accept_rate`
+come from the LOOP CONTRACT; if a cap is absent it is skipped (that row simply never matches).
+BUDGET_CAP is **advisory** when the runtime exposes no token/$ telemetry — report it as an
+estimate, do not silently treat missing telemetry as "under budget" forever.
+
+**VERIFIER_STALL (PL9)** is distinct from NO_PROGRESS: NO_PROGRESS is identical *gate* failures;
+VERIFIER_STALL is the gate going **green** ≥3 times while the verifier keeps rejecting the
+trajectory (the maker keeps gaming a different way each time). Route it to Phase R so a human
+reads why the verifier will not accept.
+
+**NO_PROGRESS escalation (S3).** Before declaring 🛑 NO_PROGRESS: if the last
+`no_progress_limit` gate failures are **identical** AND a **stronger `CI_MODEL_TIER` exists**
+AND this failure has **not yet been escalated**, then escalate the next attempt to the stronger
+tier, record a ledger row noting the escalation, and **reset the identical-failure counter once**
+(give the stronger tier a clean shot). Otherwise → 🛑 NO_PROGRESS. **In single-tier mode this
+escalation is a no-op** — with no stronger tier available, identical repeated failures go
+straight to 🛑 NO_PROGRESS.
 
 **Never** widen the contract, weaken the gate, or raise max_iterations mid-loop to force
 an exit. If the contract is wrong, stop and say so — that is a planning failure, not
 iteration n+1.
 
+**On ✅ SUCCESS — append to the project invariants file (PL14).** Append the passing gate
+command to the project **invariants file** (the durable list of executable predicates future
+runs re-check). This is what L.2's `## Verified Invariants` re-verification and `prp-implement`
+read on later runs, so a goal proven green here becomes a regression guard everywhere. Record
+it under the session-memory `## Verified Invariants` section as an executable predicate (the
+gate command + expected exit), never as an adjective like "works".
+
 **PHASE_L_CHECKPOINT:**
-- [ ] Every attempt has a ledger row
-- [ ] Verifier ran on every green gate (received attempt n)
+- [ ] Every attempt has a ledger row (blast radius, gate, OUTCOME, TRAJECTORY, accepted?, accept-rate)
+- [ ] Verifier ran on every green gate that passed the L.4b pre-scan (received attempt n)
+- [ ] `## Verified Invariants` predicates re-run at L.2; any regression recorded as this attempt's gate FAIL
+- [ ] Captured output redacted ([REDACTED]) before any write
+- [ ] A **red** blast-radius next action routed to ⏸ HUMAN_GATE, never auto-SUCCESS
 - [ ] Recurring/gamed failures promoted to `## Loop Constraints` (L.6b)
 - [ ] Exit path taken matches the table — no improvised exits
 
@@ -277,6 +450,11 @@ iteration n+1.
 ## Phase R: REPORT
 
 **HIERARCHY CHECK**: `mcp__ultimate-obsidian__list_vault({ path: "02-Notes/Reports" })`
+
+**Redaction pre-write step (S4).** Before writing the diff (and any captured output) into the
+report, scan it for secrets (keys, tokens, passwords, connection strings) and third-party /
+customer names and replace each with `[REDACTED]`. Never transmit captured output externally —
+the report stores redacted content only.
 
 Save via Obsidian MCP (never Write/bash):
 
@@ -301,8 +479,9 @@ tags: [prp, {project-root-name}, report, loop]
 
 # Loop Report: {objective one-liner}
 
-**Exit**: {SUCCESS | MAX_ITER | NO_PROGRESS | CONTEXT_CAP | HUMAN_GATE}
+**Exit**: {SUCCESS | TIME_CAP | BUDGET_CAP | LOW_YIELD | MAX_ITER | VERIFIER_STALL | NO_PROGRESS | CONTEXT_CAP | HUMAN_GATE}
 **Iterations**: {n} / {max_iterations}
+**Accept-rate**: {accepted ÷ gated attempts} · **Cost per accepted change**: {tokens or $ ÷ accepted count; "advisory — no telemetry" if unavailable}
 
 ## Contract (as run)
 {verbatim LOOP CONTRACT}
@@ -351,6 +530,13 @@ share a context.
 
 Both are spawned with `Agent(general-purpose)`. Each attempt is **one** delegate — there is
 no parallel fan-out. Scale (many agents per task) is out of scope; see below.
+
+**The verifier is a hard floor at EVERY `CI_MODEL_TIER` — including `frontier`.** "The model
+is smart enough to check itself" is **never** a valid reason to drop the maker–checker split,
+and a self-critique / self-audit fallback is explicitly forbidden. If a second independent
+context cannot be spawned, the loop reports the verifier as unavailable and stops — it does
+not self-declare done. When only one model is available, keep the split via instruction
+diversity (the blind artifact-only prompt), never by collapsing checker into maker.
 
 ## What prp-loop does NOT do
 
