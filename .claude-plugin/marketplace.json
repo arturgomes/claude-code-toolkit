@@ -7,13 +7,13 @@
   "metadata": {
     "description": "Standalone PRP engineering toolkit: a self-contained prp-plan / prp-implement / prp-loop workflow with Serena LSP codebase search, cross-session memory keyed by Jira ticket + branch, Jira context injection, and a personal knowledge base.",
     "homepage": "https://github.com/arturgomes/claude-code-toolkit",
-    "version": "3.9.0"
+    "version": "3.10.0"
   },
   "plugins": [
     {
       "name": "codebase-intelligence",
       "source": "./plugins/codebase-intelligence",
-      "version": "3.9.0",
+      "version": "3.10.0",
       "description": "Standalone PRP workflow — prp-plan / prp-implement / prp-loop — with Serena LSP structural codebase search, cross-session memory, Jira context injection, a personal KB (bookrag), and a bounded closed-loop runner with contract-mandated stop rules and an independent verifier. No prp-core required."
     }
   ]

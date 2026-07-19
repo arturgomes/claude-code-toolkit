@@ -1,6 +1,6 @@
 {
   "name": "codebase-intelligence",
-  "version": "3.9.0",
+  "version": "3.10.0",
   "description": "Standalone PRP workflow (prp-plan / prp-implement / prp-loop) with Serena LSP structural codebase search, cross-session task memory keyed by Jira ticket + branch, live Jira ticket context injection, a personal KB (bookrag), and prp-loop: a bounded closed-loop runner with contract-mandated stop rules and an independent verifier. Self-contained — no prp-core required.",
   "author": {
     "name": "Artur Gomes",
