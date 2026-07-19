@@ -57,16 +57,40 @@ The fallback is **not** a failure — every AC still holds serially; only wall-c
 
 ---
 
-## Phase A — Decompose (planner context)
+## Phase 0 — Plan (full prp-plan rigor, delegated — never reinvented)
 
-1. Invoke the `project-manager` agent (planner) with the goal + active preset. It returns:
-   - a **contract** = granular, testable `done` criteria, each with an **executable gate** and an AC
-     reference (KB: Harness Patterns F05 — negotiate a testable done contract before writing code);
-   - a **territory map** = disjoint glob sets, one per role the goal actually needs.
-2. Approve the plan **before** any specialist writes code (KB: Agent Teams P06 — plan first, approve
-   first). Write `contract[]` + provisional `specialists[]` into `orchestration-state.json`.
+The planning phase **is** the existing `/prp-plan` command, run as a building block; its rigor is
+inherited wholesale and nothing is discarded. The mediator does **not** substitute an ad-hoc goal
+decomposition for it.
+
+1. **Reuse-or-plan (idempotent):** if the caller passed `--plan <path>` and the file exists, reuse
+   that `plan.md`. Otherwise invoke `/prp-plan "<input>"` (input = `JIRA-TICKET` / goal / PRD path).
+2. `/prp-plan` runs its full pipeline unchanged: **session-memory** (load the vault session first) →
+   **Jira injection** (Atlassian MCP: ticket + AC + QA comments) → **drift-guard anchor** (verbatim
+   AC) → **codebase agents** (`codebase-explorer` + `codebase-analyst` via Serena) → **research with
+   ask-kb + Context7 BEFORE web** (`web-researcher` fills only the gaps KB + Context7 miss) →
+   **consult-kb** (architecture vs KB principles) → emits `plan.md`.
+3. The resulting `plan.md` (Intelligence Context with verbatim AC + KB/Context7 facts, AC Traceability,
+   Files-to-Change owner-lanes, per-task `expected_gate`s) is the **decomposition input** for Phase A
+   and the durable planning artifact retained in `02-Notes/Plans/`.
+4. A genuine **requirement fork** or a `/prp-plan` refusal on a blocking unknown is the sanctioned
+   AC-1 human stop — surface it and wait; never fan out on an unresolved plan.
+
+## Phase A — Decompose (planner context — consumes the plan.md)
+
+1. Invoke the `project-manager` agent (planner) with the **Phase 0 plan.md** + active preset. The PM
+   **maps the plan, it does not re-plan**:
+   - plan's **AC Traceability + tasks + `expected_gate`s** → the **contract** = granular, testable
+     `done` criteria, each carrying the task's executable gate + its AC ref (KB: Harness Patterns F05);
+   - plan's **Files-to-Change single-writer owner-lanes** → the **territory map** = disjoint glob sets
+     (the plan's lanes are already single-writer, so they map almost 1:1 to territories).
+2. Approve the contract **before** any specialist writes code (KB: Agent Teams P06). Write `contract[]`
+   + provisional `specialists[]` into `orchestration-state.json`.
 3. **Size the team to 2-5 active specialists** — never activate all 7 (KB: Agent Teams P04/X04:
-   N sessions ≈ N× token cost). Activate only the roles the goal needs.
+   N sessions ≈ N× token cost). Activate only the roles the plan's lanes require.
+4. **Fallback (no plan.md):** only if Phase 0 was skipped AND no `--plan` was given (e.g. a trivial
+   goal in a repo with no vault/Jira), the PM may decompose the raw goal directly — but the default and
+   preferred path is always to consume a real plan.md.
 
 ---
 

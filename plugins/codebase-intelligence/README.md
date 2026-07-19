@@ -131,11 +131,16 @@ and no-code-collision automatically, and returns a merged, reviewed result — w
 checkpoints or Y/N prompts.
 
 ```
-user ─▶ /prp-orchestrate "<goal>" [--preset <name>] [--base <branch>]
+user ─▶ /prp-orchestrate "<goal | JIRA-TICKET | prd.md>" [--preset <name>] [--plan <path>] [--base <branch>]
              │
-        ┌────▼──  MEDIATOR (coordinator + adversarial judge + merge-gate)  ──┐
-        │  A Decompose  → project-manager: goal → testable on-disk contract  │
-        │                 + DISJOINT territory map (activate 2-5, never 7)    │
+        0 PLAN → the FULL /prp-plan (unchanged): session-memory + Jira injection +
+             │   codebase agents + ask-kb + Context7 (BEFORE web) + drift-guard → plan.md
+             │   (durable artifact; --plan <path> reuses an existing one)
+             ▼
+        ┌───────  MEDIATOR (coordinator + adversarial judge + merge-gate)  ──┐
+        │  A Decompose  → project-manager MAPS plan.md → testable contract   │
+        │                 + DISJOINT territory map (from the plan's lanes;    │
+        │                   activate 2-5, never 7)                            │
         │  B Allocate   → one git worktree per specialist; assert territories │
         │                 pairwise-disjoint (AC-4) — abort if they intersect  │
         │  C Round-judge→ each round: monitor ▸ JUDGE every diff vs target    │
@@ -151,6 +156,12 @@ user ─▶ /prp-orchestrate "<goal>" [--preset <name>] [--base <branch>]
                      auth / payments / deploy / db-migration)
 ```
 
+- **Plans first, full rigor:** Phase 0 runs the **unchanged `/prp-plan`** on a Jira ticket, goal, or
+  PRD — session-memory (Obsidian vault) + Jira injection + `codebase-explorer`/`codebase-analyst` +
+  **ask-kb and Context7 before any web search** + drift-guard — producing a durable `plan.md`. The
+  mediator then **maps that plan.md** (AC Traceability + owner-lanes) into the contract + territory
+  map; it never substitutes an ad-hoc decomposition. `--plan <path>` reuses an existing plan. A ticket
+  prefix infers the preset (`SEATHQ-9999` → `seathq`).
 - **Interaction (AC-1):** no mandatory Y/N gates; `PHASE_N_CHECKPOINT` verbosity collapses to
   silent-unless-fail invariants; `ask-kb` / `context7-research` / `drift-guard` / `session-memory`
   are auto-invoked inside the flow.

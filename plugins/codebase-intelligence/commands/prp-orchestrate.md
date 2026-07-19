@@ -1,12 +1,14 @@
 ---
 name: prp-orchestrate
 description: >
-  Goal → done, autonomously. Hands a feature goal to a mediator that decomposes it, fans work to 2-5
-  specialists each in their OWN git worktree (no two ever touch the same code), judges every
-  specialist diff each round against the target repo's .claude/ rules, gates merges on a 🔴 verdict,
-  and merges passing worktrees serially. No mandatory Y/N gates — stops for a human ONLY on a
-  requirement fork or a red blast-radius action (auth/payments/deploy/db-migration).
-argument-hint: <goal> [--preset <name>] [--base <branch>]
+  Ticket/goal/PRD → done, autonomously. FIRST plans with the full prp-plan rigor (session-memory +
+  Jira injection + codebase agents + ask-kb + Context7 before web + drift-guard) into a durable
+  plan.md, THEN hands that plan.md to a mediator that fans work to 2-5 specialists each in their OWN
+  git worktree (no two ever touch the same code), judges every diff each round against the target
+  repo's .claude/ rules, gates merges on a 🔴 verdict, and merges passing worktrees serially. No
+  mandatory Y/N gates — stops for a human ONLY on a requirement fork or a red blast-radius action
+  (auth/payments/deploy/db-migration).
+argument-hint: <goal | JIRA-TICKET | path/to/prd.md> [--preset <name>] [--plan <path>] [--base <branch>]
 ---
 
 # /prp-orchestrate — mediator-judged parallel agent teams
@@ -25,17 +27,48 @@ requirement-fork / red-blast-radius human gate.
 
 ## Your Mission
 
-Take `<goal>` from `goal → done` with **no mandatory interactive Y/N gates**. The six mediator phases:
+Take the input from `ticket/goal/PRD → done` with **no mandatory interactive Y/N gates**. One
+planning phase (the full, unchanged prp-plan) feeds six mediator phases:
 
-1. **Decompose** — `project-manager` turns the goal into a testable on-disk contract + a disjoint
-   territory map (activate 2-5 roles, never all 7).
+0. **Plan (full prp-plan rigor)** — run the existing `/prp-plan` on the input to produce a durable
+   `plan.md` with Intelligence Context (verbatim AC), AC Traceability, Files-to-Change owner-lanes,
+   and per-task `expected_gate`s. This is **not** replaced by the mediator — it is the source of truth
+   the mediator decomposes from. See "Step 0" below.
+1. **Decompose** — `project-manager` **consumes the plan.md** (not a raw goal): it maps the plan's AC
+   Traceability + tasks + `expected_gate`s → the testable on-disk contract, and the plan's
+   single-writer owner-lanes / Files-to-Change → the disjoint territory map (activate 2-5 roles, never 7).
 2. **Activate** — one git **worktree** per active specialist off the base branch; assert territories
    are pairwise-disjoint (AC-4) — abort if they intersect.
 3. **Round-judge** — each round: monitor → JUDGE every diff vs the target repo's `.claude/`
    MUST/SHOULD/MUST-NOT/SHOULD-NOT rules (drift-guard Q1-8 + rules rubric) → 🔴 blocks that merge.
-4. **Verify** — `qa-analyst` runs behavioral gates; `pr-reviewer` does fresh-context adversarial review.
+4. **Verify** — `qa-analyst` runs the plan's `expected_gate`s / behavioral gates; `pr-reviewer` does
+   fresh-context adversarial review.
 5. **Merge** — serial merge of passing worktrees only; `ux-specialist` taste check on UI merges.
 6. **Shutdown** — clean handshake, specialists save work as files, `session-memory` SESSION END.
+
+## Step 0 — Plan with the full prp-plan rigor (do NOT skip, do NOT reinvent)
+
+The planning phase **is** the existing `/prp-plan` command, invoked as a building block — its rigor
+is inherited wholesale, nothing is discarded:
+
+1. **Reuse-or-plan (idempotent):** if `--plan <path>` is given and the file exists, **reuse that
+   plan.md** and skip to Phase 1. Otherwise invoke `/prp-plan "<input>"`.
+2. `/prp-plan` runs its full pipeline on the input (a `JIRA-TICKET` like `SEATHQ-9999`, a free-text
+   goal, or a `path/to/prd.md`):
+   - **session-memory** — load `02-Notes/Sessions/<TICKET>-<SUFFIX>.md` from the Obsidian vault first.
+   - **Jira injection** — Atlassian MCP pulls the ticket, its AC, and QA-failure comments (when the
+     input is a ticket id).
+   - **drift-guard anchor** — TASK ANCHOR with the verbatim AC (gate if AC missing).
+   - **codebase agents** — `codebase-explorer` + `codebase-analyst` (Serena LSP), `codebase-search`.
+   - **research precedence (as prp-plan already enforces):** **ask-kb (personal KB) and Context7 run
+     BEFORE any web search** — `web-researcher` only fills gaps the KB + Context7 did not cover.
+   - **consult-kb** — architecture reviewed against KB principles (🔴/🟡/🟢/💡).
+   - Emits `plan.md` with Intelligence Context (AC verbatim, KB findings, Context7 facts, assumptions),
+     AC Traceability, Files-to-Change owner-lanes, and per-task `expected_gate`s.
+3. The produced `plan.md` is retained in `02-Notes/Plans/` — it is the durable planning artifact and
+   the mediator's decomposition input. Never bypass it with an ad-hoc goal decomposition.
+4. If `/prp-plan` surfaces a genuine **requirement fork** or refuses on a **blocking unknown**, that is
+   exactly the sanctioned AC-1 human stop — surface it and wait; do not fan out on an unresolved plan.
 
 ## Step 1 — Capability preflight (U-1 / U-2)
 
@@ -71,9 +104,12 @@ Fallback table (a fallback is never a failure — every AC still holds serially)
 
 - `Skill(mediator)` owns territory allocation, the per-round `.claude/`-rules verdict, the merge gate,
   the message graph, and capability fallback.
-- If `--preset <name>` is given, the mediator loads `presets/<name>.yaml` to bind the generic roles to
-  repos/stacks; otherwise roles bind to `self` (current repo). Agents contain **no** org specifics.
+- **Preset resolution (in order):** (a) explicit `--preset <name>`; else (b) **infer from the ticket
+  prefix** — a `SEATHQ-9999` input resolves to `presets/seathq.yaml` when that file exists (lowercase
+  the prefix before the dash); else (c) roles bind to `self` (current repo). Agents contain **no** org
+  specifics — all binding is in the preset.
 - `--base <branch>` overrides the auto-detected base branch every worktree forks from.
+- `--plan <path>` reuses an existing `plan.md` and skips Step 0's planning (idempotent re-runs).
 
 ## Step 4 — Auto-invoked skills (AC-5)
 
