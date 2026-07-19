@@ -87,7 +87,7 @@ NOT in scope: {Hard boundaries from plan}
 
 **This anchor is fixed.** Re-state it before every task.
 
-If the plan has no Intelligence Context section (e.g., plain prp-core plan):
+If the plan has no Intelligence Context section (e.g., an externally-authored plan):
 → ask the user for the acceptance criteria before proceeding. Do not implement blind.
 
 **PRE-PHASE-II CHECKPOINT:**

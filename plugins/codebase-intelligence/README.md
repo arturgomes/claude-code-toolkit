@@ -1,11 +1,13 @@
 # codebase-intelligence
 
-Intelligence layer for prp-core. Adds memory, KB, Context7, drift-guard, and a
-bounded self-verifying loop to `prp-plan` and `prp-implement` without removing any
-original prp-core logic. Codebase search is **Serena LSP structural search** (single
-tier). Cross-session memory lives in an Obsidian vault via the `ultimate-obsidian` MCP.
+A **standalone** PRP engineering toolkit. Ships its own `prp-plan`, `prp-implement`,
+and `prp-loop` commands plus their agents, layered with memory, KB, Context7,
+drift-guard, and a bounded self-verifying loop. Codebase search is **Serena LSP
+structural search** (single tier). Cross-session memory lives in an Obsidian vault via
+the `ultimate-obsidian` MCP. **No prp-core (or any other plugin) required.**
 
 **Version history**
+- **v3.7.0** — decoupled from prp-core: the plugin is now fully self-contained (its own prp-plan / prp-implement / prp-loop commands and agents; no `prp-core:` invocations). Adds the `ingest-web-doc-to-kb` skill (autonomous web→KB ingestion, no API key).
 - **v3.3.0** — adds `prp-loop`: a bounded closed-loop runner with contract-mandated stop rules and an independent verifier.
 - **v3.4.0** — makes the loop self-improving: an optional context-isolating subagent per attempt, promotion of recurring/gamed failures to durable `## Loop Constraints`, and a verifier whose scrutiny rises with attempt count.
 - **v3.5.0** — folds in 27 model-agnostic techniques mined from the `x-intel-2026-07` KB (52 sources) so every skill works **without any single model** (e.g. Fable-5). Every model-tier / effort / routing / worktree feature is capability-gated with a documented single-tier no-op fallback. Also **removes SocratiCode** (search is now Serena-only) and the superseded Python memory tools (memory is now pure `ultimate-obsidian` MCP).
@@ -174,14 +176,14 @@ If Context7 is unavailable → flag the response as **unverified**.
 
 ## Agents
 
-These agents shadow the prp-core equivalents. When prp-plan calls `codebase-intelligence:codebase-explorer`, it gets our version — not prp-core's.
+The plugin ships its own agents; `prp-plan` and `prp-implement` invoke them directly (`codebase-intelligence:codebase-explorer`, etc.). If a legacy `prp-core` is also installed, these take precedence — but nothing here requires it.
 
-| Agent | Extends | What's added |
+| Agent | Role | Capabilities |
 |---|---|---|
-| `codebase-explorer` | `prp-core:codebase-explorer` | memory pre-fill · Serena LSP symbol resolution · KB pattern lookup · Source column in every output table |
-| `codebase-analyst` | `prp-core:codebase-analyst` | memory pre-fill · Serena-first entry-point resolution · drift-guard scope check · Source column |
-| `web-researcher` | `prp-core:web-researcher` | KB pre-check (skip web for covered topics) · Context7 API verification · drift-guard scope check on findings |
-| `codebase-researcher` | — (standalone) | full pre-planning research pass (memory → Serena → structured file:line report) |
+| `codebase-explorer` | Locate WHERE code lives | memory pre-fill · Serena LSP symbol resolution · KB pattern lookup · Source column in every output table |
+| `codebase-analyst` | Trace HOW code works | memory pre-fill · Serena-first entry-point resolution · drift-guard scope check · Source column |
+| `web-researcher` | External research | KB pre-check (skip web for covered topics) · Context7 API verification · drift-guard scope check on findings |
+| `codebase-researcher` | Pre-planning research | full pre-planning research pass (memory → Serena → structured file:line report) |
 
 ---
 

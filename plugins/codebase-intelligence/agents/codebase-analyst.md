@@ -2,7 +2,7 @@
 name: codebase-analyst
 description: >
   Traces HOW code works — entry points, data flow, contracts — with Serena LSP for exact file:line resolution and session-memory pre-fill.
-  Use proactively to understand HOW code works — same purpose as prp-core:codebase-analyst but with LSP-verified references.
+  Use proactively to understand HOW code works, with LSP-verified references.
 model: sonnet
 color: cyan
 ---
@@ -56,7 +56,7 @@ Skip `find_symbol` if the request already includes an explicit `file:line` — u
 Do this **before** reading files — Serena's results tell you exactly which lines to read.
 Mark results: source `serena`
 
-### Step 2 — Trace the code path (prp-core original strategy)
+### Step 2 — Trace the code path (native strategy)
 
 With Serena-verified entry points:
 

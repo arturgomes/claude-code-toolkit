@@ -54,7 +54,7 @@ Skip `find_symbol` if the request already includes an explicit `file:line` — u
 Collect results: exact `file:line` for every symbol mentioned.
 Mark source: `serena`
 
-### Step 2 — Native file exploration (prp-core original strategy)
+### Step 2 — Native file exploration
 
 Run the standard broad location search using Grep, Glob, LS:
 - Common naming conventions in this codebase
