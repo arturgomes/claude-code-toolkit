@@ -75,6 +75,11 @@ P04 — small teams).
   ledger → consumed by Phase 0 (prp-plan) as the authoritative AC set.
 - NOT READY: the same file with an `## Open Questions` section (category-grouped, rubric-shaped) and a
   hard STOP — no planning artifact, no code.
+- **session-memory (read + write):** read prior session at the start (a recurring ambiguity may already
+  be answered in `## General Rules`); on the verdict, write the DoR outcome to session-memory and
+  record any **recurring ambiguity as a reusable pitfall** in `## General Rules` (e.g. "this domain's
+  'export' always means CSV+PDF — ask once") so the next ticket doesn't re-litigate it. The mediator
+  carries this forward as the single session-memory writer once refinement passes.
 
 ## Invariants (silent unless failed)
 
