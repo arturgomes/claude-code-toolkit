@@ -22,6 +22,8 @@
     "orchestration",
     "agent-teams",
     "mediator",
-    "worktree"
+    "worktree",
+    "refinement",
+    "definition-of-ready"
   ]
 }

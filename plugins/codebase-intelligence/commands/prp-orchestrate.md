@@ -8,7 +8,7 @@ description: >
   repo's .claude/ rules, gates merges on a 🔴 verdict, and merges passing worktrees serially. No
   mandatory Y/N gates — stops for a human ONLY on a requirement fork or a red blast-radius action
   (auth/payments/deploy/db-migration).
-argument-hint: <goal | JIRA-TICKET | path/to/prd.md> [--preset <name>] [--plan <path>] [--base <branch>]
+argument-hint: <goal | JIRA-TICKET | path/to/prd.md> [--preset <name>] [--plan <path>] [--base <branch>] [--groom-autonomous]
 ---
 
 # /prp-orchestrate — mediator-judged parallel agent teams
@@ -27,13 +27,19 @@ requirement-fork / red-blast-radius human gate.
 
 ## Your Mission
 
-Take the input from `ticket/goal/PRD → done` with **no mandatory interactive Y/N gates**. One
-planning phase (the full, unchanged prp-plan) feeds six mediator phases:
+Take the input from `ticket/goal/PRD → done` with **no mandatory interactive Y/N gates**. A refinement
+gate and a planning phase precede the six mediator phases:
 
-0. **Plan (full prp-plan rigor)** — run the existing `/prp-plan` on the input to produce a durable
-   `plan.md` with Intelligence Context (verbatim AC), AC Traceability, Files-to-Change owner-lanes,
-   and per-task `expected_gate`s. This is **not** replaced by the mediator — it is the source of truth
-   the mediator decomposes from. See "Step 0" below.
+R. **Refine (Definition-of-Ready gate)** — BEFORE anything else, convene a grooming panel
+   (product-owner + project-manager + lead-engineer + QA lens) via `Skill(refinement)`. It produces
+   refined ACs + scenarios + a Definition of Done derived from the ACs, with **zero open assumptions**.
+   Verdict is binary: **READY** → continue to Phase 0; **NOT READY** → **STOP** (no planning, no code)
+   and return meaningful clarifying questions to the user. See "Step R" below. This is the hard rule:
+   *we do not dive into coding until the assignment is understood as a contract.*
+0. **Plan (full prp-plan rigor)** — run the existing `/prp-plan` on the READY refinement contract to
+   produce a durable `plan.md` with Intelligence Context (verbatim AC), AC Traceability, Files-to-Change
+   owner-lanes, and per-task `expected_gate`s. This is **not** replaced by the mediator — it is the
+   source of truth the mediator decomposes from. See "Step 0" below.
 1. **Decompose** — `project-manager` **consumes the plan.md** (not a raw goal): it maps the plan's AC
    Traceability + tasks + `expected_gate`s → the testable on-disk contract, and the plan's
    single-writer owner-lanes / Files-to-Change → the disjoint territory map (activate 2-5 roles, never 7).
@@ -46,13 +52,35 @@ planning phase (the full, unchanged prp-plan) feeds six mediator phases:
 5. **Merge** — serial merge of passing worktrees only; `ux-specialist` taste check on UI merges.
 6. **Shutdown** — clean handshake, specialists save work as files, `session-memory` SESSION END.
 
+## Step R — Refine first: the Definition-of-Ready gate (hard stop)
+
+Nothing plans or builds until the assignment is a contract. Run `Skill(refinement)` on the input FIRST:
+
+1. It convenes the grooming panel — `product-owner` (business intent + ACs), `lead-engineer`
+   (technical feasibility + edge cases + technical DoD), `project-manager` (scope/contract), and a
+   **QA lens** (`qa-analyst`: can QA fully verify + accept this?) — each in a fresh, independent context.
+2. It grooms the goal/ticket/PRD into refined **ACs + scenarios (happy/edge/failure) + a Definition of
+   Done derived from the ACs**, and drives an **assumption ledger to zero open rows**.
+3. It grades against the DoR rubric and returns a **binary verdict**:
+   - **READY** → persist `02-Notes/Plans/<slug>.refinement.md` and continue to Step 0. Phase 0's
+     `/prp-plan` consumes this as the authoritative AC set.
+   - **NOT READY** → **STOP the entire flow.** Do NOT invoke `/prp-plan`, do NOT create worktrees, do
+     NOT write code. Return the clarifying questions (each: ambiguity + why it blocks + options +
+     impact), grouped by category.
+4. **Who answers the questions:** by **default the USER answers** — present them and wait. Only if the
+   user explicitly delegates ("answer on my behalf", or `--groom-autonomous`) does the panel propose
+   answers **with rationale as ratifiable decisions** (flagged for confirmation) — never silent
+   assumptions. Re-run refinement after answers until READY.
+
 ## Step 0 — Plan with the full prp-plan rigor (do NOT skip, do NOT reinvent)
 
 The planning phase **is** the existing `/prp-plan` command, invoked as a building block — its rigor
 is inherited wholesale, nothing is discarded:
 
 1. **Reuse-or-plan (idempotent):** if `--plan <path>` is given and the file exists, **reuse that
-   plan.md** and skip to Phase 1. Otherwise invoke `/prp-plan "<input>"`.
+   plan.md** and skip to Phase 1. Otherwise invoke `/prp-plan` on the **READY refinement contract**
+   from Step R (`02-Notes/Plans/<slug>.refinement.md` — its refined ACs are the authoritative AC set),
+   falling back to the raw `<input>` only if refinement was reused via `--plan`.
 2. `/prp-plan` runs its full pipeline on the input (a `JIRA-TICKET` like `SEATHQ-9999`, a free-text
    goal, or a `path/to/prd.md`):
    - **session-memory** — load `02-Notes/Sessions/<TICKET>-<SUFFIX>.md` from the Obsidian vault first.

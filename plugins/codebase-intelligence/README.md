@@ -7,7 +7,7 @@ structural search** (single tier). Cross-session memory lives in an Obsidian vau
 the `ultimate-obsidian` MCP. **No prp-core (or any other plugin) required.**
 
 **Version history**
-- **v3.12.0** — adds the **Orchestration layer**: a `/prp-orchestrate <goal>` command, a `mediator` skill (coordinator + adversarial judge + serial merge-gate), and **7 generic role specialist agents** (`frontend-specialist`, `backend-specialist`, `core-db-specialist`, `qa-analyst`, `project-manager`, `ux-specialist`, `pr-reviewer`) bound to repos/stacks via swappable `presets/*.yaml`. Work fans out to 2-5 specialists each in their own git worktree (no two ever touch the same code — disjoint territory map), the mediator judges every diff each round against the target repo's `.claude/` MUST/SHOULD/MUST-NOT/SHOULD-NOT rules and blocks merges on 🔴, and passing worktrees merge serially. Autonomous — stops for a human only on a requirement fork or a red blast-radius action. `prp-plan` / `prp-implement` / `prp-loop` and their 4 agents are **unchanged** and remain callable building blocks. Grounded in the `claude-code`, `claude-certification`, and `llm-engineering` KB domains.
+- **v3.12.0** — adds the **Orchestration layer**: a `/prp-orchestrate <goal | JIRA-TICKET | prd.md>` command plus the `refinement` and `mediator` skills and **9 generic role agents** (`product-owner`, `lead-engineer`, `project-manager`, `frontend-specialist`, `backend-specialist`, `core-db-specialist`, `qa-analyst`, `ux-specialist`, `pr-reviewer`) bound to repos/stacks via swappable `presets/*.yaml`. Flow: **Phase R refinement** (a grooming panel drives a Definition-of-Ready gate — refined ACs + scenarios + DoD-from-ACs, zero open assumptions; NOT READY ⇒ STOP + clarifying questions for the user) → **Phase 0 plan** (the unchanged `/prp-plan`: session-memory + Jira + codebase agents + ask-kb + Context7-before-web + drift-guard → durable `plan.md`) → **mediator** fans work to 2-5 specialists each in their own git worktree (no two ever touch the same code — disjoint territory map), judges every diff each round against the target repo's `.claude/` MUST/SHOULD/MUST-NOT/SHOULD-NOT rules and blocks merges on 🔴, and merges passing worktrees serially. Autonomous — stops for a human only on a requirement fork or a red blast-radius action. `prp-plan` / `prp-implement` / `prp-loop` and their 4 agents are **unchanged** and remain callable building blocks. Grounded in the `claude-code`, `claude-certification`, and `llm-engineering` KB domains.
 - **v3.11.0** — adds the `worktree-lifecycle` skill: every implementation runs in a fresh git worktree off the detected base branch (ENTER), torn down on user satisfaction (EXIT: save-before-delete, confirm-before-remove). Wired into `prp-implement` (Phase 2 + Phase 7) and referenced by `prp-loop` (L.3); capability-gated with an in-place serial fallback.
 - **v3.10.0** — adds `/doctor`: a read-only preflight that checks system tools (`git`/`uv`/`python3`), MCP servers (`ultimate-obsidian` required; `serena`/`context7`/Atlassian optional), the bookrag engine, and vendored tools — printing the exact fix for anything missing.
 - **v3.9.0** — vendors the web-cache tool (`web-search-hook`): the web-only subset of memory-central (owner's own code) now lives in `vendor/memory-central-web/`, run via `uv` with ephemeral deps. No `~/Documents/ai-tools/memory-central` checkout required; cache index stays at `~/.claude/memory/WEB-CACHE-001/`.
@@ -131,8 +131,12 @@ and no-code-collision automatically, and returns a merged, reviewed result — w
 checkpoints or Y/N prompts.
 
 ```
-user ─▶ /prp-orchestrate "<goal | JIRA-TICKET | prd.md>" [--preset <name>] [--plan <path>] [--base <branch>]
+user ─▶ /prp-orchestrate "<goal | JIRA-TICKET | prd.md>" [--preset <name>] [--plan <path>] [--base <branch>] [--groom-autonomous]
              │
+        R REFINE → grooming panel (product-owner + project-manager + lead-engineer + QA lens):
+             │   refined ACs + scenarios + DoD-from-ACs, ZERO open assumptions → Definition-of-Ready
+             │   verdict.  NOT READY ⇒ STOP (no plan, no code) + meaningful questions for the user.
+             ▼   (READY only)
         0 PLAN → the FULL /prp-plan (unchanged): session-memory + Jira injection +
              │   codebase agents + ask-kb + Context7 (BEFORE web) + drift-guard → plan.md
              │   (durable artifact; --plan <path> reuses an existing one)
@@ -156,6 +160,13 @@ user ─▶ /prp-orchestrate "<goal | JIRA-TICKET | prd.md>" [--preset <name>] [
                      auth / payments / deploy / db-migration)
 ```
 
+- **Refines before it plans (DoR gate):** Phase R convenes a scrum-style grooming panel
+  (`product-owner` + `project-manager` + `lead-engineer` + a QA lens) that turns the goal/ticket/PRD
+  into refined ACs + scenarios + a Definition of Done **derived from the ACs**, with **zero open
+  assumptions**. Binary verdict: **NOT READY ⇒ the flow STOPS — no planning, no coding** — and returns
+  meaningful clarifying questions (ambiguity + why-it-blocks + options + impact) for the **user** to
+  answer (or, on `--groom-autonomous`, the panel proposes ratifiable decisions, never silent
+  assumptions). *We don't dive into code until the assignment is understood as a contract.*
 - **Plans first, full rigor:** Phase 0 runs the **unchanged `/prp-plan`** on a Jira ticket, goal, or
   PRD — session-memory (Obsidian vault) + Jira injection + `codebase-explorer`/`codebase-analyst` +
   **ask-kb and Context7 before any web search** + drift-guard — producing a durable `plan.md`. The
@@ -256,7 +267,9 @@ Generic, portable role agents used by `/prp-orchestrate` — repo/stack binding 
 
 | Agent | Harness role | Responsibility |
 |---|---|---|
-| `project-manager` | planner | goal → testable on-disk contract + disjoint territory map + AC traceability (no code) |
+| `product-owner` | refinement panel | business intent + authors/challenges ACs + business scenarios; blocks readiness on vague/untestable ACs (no code) |
+| `lead-engineer` | refinement panel | technical feasibility + edge/error cases + technical DoD; blocks readiness on unmade technical decisions (no code) |
+| `project-manager` | planner / refinement | consumes plan.md → testable contract + disjoint territory map + AC traceability; also on the grooming panel (no code) |
 | `frontend-specialist` | generator | UI/components/pages in its own worktree/territory; → qa, ux |
 | `backend-specialist` | generator | APIs/services/handlers; consumes core contracts; → qa |
 | `core-db-specialist` | generator | shared types/DB/migrations; transaction + identifier rules; db-migration = red; → backend, qa |
@@ -308,6 +321,7 @@ claude mcp add atlassian \
 
 | Skill | Purpose |
 |---|---|
+| `refinement` | Pre-planning Definition-of-Ready gate behind `/prp-orchestrate`: grooming panel (product-owner + project-manager + lead-engineer + QA lens) → refined ACs + scenarios + DoD-from-ACs, zero open assumptions; NOT READY ⇒ STOP + clarifying questions for the user |
 | `mediator` | Coordinator + adversarial judge + serial merge-gate behind `/prp-orchestrate`: disjoint territory allocation, per-round `.claude/`-rules verdict, 🔴-blocks-merge, worktree-per-specialist, capability fallback |
 | `drift-guard` | Anchor every decision to the AC — mechanical pre-scan + 8 drift questions, at every gate |
 | `loop-contract` | Define/validate a Loop Contract (executable gate, budget, blast-radius, stop rules); refuse without a binary gate |
