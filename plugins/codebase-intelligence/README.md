@@ -7,6 +7,7 @@ structural search** (single tier). Cross-session memory lives in an Obsidian vau
 the `ultimate-obsidian` MCP. **No prp-core (or any other plugin) required.**
 
 **Version history**
+- **v3.12.0** — adds the **Orchestration layer**: a `/prp-orchestrate <goal>` command, a `mediator` skill (coordinator + adversarial judge + serial merge-gate), and **7 generic role specialist agents** (`frontend-specialist`, `backend-specialist`, `core-db-specialist`, `qa-analyst`, `project-manager`, `ux-specialist`, `pr-reviewer`) bound to repos/stacks via swappable `presets/*.yaml`. Work fans out to 2-5 specialists each in their own git worktree (no two ever touch the same code — disjoint territory map), the mediator judges every diff each round against the target repo's `.claude/` MUST/SHOULD/MUST-NOT/SHOULD-NOT rules and blocks merges on 🔴, and passing worktrees merge serially. Autonomous — stops for a human only on a requirement fork or a red blast-radius action. `prp-plan` / `prp-implement` / `prp-loop` and their 4 agents are **unchanged** and remain callable building blocks. Grounded in the `claude-code`, `claude-certification`, and `llm-engineering` KB domains.
 - **v3.11.0** — adds the `worktree-lifecycle` skill: every implementation runs in a fresh git worktree off the detected base branch (ENTER), torn down on user satisfaction (EXIT: save-before-delete, confirm-before-remove). Wired into `prp-implement` (Phase 2 + Phase 7) and referenced by `prp-loop` (L.3); capability-gated with an in-place serial fallback.
 - **v3.10.0** — adds `/doctor`: a read-only preflight that checks system tools (`git`/`uv`/`python3`), MCP servers (`ultimate-obsidian` required; `serena`/`context7`/Atlassian optional), the bookrag engine, and vendored tools — printing the exact fix for anything missing.
 - **v3.9.0** — vendors the web-cache tool (`web-search-hook`): the web-only subset of memory-central (owner's own code) now lives in `vendor/memory-central-web/`, run via `uv` with ephemeral deps. No `~/Documents/ai-tools/memory-central` checkout required; cache index stays at `~/.claude/memory/WEB-CACHE-001/`.
@@ -122,6 +123,53 @@ Phase R        → loop report (full ledger, accept-rate, cost-per-accepted-chan
 
 ---
 
+## Orchestration layer — prp-orchestrate (v3.12.0)
+
+Goal-oriented, parallel, mediator-judged, collision-proof alternative to running the three commands
+by hand. One goal → a coordinator that fans work to isolated specialists, enforces `.claude/` rules
+and no-code-collision automatically, and returns a merged, reviewed result — without per-phase
+checkpoints or Y/N prompts.
+
+```
+user ─▶ /prp-orchestrate "<goal>" [--preset <name>] [--base <branch>]
+             │
+        ┌────▼──  MEDIATOR (coordinator + adversarial judge + merge-gate)  ──┐
+        │  A Decompose  → project-manager: goal → testable on-disk contract  │
+        │                 + DISJOINT territory map (activate 2-5, never 7)    │
+        │  B Allocate   → one git worktree per specialist; assert territories │
+        │                 pairwise-disjoint (AC-4) — abort if they intersect  │
+        │  C Round-judge→ each round: monitor ▸ JUDGE every diff vs target    │
+        │                 repo .claude/ MUST/SHOULD/MUST-NOT/SHOULD-NOT rules │
+        │                 (drift-guard Q1-8 + rules rubric) ▸ 🔴 blocks merge │
+        │  D Verify     → qa-analyst behavioral gates; pr-reviewer adversarial│
+        │                 fresh-context review (never self-evaluate)          │
+        │  E Merge      → serial merge of passing worktrees; ux taste check   │
+        │  F Shutdown   → clean handshake ▸ save files ▸ session-memory END    │
+        └───────────────────────────┬────────────────────────────────────────┘
+                                     ▼   merged + reviewed result
+                    (human asked ONLY on requirement fork or red blast-radius:
+                     auth / payments / deploy / db-migration)
+```
+
+- **Interaction (AC-1):** no mandatory Y/N gates; `PHASE_N_CHECKPOINT` verbosity collapses to
+  silent-unless-fail invariants; `ask-kb` / `context7-research` / `drift-guard` / `session-memory`
+  are auto-invoked inside the flow.
+- **No-collision guarantee (AC-4):** one worktree per active specialist **plus** a mediator-owned
+  disjoint file-territory map; merges are serial. State is durable JSON
+  (`skills/mediator/references/orchestration-state.schema.json`) — the mediator is the sole writer.
+- **Portable roles (AC-3):** the 7 agents contain no org specifics; a `presets/*.yaml` binds them to
+  repos/stacks (ships a `seathq` preset). See `presets/README.md`.
+- **Capability-gated (U-1/U-2):** agent teams enable via env `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`
+  and message via the `SendMessage` tool (confirmed, official docs); if absent, falls back to serial
+  single-writer worktrees — every AC still holds, only parallelism is lost.
+- **KB-grounded (AC-6):** design cites the `claude-code` (Agent Teams, Harness Patterns, Agent
+  Decomposition), `claude-certification`, and `llm-engineering` (multi-agent systems) domains.
+
+Building blocks unchanged: `prp-plan` / `prp-implement` / `prp-loop` and their 4 agents are reused,
+not modified.
+
+---
+
 ## Model-agnostic design (v3.5.0)
 
 No skill depends on a single model. Read `CI_MODEL_TIER` (`frontier | standard | light`, default `standard` when unset/unknown):
@@ -190,6 +238,21 @@ The plugin ships its own agents; `prp-plan` and `prp-implement` invoke them dire
 | `web-researcher` | External research | KB pre-check (skip web for covered topics) · Context7 API verification · drift-guard scope check on findings |
 | `codebase-researcher` | Pre-planning research | full pre-planning research pass (memory → Serena → structured file:line report) |
 
+### Orchestration role specialists (v3.12.0)
+
+Generic, portable role agents used by `/prp-orchestrate` — repo/stack binding comes from a
+`presets/*.yaml`, never hard-coded in the bodies. Activate 2-5 per goal, never all 7.
+
+| Agent | Harness role | Responsibility |
+|---|---|---|
+| `project-manager` | planner | goal → testable on-disk contract + disjoint territory map + AC traceability (no code) |
+| `frontend-specialist` | generator | UI/components/pages in its own worktree/territory; → qa, ux |
+| `backend-specialist` | generator | APIs/services/handlers; consumes core contracts; → qa |
+| `core-db-specialist` | generator | shared types/DB/migrations; transaction + identifier rules; db-migration = red; → backend, qa |
+| `qa-analyst` | evaluator | writes + runs behavioral gates → pass/fail report; fresh context; → pr-reviewer |
+| `ux-specialist` | design taste | before/after taste rubric on UI merges (advises, doesn't block); → frontend |
+| `pr-reviewer` | adversarial evaluator | harsh fresh-context review of merged diff vs `.claude/` + conventions; → pm, mediator |
+
 ---
 
 ## MCP setup (Claude Code terminal)
@@ -230,10 +293,11 @@ claude mcp add atlassian \
 
 ## Commands & skills
 
-**Commands**: `/prp-plan` · `/prp-implement` · `/prp-loop` · `/setup-kb` · `/doctor`
+**Commands**: `/prp-plan` · `/prp-implement` · `/prp-loop` · `/prp-orchestrate` · `/setup-kb` · `/doctor`
 
 | Skill | Purpose |
 |---|---|
+| `mediator` | Coordinator + adversarial judge + serial merge-gate behind `/prp-orchestrate`: disjoint territory allocation, per-round `.claude/`-rules verdict, 🔴-blocks-merge, worktree-per-specialist, capability fallback |
 | `drift-guard` | Anchor every decision to the AC — mechanical pre-scan + 8 drift questions, at every gate |
 | `loop-contract` | Define/validate a Loop Contract (executable gate, budget, blast-radius, stop rules); refuse without a binary gate |
 | `session-memory` | Persist/restore findings, decisions, failures to the vault (BM25); write-before-stop / read-at-start gates; Loop Ledger |

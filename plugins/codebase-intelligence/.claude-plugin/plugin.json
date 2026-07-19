@@ -1,7 +1,7 @@
 {
   "name": "codebase-intelligence",
-  "version": "3.11.0",
-  "description": "Standalone PRP workflow (prp-plan / prp-implement / prp-loop) with Serena LSP structural codebase search, cross-session task memory keyed by Jira ticket + branch, live Jira ticket context injection, a personal KB (bookrag), and prp-loop: a bounded closed-loop runner with contract-mandated stop rules and an independent verifier. Self-contained — no prp-core required.",
+  "version": "3.12.0",
+  "description": "Standalone PRP workflow (prp-plan / prp-implement / prp-loop) with Serena LSP structural codebase search, cross-session task memory keyed by Jira ticket + branch, live Jira ticket context injection, a personal KB (bookrag), prp-loop (a bounded closed-loop runner with contract-mandated stop rules and an independent verifier), and prp-orchestrate: a mediator-judged parallel agent-team layer (7 generic role specialists in isolated git worktrees, per-round .claude/-rules verdicts, serial merge gate). Self-contained — no prp-core required.",
   "author": {
     "name": "Artur Gomes",
     "url": "https://github.com/arturgomes"
@@ -18,6 +18,10 @@
     "jira",
     "memory",
     "lsp",
-    "loop-engineering"
+    "loop-engineering",
+    "orchestration",
+    "agent-teams",
+    "mediator",
+    "worktree"
   ]
 }

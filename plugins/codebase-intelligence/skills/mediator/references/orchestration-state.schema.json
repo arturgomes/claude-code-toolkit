@@ -1,0 +1,174 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/arturgomes/claude-code-toolkit/codebase-intelligence/orchestration-state.schema.json",
+  "title": "orchestration-state",
+  "description": "Durable JSON state contract for /prp-orchestrate. Persisted as JSON (not markdown) because models overwrite markdown but respect structured JSON (KB: Harness Patterns F03). The mediator is the single writer; specialists read it. Written to <repo>/.claude/orchestration-state.json in the coordinating checkout.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["goal", "preset", "contract", "specialists", "rounds", "mergeLog", "territoryDisjoint"],
+  "properties": {
+    "goal": {
+      "type": "string",
+      "description": "The verbatim <goal> passed to /prp-orchestrate."
+    },
+    "preset": {
+      "type": "string",
+      "description": "Active preset name binding generic roles to repos/stacks (e.g. 'seathq'), or 'none' for generic single-repo mode."
+    },
+    "baseBranch": {
+      "type": "string",
+      "description": "Detected base branch that every specialist worktree forks from."
+    },
+    "capability": {
+      "type": "object",
+      "description": "Capability preflight result (U-1/U-2). Drives parallel-vs-serial fallback.",
+      "additionalProperties": false,
+      "properties": {
+        "agentTeamsEnabled": {
+          "type": "boolean",
+          "description": "Whether env CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1 is set (confirmed enable key, official docs)."
+        },
+        "teamToolsAvailable": {
+          "type": "boolean",
+          "description": "Whether SendMessage + natural-language teammate spawn are exposed in this build."
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["parallel", "serial"],
+          "description": "parallel = worktree-per-specialist fan-out; serial = one-writer-at-a-time worktree fallback."
+        }
+      },
+      "required": ["mode"]
+    },
+    "contract": {
+      "type": "array",
+      "description": "Granular, testable 'done' criteria negotiated on disk BEFORE any code is written (KB: Harness Patterns F05). Each maps to ≥1 AC of the goal.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "criterion", "gate"],
+        "properties": {
+          "id": { "type": "string", "description": "Stable id, e.g. 'C1'." },
+          "criterion": { "type": "string", "description": "Human-readable testable outcome." },
+          "gate": { "type": "string", "description": "Executable predicate (shell command) that proves the criterion — never an adjective." },
+          "acRef": { "type": "string", "description": "Which goal AC this criterion serves." }
+        }
+      }
+    },
+    "specialists": {
+      "type": "array",
+      "description": "Active specialists (mediator enforces 2-5, never all 7 — KB: Agent Teams P04/X04).",
+      "minItems": 1,
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["role", "worktree", "territory", "recipients", "status"],
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": ["frontend-specialist", "backend-specialist", "core-db-specialist", "qa-analyst", "project-manager", "ux-specialist", "pr-reviewer"]
+          },
+          "boundRepo": { "type": "string", "description": "Repo/path the preset binds this role to (e.g. 'seathq-fe'), or 'self' for single-repo." },
+          "worktree": { "type": "string", "description": "Absolute path of THIS specialist's git worktree — distinct per active specialist (AC-4)." },
+          "territory": {
+            "type": "array",
+            "description": "Glob patterns this specialist exclusively owns. MUST be pairwise-disjoint with every other active specialist's territory (AC-4 invariant).",
+            "items": { "type": "string" },
+            "minItems": 1
+          },
+          "recipients": {
+            "type": "array",
+            "description": "Named message recipients (KB: Agent Teams P03 — name recipients explicitly). e.g. frontend -> [qa-analyst, ux-specialist].",
+            "items": { "type": "string" }
+          },
+          "status": {
+            "type": "string",
+            "enum": ["planned", "working", "submitted", "verdict-pass", "verdict-fail", "merged", "shutdown"]
+          }
+        }
+      }
+    },
+    "rounds": {
+      "type": "array",
+      "description": "One entry per mediator round; each carries the per-specialist verdicts graded against the target repo's .claude/ rules.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["n", "verdicts"],
+        "properties": {
+          "n": { "type": "integer", "minimum": 1 },
+          "timestamp": { "type": "string" },
+          "verdicts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["role", "verdict"],
+              "properties": {
+                "role": { "type": "string" },
+                "verdict": {
+                  "type": "string",
+                  "enum": ["on-track", "drift-risk", "drifting"],
+                  "description": "✅ on-track / ⚠️ drift-risk / 🔴 drifting. 🔴 (MUST or MUST-NOT violation, or drift-guard 3+ fails) BLOCKS this specialist's merge."
+                },
+                "ruleViolations": {
+                  "type": "array",
+                  "description": "Specific .claude/ rules violated, severity-tagged.",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "rule": { "type": "string" },
+                      "severity": { "type": "string", "enum": ["MUST", "SHOULD", "MUST-NOT", "SHOULD-NOT"] },
+                      "evidence": { "type": "string", "description": "file:line or diff hunk." }
+                    },
+                    "required": ["rule", "severity"]
+                  }
+                },
+                "actionableCriteria": {
+                  "type": "string",
+                  "description": "On a failing verdict, the concrete fix criteria returned to the specialist (KB: adversarial evaluator returns a rubric, not vibes)."
+                },
+                "blocksMerge": { "type": "boolean" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "mergeLog": {
+      "type": "array",
+      "description": "Serial merge record — worktrees merged one at a time, passing verdicts only (AC-4).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["role", "order", "result"],
+        "properties": {
+          "role": { "type": "string" },
+          "order": { "type": "integer", "description": "1-based serial merge order." },
+          "result": { "type": "string", "enum": ["merged", "blocked", "conflict-resolved"] },
+          "note": { "type": "string" }
+        }
+      }
+    },
+    "territoryDisjoint": {
+      "type": "boolean",
+      "description": "AC-4 invariant assertion: true iff every pair of active specialists' territory globs is disjoint. The mediator MUST abort allocation (Phase B) if this is false."
+    },
+    "humanGates": {
+      "type": "array",
+      "description": "The only points the run stopped for a human (AC-1): requirement fork or red blast-radius (auth/payments/deploy/db-migration).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "reason": { "type": "string", "enum": ["requirement-fork", "red-blast-radius"] },
+          "detail": { "type": "string" },
+          "resolvedBy": { "type": "string" }
+        },
+        "required": ["reason", "detail"]
+      }
+    }
+  }
+}
