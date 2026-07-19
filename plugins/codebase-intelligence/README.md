@@ -237,6 +237,7 @@ claude mcp add atlassian \
 | `consult-kb` | Review code/RFCs/ADRs against the KB for violations, tensions, aligned patterns |
 | `kb-indexer` | Ingest ebooks/PDFs/docs into the KB (bookrag DB + registry) |
 | `add-pdf-to-kb` | Ingest a single PDF/EPUB into a domain bookrag.db + create a vault reference note |
+| `ingest-web-doc-to-kb` | Scrape a doc site/article + sub-pages, distill in-session (no API key), index into a domain, batched Chroma, vault note + master rebuild — fully autonomous |
 | `index-kb-domains` | Wikilink all KB domains in the vault so the KB is graph-traceable |
 | `benchmark-kb` | Benchmark bookrag retrieval (MRR / Recall@k / Precision@5) with optional regression check |
 | `product-spec` | Generate a structured PRD (user stories, AC, constraints) from a feature idea |
