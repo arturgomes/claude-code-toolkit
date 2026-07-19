@@ -35,6 +35,28 @@ Persist all coordination state as JSON, **not markdown** — models overwrite ma
 structured JSON (KB: Harness Patterns F03). Schema: `references/orchestration-state.schema.json`.
 Written to `<repo>/.claude/orchestration-state.json`. Only the mediator writes it; specialists read it.
 
+## Progress log: session-memory (read + write, throughout — the mediator is the single writer)
+
+The `orchestration-state.json` is the machine contract; **session-memory is the durable narrative
+record** of the run — progress, findings, common pitfalls, and lessons — in the Obsidian vault via the
+`session-memory` skill. The orchestration layer **reads and writes it throughout**, not just at the end:
+
+- **READ at start (Phase R / Phase 0):** restore any prior session for this ticket/goal — resume
+  `## Last-Session State`, and re-read `## General Rules` and `## Open Failures` so the team does not
+  repeat a documented pitfall (this feeds the mediator's incident-repeat check, drift-guard Q8).
+- **WRITE per round + per milestone (Phase C-E):** append what each round produced —
+  - `## Verified Facts` — a confirmed fact with `file:line` evidence (a passing gate, a merged diff).
+  - `## General Rules (distilled)` — a **reusable, ticket-agnostic pitfall or rule** learned this run
+    (e.g. "MUI 7 prop X renamed — verify via Context7"): this is where **common pitfalls** are documented.
+  - `## Open Failures` — anything still failing, with a required `Verify:` repro/`file:line`.
+  - `## Lessons` — one `symptom → rule` line per non-obvious fix / gotcha / drift correction.
+- **WRITE at SESSION END (Phase F):** the write-before-stop gate — full segmented block + append each
+  proven contract gate to `## Verified Invariants`, and index for BM25 search.
+
+**Single writer:** only the mediator writes session-memory (mirrors the plugin's single-writer rule).
+Specialists **return** findings/pitfalls to the mediator (via `SendMessage`); the mediator records them.
+Every vault write passes the `session-memory` pre-write secret scrub → `[REDACTED]`.
+
 ---
 
 ## Capability preflight (U-1 / U-2 — run once, before Phase A)
@@ -172,13 +194,15 @@ the goal's contract criteria are all met (or a hard stop / human gate fires).
 ## Invariants checklist (silent unless failed — AC-5)
 
 - [ ] `territoryDisjoint == true` before any specialist writes (else ABORT).
-- [ ] One distinct worktree path per active specialist; 2-5 active, never 7.
+- [ ] One distinct worktree path per active specialist; 2-5 active, never all 9.
 - [ ] Every round emits a rules verdict per specialist; 🔴 blocks that merge.
 - [ ] Recipients named for every specialist (message graph).
 - [ ] Merges are serial; `mergeLog[]` ordered.
 - [ ] State persisted as JSON; mediator is sole writer.
+- [ ] session-memory READ at start (restore pitfalls/last-state) + WRITTEN per round/milestone
+      (progress, findings, common pitfalls, lessons); mediator is the sole session-memory writer.
 - [ ] Human asked ONLY on requirement fork or red blast-radius.
-- [ ] Clean shutdown + session-memory SESSION END before exit.
+- [ ] Clean shutdown + session-memory SESSION END before exit (write-before-stop).
 
 ## Dependencies
 

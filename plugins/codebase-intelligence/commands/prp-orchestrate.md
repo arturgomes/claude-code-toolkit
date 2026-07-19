@@ -146,7 +146,14 @@ Fallback table (a fallback is never a failure — every AC still holds serially)
 
 Inside the flow — no manual calls required — the mediator auto-invokes `drift-guard` (per-round
 judging), `ask-kb` (pattern decisions), `context7-research` (any external API a specialist introduces),
-`session-memory` (start/end), and `worktree-lifecycle` (ENTER/EXIT per specialist).
+and `worktree-lifecycle` (ENTER/EXIT per specialist).
+
+**Progress tracking — `session-memory` read/write throughout (not just at end):** the orchestration
+layer **reads** prior session-memory at the start (restore last-state + re-read documented pitfalls so
+the team doesn't repeat them) and **writes** it per round and per milestone — progress + `## Verified
+Facts`, **common pitfalls → `## General Rules`**, `## Open Failures`, and `symptom → rule` `## Lessons`
+— then a full SESSION END (write-before-stop) with `## Verified Invariants`. The mediator is the sole
+session-memory writer; specialists return findings to it via `SendMessage`.
 
 ## Step 5 — Pre-approval note (avoid permission stalls — KB: Agent Teams P05/X01)
 

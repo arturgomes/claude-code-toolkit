@@ -209,6 +209,12 @@ flowchart TD
   (`skills/mediator/references/orchestration-state.schema.json`) — the mediator is the sole writer.
 - **Portable roles (AC-3):** the 9 role agents contain no org specifics; a `presets/*.yaml` binds them
   to repos/stacks (ships a `seathq` preset). See `presets/README.md`.
+- **Tracks its own progress (session-memory read/write):** the orchestration layer keeps a durable
+  narrative record in the Obsidian vault alongside the JSON machine state. It **reads** prior sessions
+  at the start (resume last-state; re-read documented pitfalls so the team doesn't repeat them) and
+  **writes** per round/milestone — progress + `## Verified Facts`, **common pitfalls → `## General
+  Rules`**, `## Open Failures`, and `symptom → rule` `## Lessons` — plus a write-before-stop SESSION
+  END. The mediator is the sole session-memory writer; specialists return findings to it.
 - **Capability-gated (U-1/U-2):** agent teams enable via env `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`
   and message via the `SendMessage` tool (confirmed, official docs); if absent, falls back to serial
   single-writer worktrees — every AC still holds, only parallelism is lost.
@@ -291,19 +297,20 @@ The plugin ships its own agents; `prp-plan` and `prp-implement` invoke them dire
 ### Orchestration role specialists (v3.12.0)
 
 Generic, portable role agents used by `/prp-orchestrate` — repo/stack binding comes from a
-`presets/*.yaml`, never hard-coded in the bodies. Activate 2-5 per goal, never all 7.
+`presets/*.yaml`, never hard-coded in the bodies. Activate 2-5 per goal, never all 9. Each carries a
+**persona** (a stance, not a name gimmick) so its voice in the panel/team is consistent.
 
-| Agent | Harness role | Responsibility |
-|---|---|---|
-| `product-owner` | refinement panel | business intent + authors/challenges ACs + business scenarios; blocks readiness on vague/untestable ACs (no code) |
-| `lead-engineer` | refinement panel | technical feasibility + edge/error cases + technical DoD; blocks readiness on unmade technical decisions (no code) |
-| `project-manager` | planner / refinement | consumes plan.md → testable contract + disjoint territory map + AC traceability; also on the grooming panel (no code) |
-| `frontend-specialist` | generator | UI/components/pages in its own worktree/territory; → qa, ux |
-| `backend-specialist` | generator | APIs/services/handlers; consumes core contracts; → qa |
-| `core-db-specialist` | generator | shared types/DB/migrations; transaction + identifier rules; db-migration = red; → backend, qa |
-| `qa-analyst` | evaluator | writes + runs behavioral gates → pass/fail report; fresh context; → pr-reviewer |
-| `ux-specialist` | design taste | before/after taste rubric on UI merges (advises, doesn't block); → frontend |
-| `pr-reviewer` | adversarial evaluator | harsh fresh-context review of merged diff vs the repo's rule sources (`.claude/` + `CLAUDE.md` + `.github/` instructions) + conventions; → pm, mediator |
+| Agent | Persona | Harness role | Responsibility |
+|---|---|---|---|
+| `product-owner` | **Priya, the Customer's Voice** — allergic to vague ACs | refinement panel | business intent + authors/challenges ACs + business scenarios; blocks readiness on vague/untestable ACs (no code) |
+| `lead-engineer` | **Idris, the Staff Engineer** — edge-case hunter | refinement panel | technical feasibility + edge/error cases + technical DoD; blocks readiness on unmade technical decisions (no code) |
+| `project-manager` | **Nadia, the Coordinator** — disjoint lanes, nobody idle | planner / refinement | consumes plan.md → testable contract + disjoint territory map + AC traceability; also on the grooming panel (no code) |
+| `frontend-specialist` | **Fern, the Interface Builder** — reuse before hand-roll, typed props | generator | UI/components/pages in its own worktree/territory; → qa, ux |
+| `backend-specialist` | **Bruno, the API Craftsman** — validate at the boundary | generator | APIs/services/handlers; consumes core contracts; → qa |
+| `core-db-specialist` | **Cora, the Data Steward** — transactions, migrations = red | generator | shared types/DB/migrations; transaction + identifier rules; db-migration = red; → backend, qa |
+| `qa-analyst` | **Quinn, the Skeptic** — no runnable gate, not done | evaluator | writes + runs behavioral gates → pass/fail report; fresh context; → pr-reviewer |
+| `ux-specialist` | **Uma, the Taste-maker** — concrete asks, never vibes | design taste | before/after taste rubric on UI merges (advises, doesn't block); → frontend |
+| `pr-reviewer` | **Rex, the Adversary** — tries to falsify the diff | adversarial evaluator | harsh fresh-context review of merged diff vs the repo's rule sources (`.claude/` + `CLAUDE.md` + `.github/` instructions) + conventions; → pm, mediator |
 
 ---
 
