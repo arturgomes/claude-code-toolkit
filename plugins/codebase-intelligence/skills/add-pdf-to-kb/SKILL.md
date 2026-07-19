@@ -9,6 +9,16 @@ description: >
   "add to knowledge base", "index this PDF", "import this book into KB".
 ---
 
+> **bookrag engine path** — This skill runs the local `bookrag` engine. Resolve its path ONCE at
+> the start of a run, note the printed value, and substitute it wherever `$BOOKRAG_HOME` appears
+> below. This bootstraps a pinned, patched bookrag on first use (public base fetched from source +
+> your own patches) — no `~/Documents` path required:
+>
+> ```bash
+> bash "$(find ~/.claude -type f -path '*codebase-intelligence/scripts/bookrag-home.sh' 2>/dev/null | head -1)"
+> ```
+
+
 # add-pdf-to-kb
 
 Automated workflow for ingesting PDF/EPUB ebooks into your knowledge base via the bookrag pipeline.
@@ -46,7 +56,7 @@ Verify the file exists and is a supported format (`.pdf` or `.epub`).
 
    If domain doesn't exist yet, register it first:
    ```bash
-   uv run --directory ~/Documents/ai-tools/skills-mono-repo \
+   uv run --directory $BOOKRAG_HOME \
      bookrag domain-create {domain-name} \
      --display-name "{display name}" \
      --keywords "{comma,separated,keywords}" \
@@ -59,7 +69,7 @@ Verify the file exists and is a supported format (`.pdf` or `.epub`).
 ### Step 3 — Run bookrag build
 
 ```bash
-uv run --directory ~/Documents/ai-tools/skills-mono-repo \
+uv run --directory $BOOKRAG_HOME \
   bookrag build \
   --input "{input_file}" \
   --domain "{domain}" \
@@ -91,7 +101,7 @@ Output lands in: `~/Documents/Obsidian-Vault/05-Knowledge-Base/domains/{domain}/
 
 **Skip structure (faster, lower quality):**
 ```bash
-uv run --directory ~/Documents/ai-tools/skills-mono-repo \
+uv run --directory $BOOKRAG_HOME \
   bookrag build \
   --input "{input_file}" \
   --domain "{domain}" \
@@ -109,7 +119,7 @@ as raw chunks (no principle extraction, no claim analysis).
 cat ~/Documents/Obsidian-Vault/05-Knowledge-Base/domains/{domain}/books.yaml
 
 # Run a sample query against the new domain DB
-uv run --directory ~/Documents/ai-tools/skills-mono-repo \
+uv run --directory $BOOKRAG_HOME \
   bookrag query-hybrid "key topic from the book" \
   --domain "{domain}" \
   --settings ~/Documents/Obsidian-Vault/05-Knowledge-Base/config/settings.toml \
@@ -126,20 +136,20 @@ Expected output: JSON with `hits` array containing relevant text chunks from the
 vault DB that must be explicitly rebuilt after adding any book.
 
 ```bash
-uv run --directory ~/Documents/ai-tools/skills-mono-repo \
+uv run --directory $BOOKRAG_HOME \
   bookrag obsidian-ingest \
   --vault-path ~/Documents/Obsidian-Vault \
-  --db ~/Documents/ai-tools/skills-mono-repo/master-kb/domains/obsidian-vault/bookrag.db \
-  --settings ~/Documents/ai-tools/skills-mono-repo/bookrag/config/settings.toml
+  --db $BOOKRAG_HOME/master-kb/domains/obsidian-vault/bookrag.db \
+  --settings $BOOKRAG_HOME/bookrag/config/settings.toml
 ```
 
 Takes 20–60 minutes. Monitor for `obsidian-ingest: N vectors upserted to ChromaDB` then verify:
 
 ```bash
-uv run --directory ~/Documents/ai-tools/skills-mono-repo \
+uv run --directory $BOOKRAG_HOME \
   bookrag query-hybrid "key topic from {title}" \
-  --db ~/Documents/ai-tools/skills-mono-repo/master-kb/domains/obsidian-vault/bookrag.db \
-  --settings ~/Documents/ai-tools/skills-mono-repo/bookrag/config/settings.toml \
+  --db $BOOKRAG_HOME/master-kb/domains/obsidian-vault/bookrag.db \
+  --settings $BOOKRAG_HOME/bookrag/config/settings.toml \
   --stdout
 ```
 
@@ -181,7 +191,7 @@ tags: [#book, #{domain}, #imported]
 
 ## Query This Book
 
-    uv run --directory ~/Documents/ai-tools/skills-mono-repo \
+    uv run --directory $BOOKRAG_HOME \
       bookrag query-hybrid "your question" \
       --domain "{domain}" \
       --settings ~/Documents/Obsidian-Vault/05-Knowledge-Base/config/settings.toml \
@@ -201,7 +211,7 @@ DB:         ~/Documents/Obsidian-Vault/05-Knowledge-Base/domains/{domain}/bookra
 Vault note: 01-Reference/Books/{book-slug}.md
 
 Query now:
-  uv run --directory ~/Documents/ai-tools/skills-mono-repo \
+  uv run --directory $BOOKRAG_HOME \
     bookrag query-hybrid "your question about {title}" \
     --domain "{domain}" \
     --settings ~/Documents/Obsidian-Vault/05-Knowledge-Base/config/settings.toml \
@@ -245,7 +255,7 @@ Then retry with the OCR'd version.
 ```
 ❌ Domain '{domain}' not registered.
 Register first (Step 2):
-  uv run --directory ~/Documents/ai-tools/skills-mono-repo \
+  uv run --directory $BOOKRAG_HOME \
     bookrag domain-create {domain} \
     --display-name "..." --keywords "..." --description "..."
 ```
@@ -260,14 +270,14 @@ Install: brew install uv  OR  pip install uv
 
 **Required**:
 - `uv` (Python package manager + task runner): `brew install uv` or `pip install uv`
-- `bookrag` installed in skills-mono-repo: `cd ~/Documents/ai-tools/skills-mono-repo && uv sync`
+- `bookrag` installed in skills-mono-repo: `cd $BOOKRAG_HOME && uv sync`
 - `ANTHROPIC_API_KEY` environment variable (for the structure stage — LLM-based KB extraction)
 - **ultimate-obsidian MCP** running in Claude Code (for Step 5 vault note creation)
 
 **Check installation**:
 ```bash
 uv --version
-uv run --directory ~/Documents/ai-tools/skills-mono-repo bookrag --help
+uv run --directory $BOOKRAG_HOME bookrag --help
 echo $ANTHROPIC_API_KEY | head -c 8  # should show 'sk-ant-a'
 ```
 

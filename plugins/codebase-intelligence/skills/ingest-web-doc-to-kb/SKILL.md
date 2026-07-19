@@ -10,6 +10,16 @@ description: >
   "scrape this site into my knowledge base", "add these docs to my KB from the web".
 ---
 
+> **bookrag engine path** — This skill runs the local `bookrag` engine. Resolve its path ONCE at
+> the start of a run, note the printed value, and substitute it wherever `$BOOKRAG_HOME` appears
+> below. This bootstraps a pinned, patched bookrag on first use (public base fetched from source +
+> your own patches) — no `~/Documents` path required:
+>
+> ```bash
+> bash "$(find ~/.claude -type f -path '*codebase-intelligence/scripts/bookrag-home.sh' 2>/dev/null | head -1)"
+> ```
+
+
 # ingest-web-doc-to-kb
 
 End-to-end, **hands-off** ingestion of a web documentation source into the local bookrag KB.
@@ -33,7 +43,7 @@ cards, indexes them into the right domain, and makes them queryable — with **n
 ## Fixed paths (this machine)
 
 ```
-REPO=~/Documents/ai-tools/skills-mono-repo
+REPO=$BOOKRAG_HOME
 VAULT=~/Documents/Obsidian-Vault
 SETTINGS=$VAULT/05-Knowledge-Base/config/settings.toml
 REGISTRY=$VAULT/05-Knowledge-Base/config/domain_registry.yaml

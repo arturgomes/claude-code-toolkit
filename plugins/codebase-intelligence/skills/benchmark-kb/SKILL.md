@@ -7,13 +7,23 @@ argument-hint: "[software-craft | functional-programming | all]"
 version: 1.0.1
 ---
 
+> **bookrag engine path** — This skill runs the local `bookrag` engine. Resolve its path ONCE at
+> the start of a run, note the printed value, and substitute it wherever `$BOOKRAG_HOME` appears
+> below. This bootstraps a pinned, patched bookrag on first use (public base fetched from source +
+> your own patches) — no `~/Documents` path required:
+>
+> ```bash
+> bash "$(find ~/.claude -type f -path '*codebase-intelligence/scripts/bookrag-home.sh' 2>/dev/null | head -1)"
+> ```
+
+
 # benchmark-kb
 
 Run bookrag retrieval quality benchmarks against the obsidian-vault knowledge base.
 Reports MRR, Recall@5, Recall@10, and Precision@5 for `semantic` and `hybrid` modes.
 Compares against a saved baseline when one exists.
 
-Bookrag project root: `~/Documents/ai-tools/skills-mono-repo`. Paths inline in commands below.
+Bookrag project root: `$BOOKRAG_HOME`. Paths inline in commands below.
 
 ---
 
@@ -36,8 +46,8 @@ Store as `{DOMAINS}`.
 
 ```bash
 uv --version
-ls ~/Documents/ai-tools/skills-mono-repo/master-kb/domains/obsidian-vault/bookrag.db
-ls ~/Documents/ai-tools/skills-mono-repo/bookrag/data/benchmarks/{domain}.json   # per domain
+ls $BOOKRAG_HOME/master-kb/domains/obsidian-vault/bookrag.db
+ls $BOOKRAG_HOME/bookrag/data/benchmarks/{domain}.json   # per domain
 ```
 
 Print: `Environment: uv ✅ | DB ✅ | Fixtures: {domain-list} ✅`
@@ -52,23 +62,23 @@ For each domain in `{DOMAINS}`:
 
 Check baseline:
 ```bash
-ls ~/Documents/ai-tools/skills-mono-repo/master-kb/data/eval/{domain}-baseline.json
+ls $BOOKRAG_HOME/master-kb/data/eval/{domain}-baseline.json
 ```
 
 **Canonical command:**
 ```bash
-uv run --directory ~/Documents/ai-tools/skills-mono-repo \
+uv run --directory $BOOKRAG_HOME \
   bookrag benchmark \
-  --queries ~/Documents/ai-tools/skills-mono-repo/bookrag/data/benchmarks/{domain}.json \
-  --db ~/Documents/ai-tools/skills-mono-repo/master-kb/domains/obsidian-vault/bookrag.db \
-  --settings ~/Documents/ai-tools/skills-mono-repo/bookrag/config/settings.toml \
+  --queries $BOOKRAG_HOME/bookrag/data/benchmarks/{domain}.json \
+  --db $BOOKRAG_HOME/master-kb/domains/obsidian-vault/bookrag.db \
+  --settings $BOOKRAG_HOME/bookrag/config/settings.toml \
   --modes semantic,hybrid \
   --output /tmp/bookrag-bench-{domain}.json
 ```
 
 Tail-flag variants (append to canonical command):
-- **Compare against baseline**: add `--compare ~/Documents/ai-tools/skills-mono-repo/master-kb/data/eval/{domain}-baseline.json --check-drift --drift-threshold 0.05`
-- **Save new baseline**: add `--save-baseline ~/Documents/ai-tools/skills-mono-repo/master-kb/data/eval/{domain}-baseline.json`
+- **Compare against baseline**: add `--compare $BOOKRAG_HOME/master-kb/data/eval/{domain}-baseline.json --check-drift --drift-threshold 0.05`
+- **Save new baseline**: add `--save-baseline $BOOKRAG_HOME/master-kb/data/eval/{domain}-baseline.json`
 
 Note: First run 30–60 s (embeddings computed per query); subsequent runs cached.
 
@@ -90,7 +100,7 @@ Read `/tmp/bookrag-bench-{domain}.json` (schema: `aggregate{mode,num_queries,mrr
 | hybrid   | …    | …        | …         | …           |
 ```
 
-**Baseline-present table:** read `~/Documents/ai-tools/skills-mono-repo/master-kb/data/eval/{domain}-baseline.json`, compute Δ = current − baseline per metric, format `+0.03` / `-0.02`. Add Δ columns after each metric.
+**Baseline-present table:** read `$BOOKRAG_HOME/master-kb/data/eval/{domain}-baseline.json`, compute Δ = current − baseline per metric, format `+0.03` / `-0.02`. Add Δ columns after each metric.
 
 If `skipped_modes` non-empty: "⚠️ Skipped modes: {list} — check bookrag output for reason."
 If `per_mode` missing (older bookrag): fall back to `aggregate`, print "⚠️ per_mode not found — showing aggregate only."
@@ -119,7 +129,7 @@ To investigate: check if DB was rebuilt or fixtures changed.
 |---|---|
 | `uv: command not found` | Install: `curl -LsSf https://astral.sh/uv/install.sh \| sh` then restart shell |
 | DB not found | Run `bookrag build` or `bookrag ingest` to create the DB first |
-| Fixture not found | `uv run --directory ~/Documents/ai-tools/skills-mono-repo bookrag create-benchmark --mode auto --domain {domain}` |
+| Fixture not found | `uv run --directory $BOOKRAG_HOME bookrag create-benchmark --mode auto --domain {domain}` |
 | `poor-man-mcp-search-engine: not found` | Ignore — outdated `run-benchmark.md` reference. This skill uses `bookrag benchmark` directly |
 | Fixture chunk IDs stale (after DB rebuild) | Re-run `bookrag create-benchmark --mode auto` to refresh fixture chunk IDs |
 | bookrag exits non-zero (not drift) | Print stderr; check `bookrag benchmark --help` for required flags |

@@ -1,0 +1,390 @@
+diff --git a/bookrag/.gitignore b/bookrag/.gitignore
+index 7dbcbec..56c490b 100644
+--- a/bookrag/.gitignore
++++ b/bookrag/.gitignore
+@@ -9,6 +9,9 @@ build/
+ # Environment
+ .env
+ 
++# Machine-local settings overrides (see config/settings.local.toml.example)
++config/settings.local.toml
++
+ # ChromaDB
+ .chroma/
+ 
+diff --git a/bookrag/config/settings.local.toml.example b/bookrag/config/settings.local.toml.example
+new file mode 100644
+index 0000000..651e4c0
+--- /dev/null
++++ b/bookrag/config/settings.local.toml.example
+@@ -0,0 +1,20 @@
++# Machine-local overrides for settings.toml.
++# Copy this file to settings.local.toml (git-ignored) and edit as needed.
++# Only the keys you specify here are overridden; everything else comes from settings.toml.
++#
++# Use case: run all-MiniLM-L6-v2 from a local path instead of downloading from HuggingFace.
++#   1. Download the model once:
++#        python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
++#      Model lands in ~/.cache/huggingface/hub/models--sentence-transformers--all-MiniLM-L6-v2/
++#      Or copy/symlink it anywhere you like.
++#   2. Set the path below:
++
++[embedding]
++embedding_model = "/absolute/path/to/all-MiniLM-L6-v2"
++
++# Other common per-machine overrides:
++#
++# [structuring]
++# provider = "ollama"
++# model    = "qwen2.5:14b"
++# ollama_base_url = "http://localhost:11434"
+diff --git a/bookrag/src/bookrag/cli.py b/bookrag/src/bookrag/cli.py
+index 5d9ad05..8d82ad0 100644
+--- a/bookrag/src/bookrag/cli.py
++++ b/bookrag/src/bookrag/cli.py
+@@ -174,6 +174,30 @@ def build_parser() -> argparse.ArgumentParser:
+     p.add_argument("--db", required=True)
+     p.add_argument("--settings", default=str(DEFAULT_SETTINGS))
+ 
++    p = sub.add_parser(
++        "obsidian-ingest",
++        help="Ingest Obsidian vault markdown notes into a bookrag domain (SQLite + ChromaDB + BM25)",
++    )
++    p.add_argument("--vault-path", required=True, help="Path to Obsidian vault root")
++    p.add_argument(
++        "--include",
++        action="append",
++        dest="include_patterns",
++        default=None,
++        help="Glob pattern(s) relative to vault-path (repeatable). Default: **/*.md",
++    )
++    p.add_argument(
++        "--exclude",
++        action="append",
++        dest="exclude_patterns",
++        default=None,
++        help="Glob pattern(s) to exclude (repeatable). Default: .obsidian, _attachments, _templates",
++    )
++    p.add_argument("--db", required=True, help="Path to bookrag.db (created if absent)")
++    p.add_argument("--domain", default="obsidian", help="Domain name for doc_id/book_id prefixes")
++    p.add_argument("--stdout", action="store_true", help="Print summary JSON to stdout")
++    p.add_argument("--settings", default=str(DEFAULT_SETTINGS))
++
+     p = sub.add_parser("build-graph")
+     p.add_argument("--db", required=True)
+ 
+@@ -1873,6 +1897,65 @@ def main() -> None:
+         logger.info("Wrote %s sparse index to %s", sparse_model, args.db)
+         return
+ 
++    if args.command == "obsidian-ingest":
++        from bookrag.pipeline.obsidian_ingest import read_obsidian_notes
++
++        settings = load_settings(args.settings)
++        docs = read_obsidian_notes(
++            vault_path=args.vault_path,
++            include_patterns=args.include_patterns,
++            exclude_patterns=args.exclude_patterns,
++            domain=args.domain,
++        )
++        logger.info("obsidian-ingest: %d documents loaded", len(docs))
++
++        chunks = chunk_documents(
++            [d.to_dict() for d in docs],
++            target_chars=settings["chunking"]["target_chars"],
++            overlap_chars=settings["chunking"]["overlap_chars"],
++            min_chars=settings["chunking"]["min_chars"],
++            respect_headings=True,
++            kb_aware=False,
++        )
++        logger.info("obsidian-ingest: %d chunks produced", len(chunks))
++
++        chunk_dicts = [c.to_dict() for c in chunks]
++        embeddings = build_embeddings(
++            chunk_dicts,
++            embedding_model=settings["embedding"]["embedding_model"],
++            dimension=settings["embedding"]["dimension"],
++        )
++
++        db = BookragDB(args.db)
++        db.insert_documents([d.to_dict() for d in docs])
++        db.insert_chunks(chunk_dicts)
++        db.insert_embeddings([e.to_dict() for e in embeddings])
++
++        chroma_dir = chroma_path_for(args.db)
++        emb_dicts = [{"chunk_id": e.chunk_id, "vector": e.vector, "metadata": e.metadata} for e in embeddings]
++        n_upserted = 0
++        _chroma_batch = 5000
++        for _i in range(0, len(emb_dicts), _chroma_batch):
++            n_upserted += upsert_to_chroma(emb_dicts[_i : _i + _chroma_batch], chroma_dir)
++        logger.info("obsidian-ingest: %d vectors upserted to ChromaDB", n_upserted)
++
++        sparse_model = settings.get("retrieval", {}).get("sparse_model", "bm25")
++        sparse_payload = build_sparse(chunk_dicts, sparse_model=sparse_model)
++        db.insert_sparse_index(sparse_payload)
++        db.close()
++        logger.info("obsidian-ingest: sparse index built")
++
++        summary = {
++            "vault_path": args.vault_path,
++            "domain": args.domain,
++            "documents": len(docs),
++            "chunks": len(chunks),
++            "vectors": n_upserted,
++        }
++        if args.stdout:
++            print(json.dumps(summary, indent=2))
++        return
++
+     if args.command == "build-graph":
+         db = BookragDB(args.db)
+         chunks = db.get_chunks()
+diff --git a/bookrag/src/bookrag/config.py b/bookrag/src/bookrag/config.py
+index 53aaa25..d76c719 100644
+--- a/bookrag/src/bookrag/config.py
++++ b/bookrag/src/bookrag/config.py
+@@ -30,4 +30,17 @@ def load_settings(path: str | Path) -> dict[str, Any]:
+                 val = Path(settings["domain"][key])
+                 if not val.is_absolute():
+                     settings["domain"][key] = str(settings_dir / val)
++
++    # Machine-local overrides (not committed). Keys in each section replace the
++    # corresponding base values; sections not present in the local file are untouched.
++    local_path = settings_path.with_name("settings.local.toml")
++    if local_path.exists():
++        with local_path.open("rb") as handle:
++            local = tomllib.load(handle)
++        for section, values in local.items():
++            if isinstance(values, dict) and section in settings and isinstance(settings[section], dict):
++                settings[section].update(values)
++            else:
++                settings[section] = values
++
+     return settings
+diff --git a/bookrag/src/bookrag/pipeline/obsidian_ingest.py b/bookrag/src/bookrag/pipeline/obsidian_ingest.py
+new file mode 100644
+index 0000000..bc18f79
+--- /dev/null
++++ b/bookrag/src/bookrag/pipeline/obsidian_ingest.py
+@@ -0,0 +1,89 @@
++from __future__ import annotations
++
++import re
++from pathlib import Path
++from typing import Any
++
++import yaml
++
++from bookrag.models import DocumentRecord
++from bookrag.text_utils import normalize_whitespace
++
++_FM_RE = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.DOTALL)
++
++_DEFAULT_EXCLUDES = {"**/.obsidian/**", "**/_attachments/**", "**/_templates/**"}
++
++
++def strip_frontmatter(text: str) -> tuple[dict[str, Any], str]:
++    """Strip YAML frontmatter block from markdown text.
++
++    Returns (frontmatter_dict, body_text). body_text retains all markdown
++    including headings. Returns ({}, text) if no frontmatter block found.
++    """
++    m = _FM_RE.match(text)
++    if not m:
++        return {}, text
++    try:
++        fm = yaml.safe_load(m.group(1)) or {}
++    except Exception:
++        fm = {}
++    return (fm if isinstance(fm, dict) else {}), text[m.end():]
++
++
++def _doc_id_from_path(rel_path: Path, domain: str) -> str:
++    parts = [domain] + list(rel_path.with_suffix("").parts)
++    return "__".join(re.sub(r"[^a-zA-Z0-9_-]", "-", p) for p in parts)
++
++
++def read_obsidian_notes(
++    vault_path: str | Path,
++    include_patterns: list[str] | None = None,
++    exclude_patterns: list[str] | None = None,
++    domain: str = "obsidian",
++) -> list[DocumentRecord]:
++    """Read vault markdown notes and return DocumentRecord objects for the bookrag pipeline.
++
++    text field contains body WITH headings intact (for chunk_documents(respect_headings=True)).
++    source_relpath is vault-relative (e.g. "02-Notes/Sessions/note.md").
++    """
++    vault_path = Path(vault_path).expanduser().resolve()
++    includes = include_patterns or ["**/*.md"]
++    excludes = set(exclude_patterns or []) | _DEFAULT_EXCLUDES
++
++    candidates: list[Path] = []
++    for pattern in includes:
++        for match in vault_path.glob(pattern):
++            if match.is_dir():
++                candidates.extend(match.rglob("*.md"))
++            else:
++                candidates.append(match)
++
++    rows: list[DocumentRecord] = []
++    for file_path in sorted(set(candidates)):
++        if not file_path.is_file() or file_path.suffix != ".md":
++            continue
++
++        rel_path = file_path.relative_to(vault_path)
++        if any(file_path.match(excl) for excl in excludes):
++            continue
++
++        raw_text = file_path.read_text(encoding="utf-8", errors="replace")
++        fm, body = strip_frontmatter(raw_text)
++
++        book_id = rel_path.parts[0] if len(rel_path.parts) > 1 else domain
++        title = str(fm.get("title") or "") or file_path.stem
++
++        rows.append(
++            DocumentRecord(
++                doc_id=_doc_id_from_path(rel_path, domain),
++                book_id=book_id,
++                title=title,
++                heading_path=[book_id, title],
++                source_path=str(file_path),
++                source_relpath=str(rel_path),
++                text=normalize_whitespace(body),
++                metadata={"source_format": "obsidian"},
++            )
++        )
++
++    return rows
+diff --git a/bookrag/src/bookrag/tests/test_obsidian_ingest.py b/bookrag/src/bookrag/tests/test_obsidian_ingest.py
+new file mode 100644
+index 0000000..ec4e894
+--- /dev/null
++++ b/bookrag/src/bookrag/tests/test_obsidian_ingest.py
+@@ -0,0 +1,126 @@
++from __future__ import annotations
++
++from bookrag.pipeline.obsidian_ingest import read_obsidian_notes, strip_frontmatter
++
++
++def test_strip_frontmatter_with_yaml():
++    text = "---\ntitle: My Note\ntags: [foo]\n---\n# Heading\nBody text."
++    fm, body = strip_frontmatter(text)
++    assert fm["title"] == "My Note"
++    assert fm["tags"] == ["foo"]
++    assert "# Heading" in body
++    assert "---" not in body
++    assert "title" not in body
++
++
++def test_strip_frontmatter_no_frontmatter():
++    text = "# Just a heading\nNo frontmatter here."
++    fm, body = strip_frontmatter(text)
++    assert fm == {}
++    assert body == text
++
++
++def test_strip_frontmatter_malformed_yaml():
++    text = "---\n: invalid: yaml: {unclosed\n---\n# Content\nBody."
++    fm, body = strip_frontmatter(text)
++    assert fm == {}
++    assert "# Content" in body
++
++
++def test_strip_frontmatter_empty_frontmatter():
++    text = "---\n\n---\n# Heading\nContent."
++    fm, body = strip_frontmatter(text)
++    assert fm == {}
++    assert "# Heading" in body
++
++
++def test_read_obsidian_notes_basic(tmp_path):
++    (tmp_path / "02-Notes").mkdir()
++    note = tmp_path / "02-Notes" / "test-note.md"
++    note.write_text("---\ntitle: Test Note\n---\n# Section\nSome content here.")
++    docs = read_obsidian_notes(tmp_path, include_patterns=["02-Notes/**/*.md"])
++    assert len(docs) == 1
++    d = docs[0]
++    assert d.source_relpath == "02-Notes/test-note.md"
++    assert d.book_id == "02-Notes"
++    assert d.title == "Test Note"
++    assert "# Section" in d.text
++    assert "---" not in d.text
++    assert "title:" not in d.text
++    assert d.metadata["source_format"] == "obsidian"
++
++
++def test_read_obsidian_notes_heading_preserved(tmp_path):
++    note = tmp_path / "note.md"
++    note.write_text("---\ntitle: T\n---\n# H1\nParagraph.\n\n## H2\nMore text.")
++    docs = read_obsidian_notes(tmp_path)
++    assert len(docs) == 1
++    assert "# H1" in docs[0].text
++    assert "## H2" in docs[0].text
++
++
++def test_read_obsidian_notes_excludes_obsidian_dir(tmp_path):
++    (tmp_path / ".obsidian").mkdir()
++    (tmp_path / ".obsidian" / "config.md").write_text("internal config")
++    (tmp_path / "note.md").write_text("# Real note\nContent.")
++    docs = read_obsidian_notes(tmp_path)
++    assert all(".obsidian" not in d.source_relpath for d in docs)
++    assert len(docs) == 1
++
++
++def test_read_obsidian_notes_excludes_templates(tmp_path):
++    (tmp_path / "_templates").mkdir()
++    (tmp_path / "_templates" / "daily.md").write_text("# Template\n{{date}}")
++    (tmp_path / "note.md").write_text("# Note\nContent.")
++    docs = read_obsidian_notes(tmp_path)
++    assert all("_templates" not in d.source_relpath for d in docs)
++
++
++def test_read_obsidian_notes_no_frontmatter(tmp_path):
++    note = tmp_path / "bare.md"
++    note.write_text("# Bare Heading\nJust body text, no frontmatter.")
++    docs = read_obsidian_notes(tmp_path)
++    assert len(docs) == 1
++    assert docs[0].title == "bare"
++    assert "# Bare Heading" in docs[0].text
++
++
++def test_read_obsidian_notes_source_relpath_vault_relative(tmp_path):
++    (tmp_path / "05-Knowledge-Base" / "domains").mkdir(parents=True)
++    note = tmp_path / "05-Knowledge-Base" / "domains" / "kb.md"
++    note.write_text("# KB\nContent.")
++    docs = read_obsidian_notes(tmp_path)
++    assert docs[0].source_relpath == "05-Knowledge-Base/domains/kb.md"
++    assert docs[0].book_id == "05-Knowledge-Base"
++
++
++def test_read_obsidian_notes_doc_id_stable(tmp_path):
++    note = tmp_path / "note.md"
++    note.write_text("# N\nContent.")
++    docs = read_obsidian_notes(tmp_path, domain="test-domain")
++    assert docs[0].doc_id.startswith("test-domain")
++    assert "note" in docs[0].doc_id
++
++
++def test_chunk_documents_preserves_headings(tmp_path):
++    from bookrag.pipeline.chunking import chunk_documents
++
++    long_text = "# Section A\n" + "word " * 300 + "\n\n# Section B\n" + "word " * 300
++    docs = [
++        {
++            "doc_id": "test__note",
++            "book_id": "02-Notes",
++            "heading_path": ["02-Notes"],
++            "source_relpath": "note.md",
++            "text": long_text,
++            "source_path": "",
++            "page_start": None,
++            "page_end": None,
++            "title": "note",
++            "metadata": {},
++        }
++    ]
++    chunks = chunk_documents(docs, respect_headings=True, kb_aware=False)
++    assert len(chunks) >= 2
++    heading_paths_str = [str(c.heading_path) for c in chunks]
++    assert any("Section A" in hp for hp in heading_paths_str)

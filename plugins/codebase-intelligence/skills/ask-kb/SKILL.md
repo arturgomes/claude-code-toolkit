@@ -6,6 +6,16 @@ description: >
 version: 2.0.1
 ---
 
+> **bookrag engine path** — This skill runs the local `bookrag` engine. Resolve its path ONCE at
+> the start of a run, note the printed value, and substitute it wherever `$BOOKRAG_HOME` appears
+> below. This bootstraps a pinned, patched bookrag on first use (public base fetched from source +
+> your own patches) — no `~/Documents` path required:
+>
+> ```bash
+> bash "$(find ~/.claude -type f -path '*codebase-intelligence/scripts/bookrag-home.sh' 2>/dev/null | head -1)"
+> ```
+
+
 # ask-kb
 
 Answer questions by consulting the user's personal knowledge base — not from general knowledge.
@@ -21,10 +31,10 @@ command — do not look elsewhere.
 ### Step 1 — Run bookrag query-hybrid
 
 ```bash
-uv run --directory ~/Documents/ai-tools/skills-mono-repo \
+uv run --directory $BOOKRAG_HOME \
   bookrag query-hybrid "<question>" \
-  --db ~/Documents/ai-tools/skills-mono-repo/master-kb/domains/obsidian-vault/bookrag.db \
-  --settings ~/Documents/ai-tools/skills-mono-repo/bookrag/config/settings.toml \
+  --db $BOOKRAG_HOME/master-kb/domains/obsidian-vault/bookrag.db \
+  --settings $BOOKRAG_HOME/bookrag/config/settings.toml \
   --stdout
 ```
 

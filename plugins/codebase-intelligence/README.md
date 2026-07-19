@@ -7,6 +7,7 @@ structural search** (single tier). Cross-session memory lives in an Obsidian vau
 the `ultimate-obsidian` MCP. **No prp-core (or any other plugin) required.**
 
 **Version history**
+- **v3.8.0** — removes the `~/Documents/ai-tools/skills-mono-repo` dependency: the `bookrag` KB engine is now **bootstrapped on first use** (`/setup-kb`) — the public upstream is cloned at a **pinned commit** and the owner's own deltas (obsidian-ingest + a Chroma batching fix) are applied as local patches. No third-party code is vendored; KB skills resolve the engine at runtime via `scripts/bookrag-home.sh`.
 - **v3.7.0** — decoupled from prp-core: the plugin is now fully self-contained (its own prp-plan / prp-implement / prp-loop commands and agents; no `prp-core:` invocations). Adds the `ingest-web-doc-to-kb` skill (autonomous web→KB ingestion, no API key).
 - **v3.3.0** — adds `prp-loop`: a bounded closed-loop runner with contract-mandated stop rules and an independent verifier.
 - **v3.4.0** — makes the loop self-improving: an optional context-isolating subagent per attempt, promotion of recurring/gamed failures to durable `## Loop Constraints`, and a verifier whose scrutiny rises with attempt count.
@@ -225,7 +226,7 @@ claude mcp add atlassian \
 
 ## Commands & skills
 
-**Commands**: `/prp-plan` · `/prp-implement` · `/prp-loop`
+**Commands**: `/prp-plan` · `/prp-implement` · `/prp-loop` · `/setup-kb`
 
 | Skill | Purpose |
 |---|---|
@@ -301,3 +302,7 @@ decide about authentication". Restore reads a per-folder `02-Notes/Sessions/_ind
 
 - **Obsidian vault**: `~/Documents/Obsidian-Vault/` (must exist)
 - **`ultimate-obsidian` MCP**: provides all note + index + search operations
+- **`bookrag` KB engine** (for the KB skills): bootstrapped by `/setup-kb` into
+  `~/.codebase-intelligence/skills-mono-repo` (override via `CI_BOOKRAG_HOME`) — pinned public base +
+  local patches, fetched on first use. Requires `git` + `uv`. Not vendored; not a personal checkout.
+- **Optional MCPs**: `serena` (LSP codebase search), `context7` (library docs), `atlassian` (Jira injection)

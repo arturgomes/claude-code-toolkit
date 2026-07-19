@@ -1,0 +1,27 @@
+diff --git a/bookrag/src/bookrag/pipeline/chroma_store.py b/bookrag/src/bookrag/pipeline/chroma_store.py
+index 930bc04..729f29a 100644
+--- a/bookrag/src/bookrag/pipeline/chroma_store.py
++++ b/bookrag/src/bookrag/pipeline/chroma_store.py
+@@ -31,7 +31,21 @@ def upsert_to_chroma(
+         for m in metadatas
+     ]
+ 
+-    collection.upsert(ids=ids, embeddings=vectors, metadatas=sanitized)
++    # ChromaDB rejects a single upsert larger than its max batch size (typically
++    # 5461). Upsert in bounded batches so large/growing collections don't silently
++    # skip the whole write (which leaves the dense index stale).
++    try:
++        max_batch = int(getattr(client, "get_max_batch_size", lambda: 5461)())
++    except Exception:
++        max_batch = 5461
++    batch_size = max(1, min(max_batch, 4000))
++    for start in range(0, len(ids), batch_size):
++        end = start + batch_size
++        collection.upsert(
++            ids=ids[start:end],
++            embeddings=vectors[start:end],
++            metadatas=sanitized[start:end],
++        )
+     return len(ids)
+ 
+ 

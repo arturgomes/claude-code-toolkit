@@ -6,6 +6,16 @@ description: >
 version: 2.0.1
 ---
 
+> **bookrag engine path** — This skill runs the local `bookrag` engine. Resolve its path ONCE at
+> the start of a run, note the printed value, and substitute it wherever `$BOOKRAG_HOME` appears
+> below. This bootstraps a pinned, patched bookrag on first use (public base fetched from source +
+> your own patches) — no `~/Documents` path required:
+>
+> ```bash
+> bash "$(find ~/.claude -type f -path '*codebase-intelligence/scripts/bookrag-home.sh' 2>/dev/null | head -1)"
+> ```
+
+
 # consult-kb
 
 Review artifacts (code, RFCs, ADRs, designs) against the user's knowledge base.
@@ -26,10 +36,10 @@ Build a query from the artifact's stated domain and key concepts. For a retry RF
 `"strategy frameworks product decision-making"`.
 
 ```bash
-uv run --directory ~/Documents/ai-tools/skills-mono-repo \
+uv run --directory $BOOKRAG_HOME \
   bookrag query-hybrid "<domain-query>" \
-  --db ~/Documents/ai-tools/skills-mono-repo/master-kb/domains/obsidian-vault/bookrag.db \
-  --settings ~/Documents/ai-tools/skills-mono-repo/bookrag/config/settings.toml \
+  --db $BOOKRAG_HOME/master-kb/domains/obsidian-vault/bookrag.db \
+  --settings $BOOKRAG_HOME/bookrag/config/settings.toml \
   --stdout
 ```
 
