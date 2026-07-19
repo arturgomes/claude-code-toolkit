@@ -16,6 +16,46 @@ Adds intelligent memory and verification layers to the PRP (Planning-Research-Pr
 - **Context7 Library Verification**: Verify external library APIs before writing code
 - **Drift Guard**: Seven-question validation at each phase to prevent scope creep
 - **Knowledge Base Consultation**: Query personal KB for patterns and principles (optional)
+- **Orchestration layer** (`/prp-orchestrate`): a refinement gate + full planning + a mediator-judged
+  parallel agent team that fans work to specialists in isolated git worktrees
+
+### The actions, and how they compose
+
+```mermaid
+flowchart TD
+    IN([ticket · goal · PRD]):::start --> O{{/prp-orchestrate<br/>autonomous · parallel · mediator-judged}}:::top
+    O --> R[Refine · Definition-of-Ready gate<br/>product-owner · project-manager · lead-engineer · QA lens]:::refine
+    R -->|NOT READY| Q[STOP — no plan, no code<br/>meaningful questions to the user]:::bad
+    R -->|READY| PP[Plan · /prp-plan → plan.md<br/>memory · Jira · KB · Context7 · drift-guard]:::gate
+    PP --> MED[Implement · mediator + specialists<br/>isolated git worktrees · judged vs<br/>.claude/ + CLAUDE.md + .github rules]:::gate
+    MED --> LG{gates green +<br/>verifier agrees?}:::decide
+    LG -->|no| PL[Loop · /prp-loop<br/>bounded retry + independent verifier]:::gate
+    PL --> MED
+    LG -->|yes| DONE([merged + reviewed result]):::done
+
+    subgraph L["always-on layers (every phase)"]
+      direction LR
+      M[session-memory<br/>Obsidian vault]:::layer
+      K[ask-kb / consult-kb]:::layer
+      C[Context7 verification]:::layer
+      DG[drift-guard anchor]:::layer
+    end
+    R -.-> L
+    PP -.-> L
+    MED -.-> L
+
+    classDef start fill:#1a73e8,stroke:#0b4aa2,color:#fff
+    classDef top fill:#6b46c1,stroke:#4c2889,color:#fff,font-weight:bold
+    classDef refine fill:#6b46c1,stroke:#4c2889,color:#fff
+    classDef gate fill:#1a73e8,stroke:#0b4aa2,color:#fff
+    classDef decide fill:#e8710a,stroke:#a4530a,color:#fff
+    classDef done fill:#137333,stroke:#0b5323,color:#fff
+    classDef bad fill:#a50e0e,stroke:#6e0909,color:#fff
+    classDef layer fill:#5f6368,stroke:#3c4043,color:#fff
+```
+
+`prp-plan`, `prp-implement`, and `prp-loop` also run **standalone** — `/prp-orchestrate` is the
+autonomous umbrella that chains them behind a refinement gate and a mediator.
 
 ---
 
@@ -127,7 +167,40 @@ To add a book to your KB later, upload the PDF to Claude Code and say:
 
 ## Usage
 
-Everything runs through `/codebase-intelligence:prp-plan` and `/codebase-intelligence:prp-implement`.
+Run the whole pipeline autonomously with `/codebase-intelligence:prp-orchestrate`, or drive each stage
+by hand with `/codebase-intelligence:prp-plan` → `prp-implement` → `prp-loop`.
+
+### Orchestrate a ticket end-to-end (autonomous)
+
+```
+/codebase-intelligence:prp-orchestrate SEATHQ-9999 --preset seathq
+```
+
+Refines → plans → fans work to specialists in isolated worktrees → judges every diff against the
+repo's rules → merges serially. It stops for a human **only** on a requirement fork or a red
+blast-radius action. Each round, the mediator gates every specialist's diff like this:
+
+```mermaid
+flowchart TD
+    D[specialist diff this round]:::gate --> TB{touches files outside<br/>its own territory?}:::decide
+    TB -->|yes · territory breach| R1[🔴 DRIFTING]:::bad
+    TB -->|no| RULES[grade vs rule sources:<br/>.claude/ + CLAUDE.md + .github/ instructions<br/>applyTo-scoped · drift-guard Q1-8]:::gate
+    RULES --> SEV{worst finding?}:::decide
+    SEV -->|MUST / MUST-NOT violation| R2[🔴 DRIFTING]:::bad
+    SEV -->|SHOULD / SHOULD-NOT<br/>or drift 1-2| Y1[⚠️ DRIFT RISK]:::warn
+    SEV -->|clean| G1[✅ ON TRACK]:::good
+    R1 --> BLOCK[blocks THIS worktree's merge<br/>return actionable criteria → next round]:::bad
+    R2 --> BLOCK
+    Y1 --> ELIG[merge-eligible · note recorded]:::good
+    G1 --> ELIG
+    ELIG --> SER([serial merge · one worktree at a time]):::done
+    classDef gate fill:#1a73e8,stroke:#0b4aa2,color:#fff
+    classDef decide fill:#e8710a,stroke:#a4530a,color:#fff
+    classDef good fill:#137333,stroke:#0b5323,color:#fff
+    classDef done fill:#137333,stroke:#0b5323,color:#fff
+    classDef warn fill:#b06000,stroke:#7a4200,color:#fff
+    classDef bad fill:#a50e0e,stroke:#6e0909,color:#fff
+```
 
 ### Plan a new feature
 
@@ -299,8 +372,11 @@ Inside a Claude Code session:
 
 | Command | Description |
 |---|---|
+| `prp-orchestrate` | Autonomous umbrella: refinement (Definition-of-Ready) gate → full `prp-plan` → mediator-judged parallel agent team (specialists in isolated git worktrees, per-round rules verdict, serial merge). Input a goal, `JIRA-TICKET`, or PRD; stops for a human only on a requirement fork or red blast-radius |
 | `prp-plan` | Generate a battle-tested implementation plan — with vault storage, session memory, Jira injection, drift-guard anchor, KB consultation, Context7 verification, and AC traceability table |
 | `prp-implement` | Execute a plan end-to-end — with memory restore, per-task drift checks, Context7 before library calls, vault-based reports, and session memory saves |
+| `prp-loop` | Bounded closed-loop runner — re-attempts a goal until an executable gate passes AND an independent fresh-context verifier agrees, or a hard stop fires |
+| `doctor` | Read-only preflight — checks system tools, MCP servers, the KB engine, and vendored tools; prints the exact fix for anything missing |
 
 ### Skills
 
