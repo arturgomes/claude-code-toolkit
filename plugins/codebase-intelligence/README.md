@@ -126,9 +126,10 @@ Phase R        → loop report (full ledger, accept-rate, cost-per-accepted-chan
 ## Orchestration layer — prp-orchestrate (v3.12.0)
 
 Goal-oriented, parallel, mediator-judged, collision-proof alternative to running the three commands
-by hand. One goal → a coordinator that fans work to isolated specialists, enforces `.claude/` rules
-and no-code-collision automatically, and returns a merged, reviewed result — without per-phase
-checkpoints or Y/N prompts.
+by hand. One goal → a coordinator that fans work to isolated specialists, enforces the target repo's
+rule sources (`.claude/` + `CLAUDE.md` + `.github/` Copilot instructions, `applyTo`-scoped) and
+no-code-collision automatically, and returns a merged, reviewed result — without per-phase checkpoints
+or Y/N prompts.
 
 ```
 user ─▶ /prp-orchestrate "<goal | JIRA-TICKET | prd.md>" [--preset <name>] [--plan <path>] [--base <branch>] [--groom-autonomous]
@@ -148,8 +149,9 @@ user ─▶ /prp-orchestrate "<goal | JIRA-TICKET | prd.md>" [--preset <name>] [
         │  B Allocate   → one git worktree per specialist; assert territories │
         │                 pairwise-disjoint (AC-4) — abort if they intersect  │
         │  C Round-judge→ each round: monitor ▸ JUDGE every diff vs target    │
-        │                 repo .claude/ MUST/SHOULD/MUST-NOT/SHOULD-NOT rules │
-        │                 (drift-guard Q1-8 + rules rubric) ▸ 🔴 blocks merge │
+        │                 repo rule sources: .claude/ + CLAUDE.md + .github/  │
+        │                 Copilot instructions (applyTo-scoped) as MUST/SHOULD/│
+        │                 MUST-NOT/SHOULD-NOT (drift-guard Q1-8) ▸ 🔴 blocks   │
         │  D Verify     → qa-analyst behavioral gates; pr-reviewer adversarial│
         │                 fresh-context review (never self-evaluate)          │
         │  E Merge      → serial merge of passing worktrees; ux taste check   │
@@ -176,6 +178,12 @@ user ─▶ /prp-orchestrate "<goal | JIRA-TICKET | prd.md>" [--preset <name>] [
 - **Interaction (AC-1):** no mandatory Y/N gates; `PHASE_N_CHECKPOINT` verbosity collapses to
   silent-unless-fail invariants; `ask-kb` / `context7-research` / `drift-guard` / `session-memory`
   are auto-invoked inside the flow.
+- **Rule-aware judging (AC-2):** the mediator grades each diff against **all** of the target repo's
+  rule sources — `CLAUDE.md`, `.claude/*.md`, and the **`.github/` Copilot instructions**
+  (`.github/copilot-instructions.md` + `.github/instructions/*.instructions.md`, each applied only to
+  files matching its `applyTo` glob; checklist IDs like `FQ-4` count as SHOULD) — as
+  MUST/SHOULD/MUST-NOT/SHOULD-NOT. A MUST/MUST-NOT violation ⇒ 🔴 blocks that merge. A preset may
+  point `rule_sources` at non-standard locations.
 - **No-collision guarantee (AC-4):** one worktree per active specialist **plus** a mediator-owned
   disjoint file-territory map; merges are serial. State is durable JSON
   (`skills/mediator/references/orchestration-state.schema.json`) — the mediator is the sole writer.
@@ -275,7 +283,7 @@ Generic, portable role agents used by `/prp-orchestrate` — repo/stack binding 
 | `core-db-specialist` | generator | shared types/DB/migrations; transaction + identifier rules; db-migration = red; → backend, qa |
 | `qa-analyst` | evaluator | writes + runs behavioral gates → pass/fail report; fresh context; → pr-reviewer |
 | `ux-specialist` | design taste | before/after taste rubric on UI merges (advises, doesn't block); → frontend |
-| `pr-reviewer` | adversarial evaluator | harsh fresh-context review of merged diff vs `.claude/` + conventions; → pm, mediator |
+| `pr-reviewer` | adversarial evaluator | harsh fresh-context review of merged diff vs the repo's rule sources (`.claude/` + `CLAUDE.md` + `.github/` instructions) + conventions; → pm, mediator |
 
 ---
 

@@ -3,8 +3,9 @@ name: mediator
 description: >
   Coordinator + adversarial judge + merge-gate for /prp-orchestrate. Decomposes a goal into a
   testable on-disk contract, assigns disjoint file territory, fans work to 2-5 specialists each in
-  their OWN git worktree, judges every specialist's diff each round against the target repo's
-  .claude/ MUST/SHOULD/MUST-NOT/SHOULD-NOT rules (drift-guard Q1-8 + rules rubric), blocks merges on
+  their OWN git worktree, judges every specialist's diff each round against the target repo's rule
+  sources (.claude/ + CLAUDE.md + .github/ Copilot instructions, applyTo-scoped) as
+  MUST/SHOULD/MUST-NOT/SHOULD-NOT (drift-guard Q1-8 + rules rubric), blocks merges on
   a 🔴 verdict, and merges passing worktrees serially. Capability-gated: falls back to serial
   single-writer worktrees when agent-teams tools are absent. Auto-invoked by /prp-orchestrate;
   invoke manually on "coordinate a team", "run the mediator", "judge these specialist diffs".
@@ -117,9 +118,11 @@ Each round, for every `working`/`submitted` specialist:
 
 1. **Monitor** progress (avoid the idle-teammate failure X03 — every activated specialist has an
    explicit assigned criterion + dependency).
-2. **JUDGE** the specialist's diff using `references/rules-rubric.md`: parse the target repo's
-   `.claude/` **MUST / SHOULD / MUST NOT / SHOULD NOT** rules, run drift-guard Q1-8 + the mechanical
-   territory pre-scan, and emit a verdict `✅ ON TRACK / ⚠️ DRIFT RISK / 🔴 DRIFTING`.
+2. **JUDGE** the specialist's diff using `references/rules-rubric.md`: parse ALL the target repo's rule
+   sources — `.claude/` + `CLAUDE.md` + `.github/copilot-instructions.md` +
+   `.github/instructions/*.instructions.md` (each `applyTo`-scoped to matching diff files) — as
+   **MUST / SHOULD / MUST NOT / SHOULD NOT** (checklist IDs like `FQ-4` default to SHOULD), run
+   drift-guard Q1-8 + the mechanical territory pre-scan, and emit `✅ ON TRACK / ⚠️ DRIFT RISK / 🔴 DRIFTING`.
 3. **Gate:** a 🔴 verdict (any MUST/MUST-NOT violation, a territory breach, or drift 3+) sets
    `blocksMerge: true` and returns **actionable criteria** to that specialist for the next round.
    ⚠️ is recorded but does not block; ✅ is merge-eligible.
@@ -137,7 +140,8 @@ the goal's contract criteria are all met (or a hard stop / human gate fires).
 
 1. `qa-analyst` (evaluator) runs the contract's **behavioral gates** → pass/fail report.
 2. `pr-reviewer` (adversarial evaluator) does a **harsh fresh-context** review of the merged-candidate
-   diff vs `.claude/` + repo conventions. Neither evaluator may be the author of the code it grades —
+   diff vs the repo's rule sources (`.claude/` + `CLAUDE.md` + `.github/` instructions) + conventions.
+   Neither evaluator may be the author of the code it grades —
    generator/evaluator/planner keep separate contexts, never self-evaluate (KB: Harness Patterns P06).
 
 ---

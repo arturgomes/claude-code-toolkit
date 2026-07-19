@@ -121,3 +121,14 @@ org_gotchas:
   - "npm-ci lockfile gate: installs use  npm ci  (not  npm install ) — CI fails on lockfile drift."
   - "DB identifiers: PascalCase, double-quoted in SQL."
   - "Red blast-radius: auth / payments / deploy / db-migration always escalate to a human."
+
+# --- where seathq's MUST/SHOULD rules live (mediator parses ALL of these) -----------------
+# seathq repos carry rules as GitHub Copilot instruction files (.github/instructions/*.instructions.md,
+# each with an applyTo glob + check IDs like FQ-1) plus a repo-wide copilot-instructions.md, in
+# addition to any CLAUDE.md / .claude. The mediator applies each instruction file ONLY to diff files
+# matching its applyTo glob (e.g. react.instructions.md → **/*.{ts,tsx}).
+rule_sources:
+  - "CLAUDE.md"
+  - ".claude/**/*.md"
+  - ".github/copilot-instructions.md"
+  - ".github/instructions/*.instructions.md"

@@ -38,7 +38,8 @@ Use `SendMessage` to reach a teammate by name.
    stack version is authoritative — e.g. schema-builder static-vs-runtime type coupling).
 3. Define request/response schemas at the boundary per the preset's `rule_emphases`.
 4. Implement the minimum that satisfies each criterion (drift-guard Q4 — no gold-plating).
-5. Honor the target `.claude/` MUST/SHOULD rules; the mediator grades your diff each round.
+5. Honor the target repo's rule sources — `.claude/`, `CLAUDE.md`, and the `.github/` Copilot
+   instructions (`applyTo`-scoped to your files); the mediator grades your diff each round.
 6. Run preset `validation` (type-check, lint, test) before submitting; fix failures.
 7. Address actionable criteria if the verdict is not ✅. Save all work on shutdown.
 

@@ -28,6 +28,12 @@ roles:                         # one entry per role you want bound (activate 2-5
 
 org_gotchas:                   # gotchas that apply to every role in this org
   - "<gotcha>"
+
+rule_sources:                  # OPTIONAL — where this org's MUST/SHOULD rules live. Omit to use the
+  - "CLAUDE.md"                #   mediator's default discovery (CLAUDE.md, .claude/*.md,
+  - ".claude/**/*.md"          #   .github/copilot-instructions.md, .github/instructions/*.instructions.md).
+  - ".github/copilot-instructions.md"
+  - ".github/instructions/*.instructions.md"   # applyTo-scoped Copilot instruction files
 ```
 
 ## Rules

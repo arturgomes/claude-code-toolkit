@@ -1,8 +1,9 @@
 # Mediator Rules Rubric — per-round verdict on a specialist diff
 
 The mediator loads this rubric each round and grades **every active specialist's diff**
-against (a) the target repo's `.claude/` + `CLAUDE.md` rules and (b) drift-guard's 8
-questions. Output is a single verdict per specialist plus, on failure, **actionable criteria**
+against (a) the target repo's rule sources — `CLAUDE.md`, `.claude/*.md`, **and the `.github/`
+Copilot instructions (`.github/copilot-instructions.md` + `.github/instructions/*.instructions.md`,
+each `applyTo`-scoped)** — and (b) drift-guard's 8 questions. Output is a single verdict per specialist plus, on failure, **actionable criteria**
 returned to that specialist (an adversarial evaluator returns a rubric, never vibes — KB:
 `claude-code` / Harness Patterns P06, Adversarial-Evaluator checklist).
 
@@ -13,22 +14,34 @@ specialist's worktree (AC-2).
 
 ## Step 1 — Parse the target repo rules (per round, cached)
 
-Read the target repo's rule sources, in precedence order:
+Read **all** of the target repo's rule sources — do not stop at `.claude/`. Discover, in precedence
+order (later sources refine earlier ones; a preset `rule_sources` list overrides this default set):
 
 1. `<repo>/CLAUDE.md` and any `<repo>/.claude/*.md` behavioral contracts.
-2. The active preset's `rule_emphases` for this role (e.g. core-db-specialist ⇒ D-1/D-3 transactions).
+2. **`.github/` Copilot instructions** (a first-class rule source, not optional):
+   - `<repo>/.github/copilot-instructions.md` — repo-wide guidelines.
+   - `<repo>/.github/instructions/*.instructions.md` — scoped instruction files. Each has frontmatter
+     with an **`applyTo` glob** (e.g. `applyTo: "**/*.{ts,tsx}"`) — **apply that file's rules ONLY to
+     diff files matching its `applyTo` glob.** A React instruction file does not judge a SQL migration.
+3. Any path listed in the active preset's `rule_sources` (if present) — lets a repo point at
+   non-standard locations.
+4. The active preset's `rule_emphases` for this role (e.g. core-db-specialist ⇒ D-1/D-3 transactions).
 
-Classify every rule line by its modal verb into one of four buckets:
+**Classify every rule** into one of four buckets — by modal verb **and** by checklist convention
+(Copilot instruction files often use check IDs like `FQ-1` and imperative/▢-style lines rather than
+"MUST/SHOULD"):
 
-| Bucket | Modal | Severity | Verdict effect |
+| Bucket | Signals | Severity | Verdict effect |
 |---|---|---|---|
-| **MUST** | must / shall / always / required | blocking | violation ⇒ 🔴 (blocks merge) |
-| **MUST NOT** | must not / never / forbidden / do not | blocking | violation ⇒ 🔴 (blocks merge) |
-| **SHOULD** | should / prefer / recommended | advisory | violation ⇒ ⚠️ |
+| **MUST** | must / shall / always / required; a hard numeric limit ("≤ 10", "must be typed") | blocking | violation ⇒ 🔴 (blocks merge) |
+| **MUST NOT** | must not / never / forbidden / do not / disallowed | blocking | violation ⇒ 🔴 (blocks merge) |
+| **SHOULD** | should / prefer / recommended; a plain checklist item (e.g. `FQ-2: names descriptive`) | advisory | violation ⇒ ⚠️ |
 | **SHOULD NOT** | should not / avoid / discouraged | advisory | violation ⇒ ⚠️ |
 
-Rules whose modal verb is ambiguous default to **SHOULD** (advisory), never MUST — do not
-manufacture a blocking rule the repo did not clearly state.
+- A **checklist item under a `.github/instructions` file** that carries no modal verb defaults to
+  **SHOULD** (advisory) — cite it by its **check ID** (e.g. `FQ-4`) in the verdict evidence.
+- Genuinely ambiguous lines default to **SHOULD**, never MUST — do not manufacture a blocking rule the
+  repo did not clearly state.
 
 ---
 

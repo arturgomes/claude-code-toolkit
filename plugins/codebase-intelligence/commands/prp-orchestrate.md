@@ -5,7 +5,8 @@ description: >
   Jira injection + codebase agents + ask-kb + Context7 before web + drift-guard) into a durable
   plan.md, THEN hands that plan.md to a mediator that fans work to 2-5 specialists each in their OWN
   git worktree (no two ever touch the same code), judges every diff each round against the target
-  repo's .claude/ rules, gates merges on a 🔴 verdict, and merges passing worktrees serially. No
+  repo's rule sources (.claude/ + CLAUDE.md + .github/ Copilot instructions, applyTo-scoped), gates
+  merges on a 🔴 verdict, and merges passing worktrees serially. No
   mandatory Y/N gates — stops for a human ONLY on a requirement fork or a red blast-radius action
   (auth/payments/deploy/db-migration).
 argument-hint: <goal | JIRA-TICKET | path/to/prd.md> [--preset <name>] [--plan <path>] [--base <branch>] [--groom-autonomous]
@@ -45,8 +46,9 @@ R. **Refine (Definition-of-Ready gate)** — BEFORE anything else, convene a gro
    single-writer owner-lanes / Files-to-Change → the disjoint territory map (activate 2-5 roles, never 7).
 2. **Activate** — one git **worktree** per active specialist off the base branch; assert territories
    are pairwise-disjoint (AC-4) — abort if they intersect.
-3. **Round-judge** — each round: monitor → JUDGE every diff vs the target repo's `.claude/`
-   MUST/SHOULD/MUST-NOT/SHOULD-NOT rules (drift-guard Q1-8 + rules rubric) → 🔴 blocks that merge.
+3. **Round-judge** — each round: monitor → JUDGE every diff vs the target repo's rule sources
+   (`.claude/` + `CLAUDE.md` + `.github/copilot-instructions.md` + `.github/instructions/*.instructions.md`,
+   each `applyTo`-scoped) as MUST/SHOULD/MUST-NOT/SHOULD-NOT (drift-guard Q1-8 + rules rubric) → 🔴 blocks that merge.
 4. **Verify** — `qa-analyst` runs the plan's `expected_gate`s / behavioral gates; `pr-reviewer` does
    fresh-context adversarial review.
 5. **Merge** — serial merge of passing worktrees only; `ux-specialist` taste check on UI merges.
@@ -130,7 +132,8 @@ Fallback table (a fallback is never a failure — every AC still holds serially)
 
 ## Step 3 — Load the mediator + preset
 
-- `Skill(mediator)` owns territory allocation, the per-round `.claude/`-rules verdict, the merge gate,
+- `Skill(mediator)` owns territory allocation, the per-round rules verdict (`.claude/` + `CLAUDE.md`
+  + `.github/` Copilot instructions, `applyTo`-scoped), the merge gate,
   the message graph, and capability fallback.
 - **Preset resolution (in order):** (a) explicit `--preset <name>`; else (b) **infer from the ticket
   prefix** — a `SEATHQ-9999` input resolves to `presets/seathq.yaml` when that file exists (lowercase

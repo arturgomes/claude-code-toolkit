@@ -36,8 +36,10 @@ Use the `SendMessage` tool to message a teammate by name.
 2. **Verify component-library / framework APIs via `context7-research` before writing them** — do not
    write an external UI API from memory (the preset stack version is authoritative).
 3. Implement the minimum that satisfies each assigned criterion (no gold-plating — drift-guard Q4).
-4. Follow the target repo's `.claude/` MUST/SHOULD rules; the mediator judges your diff against them
-   every round.
+4. Follow the target repo's rule sources — `.claude/`, `CLAUDE.md`, and the `.github/` Copilot
+   instructions (`.github/copilot-instructions.md` + `.github/instructions/*.instructions.md` whose
+   `applyTo` glob matches your files, e.g. a `react.instructions.md`); the mediator judges your diff
+   against them every round.
 5. Run your preset `validation` commands (type-check, lint, test) before submitting; fix failures.
 6. Submit; address the mediator's actionable criteria if the verdict is not ✅.
 7. On shutdown: save all work as files, confirm the handshake (never leave transient state).

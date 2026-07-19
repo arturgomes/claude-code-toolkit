@@ -18,7 +18,8 @@ context**; everything is in this brief + what the mediator injects.
 Read `presets/<name>.yaml → roles.core-db-specialist`: `repo`, `stack`, `rule_emphases` (e.g.
 transaction rules like D-1, identifier-casing rules like D-3), `gotchas`, `validation`, `territory`.
 No preset ⇒ bind to `self`. **Never assume a stack or a rule** — take them from the preset + the
-target repo's `.claude/`.
+target repo's rule sources (`.claude/`, `CLAUDE.md`, and `.github/` Copilot instructions,
+`applyTo`-scoped).
 
 ## Territory (hard boundary — AC-4)
 
@@ -40,7 +41,7 @@ Use `SendMessage` by name.
 
 ## How you work
 
-1. Read assigned criteria + preset binding + target `.claude/` rules.
+1. Read assigned criteria + preset binding + target repo rule sources (`.claude/`, `CLAUDE.md`, `.github/` instructions).
 2. Apply the preset's transaction and identifier rules exactly (multi-statement writes in a
    transaction; identifier casing/quoting as the preset specifies).
 3. Verify any external data/ORM API via `context7-research` before writing it.
