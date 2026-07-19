@@ -131,35 +131,55 @@ rule sources (`.claude/` + `CLAUDE.md` + `.github/` Copilot instructions, `apply
 no-code-collision automatically, and returns a merged, reviewed result — without per-phase checkpoints
 or Y/N prompts.
 
+**End-to-end decision flow** — `R refine → DoR gate → 0 plan → mediator A–F`, with the two hard stops
+(NOT READY, and red blast-radius):
+
+```mermaid
+flowchart TD
+    IN([/prp-orchestrate<br/>goal · JIRA-TICKET · prd.md]):::start --> R[Phase R · Refine<br/>panel: product-owner + project-manager<br/>+ lead-engineer + QA lens]:::refine
+    R --> DOR{Definition of Ready?<br/>ACs testable · scenarios · DoD-from-ACs<br/>zero open assumptions · QA signs off}:::decide
+    DOR -->|NOT READY| STOP[STOP — no plan, no code<br/>meaningful questions → user<br/>--groom-autonomous: ratifiable decisions]:::bad
+    DOR -->|READY| P[Phase 0 · Plan = the full /prp-plan<br/>session-memory + Jira + codebase agents<br/>+ ask-kb + Context7 BEFORE web + drift-guard<br/>→ durable plan.md]:::gate
+    P --> PM[Phase A · project-manager MAPS plan.md<br/>→ testable contract + territory map<br/>activate 2-5, never all 9]:::gate
+    PM --> TERR{territories<br/>pairwise-disjoint?}:::decide
+    TERR -->|no| ABORT[abort allocation · re-partition]:::warn
+    ABORT --> PM
+    TERR -->|yes| WT[Phase B · one git worktree per specialist]:::gate
+    WT --> RJ[Phase C-E · round-judge ▸ verify ▸ serial merge]:::gate
+    RJ --> RED{red blast-radius?<br/>auth · payments · deploy · db-migration}:::decide
+    RED -->|yes| HUMAN[STOP for a human]:::bad
+    RED -->|no| DONE([merged + reviewed result]):::done
+    classDef start fill:#1a73e8,stroke:#0b4aa2,color:#fff
+    classDef refine fill:#6b46c1,stroke:#4c2889,color:#fff,font-weight:bold
+    classDef gate fill:#1a73e8,stroke:#0b4aa2,color:#fff
+    classDef decide fill:#e8710a,stroke:#a4530a,color:#fff
+    classDef done fill:#137333,stroke:#0b5323,color:#fff
+    classDef warn fill:#b06000,stroke:#7a4200,color:#fff
+    classDef bad fill:#a50e0e,stroke:#6e0909,color:#fff
 ```
-user ─▶ /prp-orchestrate "<goal | JIRA-TICKET | prd.md>" [--preset <name>] [--plan <path>] [--base <branch>] [--groom-autonomous]
-             │
-        R REFINE → grooming panel (product-owner + project-manager + lead-engineer + QA lens):
-             │   refined ACs + scenarios + DoD-from-ACs, ZERO open assumptions → Definition-of-Ready
-             │   verdict.  NOT READY ⇒ STOP (no plan, no code) + meaningful questions for the user.
-             ▼   (READY only)
-        0 PLAN → the FULL /prp-plan (unchanged): session-memory + Jira injection +
-             │   codebase agents + ask-kb + Context7 (BEFORE web) + drift-guard → plan.md
-             │   (durable artifact; --plan <path> reuses an existing one)
-             ▼
-        ┌───────  MEDIATOR (coordinator + adversarial judge + merge-gate)  ──┐
-        │  A Decompose  → project-manager MAPS plan.md → testable contract   │
-        │                 + DISJOINT territory map (from the plan's lanes;    │
-        │                   activate 2-5, never 7)                            │
-        │  B Allocate   → one git worktree per specialist; assert territories │
-        │                 pairwise-disjoint (AC-4) — abort if they intersect  │
-        │  C Round-judge→ each round: monitor ▸ JUDGE every diff vs target    │
-        │                 repo rule sources: .claude/ + CLAUDE.md + .github/  │
-        │                 Copilot instructions (applyTo-scoped) as MUST/SHOULD/│
-        │                 MUST-NOT/SHOULD-NOT (drift-guard Q1-8) ▸ 🔴 blocks   │
-        │  D Verify     → qa-analyst behavioral gates; pr-reviewer adversarial│
-        │                 fresh-context review (never self-evaluate)          │
-        │  E Merge      → serial merge of passing worktrees; ux taste check   │
-        │  F Shutdown   → clean handshake ▸ save files ▸ session-memory END    │
-        └───────────────────────────┬────────────────────────────────────────┘
-                                     ▼   merged + reviewed result
-                    (human asked ONLY on requirement fork or red blast-radius:
-                     auth / payments / deploy / db-migration)
+
+**Per-round merge-gate decision** — how the mediator judges one specialist's diff each round:
+
+```mermaid
+flowchart TD
+    D[specialist diff this round]:::gate --> TB{touches files outside<br/>its own territory?}:::decide
+    TB -->|yes · territory breach| R1[🔴 DRIFTING]:::bad
+    TB -->|no| RULES[grade vs rule sources:<br/>.claude/ + CLAUDE.md + .github/ instructions<br/>applyTo-scoped · drift-guard Q1-8]:::gate
+    RULES --> SEV{worst finding?}:::decide
+    SEV -->|MUST / MUST-NOT violation| R2[🔴 DRIFTING]:::bad
+    SEV -->|SHOULD / SHOULD-NOT<br/>or drift 1-2| Y1[⚠️ DRIFT RISK]:::warn
+    SEV -->|clean| G1[✅ ON TRACK]:::good
+    R1 --> BLOCK[blocks THIS worktree's merge<br/>return actionable criteria → next round]:::bad
+    R2 --> BLOCK
+    Y1 --> ELIG[merge-eligible · note recorded]:::good
+    G1 --> ELIG
+    ELIG --> SER([serial merge · one worktree at a time]):::done
+    classDef gate fill:#1a73e8,stroke:#0b4aa2,color:#fff
+    classDef decide fill:#e8710a,stroke:#a4530a,color:#fff
+    classDef good fill:#137333,stroke:#0b5323,color:#fff
+    classDef done fill:#137333,stroke:#0b5323,color:#fff
+    classDef warn fill:#b06000,stroke:#7a4200,color:#fff
+    classDef bad fill:#a50e0e,stroke:#6e0909,color:#fff
 ```
 
 - **Refines before it plans (DoR gate):** Phase R convenes a scrum-style grooming panel
@@ -187,8 +207,8 @@ user ─▶ /prp-orchestrate "<goal | JIRA-TICKET | prd.md>" [--preset <name>] [
 - **No-collision guarantee (AC-4):** one worktree per active specialist **plus** a mediator-owned
   disjoint file-territory map; merges are serial. State is durable JSON
   (`skills/mediator/references/orchestration-state.schema.json`) — the mediator is the sole writer.
-- **Portable roles (AC-3):** the 7 agents contain no org specifics; a `presets/*.yaml` binds them to
-  repos/stacks (ships a `seathq` preset). See `presets/README.md`.
+- **Portable roles (AC-3):** the 9 role agents contain no org specifics; a `presets/*.yaml` binds them
+  to repos/stacks (ships a `seathq` preset). See `presets/README.md`.
 - **Capability-gated (U-1/U-2):** agent teams enable via env `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`
   and message via the `SendMessage` tool (confirmed, official docs); if absent, falls back to serial
   single-writer worktrees — every AC still holds, only parallelism is lost.
