@@ -164,6 +164,14 @@ Extract:
 
 ## Phase 2: PREPARE - Git State
 
+### Step 2.0 — Enter a fresh worktree
+
+Follow skill: `codebase-intelligence:worktree-lifecycle` → **ENTER** protocol.
+
+Implementation runs inside a fresh git worktree on a new feature branch off the `{base-branch}`
+detected in Phase 0.2 (ENTER reuses that detection — **never hardcode `main`**), pulled up to date,
+so the primary checkout is never mutated and work always starts from current base code.
+
 ```bash
 git branch --show-current
 git status --porcelain
@@ -172,18 +180,18 @@ git worktree list
 
 | Current State | Action |
 |---|---|
-| In worktree | Use it |
-| On {base-branch}, clean | `git checkout -b feature/{plan-slug}` |
-| On {base-branch}, dirty | STOP: "Stash or commit changes first" |
+| Already in the task's worktree | Reuse it (ENTER detects and does not nest) |
+| On {base-branch}, clean | `worktree-lifecycle` → ENTER creates `feature/{plan-slug}` worktree off `origin/{base-branch}` |
+| On {base-branch}, dirty | STOP: "Stash or commit changes first" (ENTER precondition) |
 | On feature branch | Use it |
 
-```bash
-git fetch origin
-git pull --rebase origin {base-branch} 2>/dev/null || true
-```
+**Capability gate:** ENTER is capability-gated — `EnterWorktree` tool → `git worktree add` →
+**serial fallback** (new branch in the current checkout, isolation skipped). If no worktree support
+exists, the run continues in-place; no step hard-requires a worktree.
 
 **PHASE_2_CHECKPOINT:**
-- [ ] On correct branch
+- [ ] `worktree-lifecycle` → ENTER run (or serial fallback stated)
+- [ ] On correct branch, inside the worktree (or in-place branch on fallback)
 - [ ] Working directory clean
 - [ ] Up to date with remote
 
@@ -554,6 +562,31 @@ Optionally invoke the existing `Skill(codebase-intelligence:skillify)` on the pl
 ## Phase 6: OUTPUT - Report to User
 
 Report: plan path, branch, ticket, validation table (type-check/lint/tests/build/AC coverage — all ✅), intelligence counts (Memory sessions/saves/hits, Context7 verifications, KB patterns, drift checks/removals), artifact paths (report, archived plan, session vault path), and next steps (review report → `/prp-pr` → if QA rejects: `/codebase-intelligence:prp-plan "fix {TICKET} QA failures"`).
+
+---
+
+## Phase 7: EXIT - Tear down the worktree (on user satisfaction)
+
+**Trigger:** only after the user signals satisfaction with the work ("satisfied", "done", "ship it")
+— typically after commits + PR. Never auto-run this phase.
+
+Follow skill: `codebase-intelligence:worktree-lifecycle` → **EXIT** protocol. EXIT ordering is
+load-bearing and must not be reordered:
+
+1. **(Optional) Ship** — if not already committed/pushed/PR'd and the user wants it, `Skill(codebase-intelligence:ship)` (commit → push → PR).
+2. **Save BEFORE delete** — `Skill(codebase-intelligence:session-memory)` → SESSION END (write-before-stop). The session block must be written before anything is removed.
+3. **Uncommitted / unpushed guard** — worktree tree clean AND branch pushed, else STOP (never `--force` a dirty tree away).
+4. **Confirm before removal** — ASK the user; on "no" keep the worktree and report its path.
+5. **Remove** — `ExitWorktree` / `git worktree remove` + `git worktree prune`. **Serial fallback:** nothing to remove — the feature branch remains as the PR branch.
+
+EXIT removes only the worktree checkout — never the branch or the PR.
+
+**PHASE_7_CHECKPOINT:**
+- [ ] Triggered by explicit user satisfaction (not auto)
+- [ ] Session saved via session-memory BEFORE any deletion
+- [ ] Uncommitted/unpushed guard passed (or STOP reported)
+- [ ] User confirmed removal (or worktree kept on "no")
+- [ ] Worktree removed (or serial-fallback "nothing to remove" stated); branch/PR untouched
 
 ---
 
