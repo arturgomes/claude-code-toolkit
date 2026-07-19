@@ -40,8 +40,11 @@ P04 — small teams).
 ## Procedure
 
 1. **Ingest + context.** Take the input (goal / `JIRA-TICKET` / `prd.md`). Pull prior context first:
-   **session-memory** (Obsidian vault) and, for a ticket, **Jira** (AC + comments). Cheap KB lookups
-   via **ask-kb** for domain norms are allowed; this is grooming, not full research (that's Phase 0).
+   **session-memory** (Obsidian vault); the **related vault work** surfaced by Step V (searched by the
+   Jira **project code** — related tasks/wiki/plans/reports/sessions, with their decisions, pitfalls,
+   and open failures); and, for a ticket, **Jira** (AC + comments). Cheap KB lookups via **ask-kb** for
+   domain norms are allowed; this is grooming, not full research (that's Phase 0). Reuse from related
+   work is stated explicitly (an AC or decision carried over is cited, never silently assumed).
 2. **Independent review.** Each panelist returns their lens output (see each agent's brief) — refined
    ACs, business + edge/error scenarios, technical DoD, and per-role readiness call + questions.
 3. **Synthesize the contract draft:**

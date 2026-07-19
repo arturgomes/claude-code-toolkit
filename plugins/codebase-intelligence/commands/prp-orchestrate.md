@@ -9,7 +9,7 @@ description: >
   merges on a 🔴 verdict, and merges passing worktrees serially. No
   mandatory Y/N gates — stops for a human ONLY on a requirement fork or a red blast-radius action
   (auth/payments/deploy/db-migration).
-argument-hint: <goal | JIRA-TICKET | path/to/prd.md> [--preset <name>] [--plan <path>] [--base <branch>] [--groom-autonomous]
+argument-hint: <goal | JIRA-TICKET | path/to/prd.md> [--jira-project <CODE>] [--preset <name>] [--plan <path>] [--base <branch>] [--groom-autonomous]
 ---
 
 # /prp-orchestrate — mediator-judged parallel agent teams
@@ -31,7 +31,10 @@ requirement-fork / red-blast-radius human gate.
 Take the input from `ticket/goal/PRD → done` with **no mandatory interactive Y/N gates**. A refinement
 gate and a planning phase precede the six mediator phases:
 
-R. **Refine (Definition-of-Ready gate)** — BEFORE anything else, convene a grooming panel
+V. **Discover related vault work** — resolve the Jira project code (`--jira-project` or a ticket
+   prefix) and search the Obsidian vault for related tasks/sessions/plans/reports; feed them as prior
+   context into refinement + planning. See "Step V" below.
+R. **Refine (Definition-of-Ready gate)** — after discovery, convene a grooming panel
    (product-owner + project-manager + lead-engineer + QA lens) via `Skill(refinement)`. It produces
    refined ACs + scenarios + a Definition of Done derived from the ACs, with **zero open assumptions**.
    Verdict is binary: **READY** → continue to Phase 0; **NOT READY** → **STOP** (no planning, no code)
@@ -53,6 +56,30 @@ R. **Refine (Definition-of-Ready gate)** — BEFORE anything else, convene a gro
    fresh-context adversarial review.
 5. **Merge** — serial merge of passing worktrees only; `ux-specialist` taste check on UI merges.
 6. **Shutdown** — clean handshake, specialists save work as files, `session-memory` SESSION END.
+
+## Step V — Related vault-task discovery (by Jira project code)
+
+Before refining, gather related prior work from the Obsidian vault so the team **reuses decisions and
+avoids re-investigation**. This is read-only.
+
+1. **Resolve the project code** — from `--jira-project <CODE>` (e.g. `SEATHQ`), or the project prefix
+   of a ticket argument (`SEATHQ-9999` → `SEATHQ`). If neither is present, derive keywords from the
+   goal and skip the project-scoped search.
+2. **Search the vault** (`ultimate-obsidian` MCP) for related notes across `02-Notes/`:
+   - `search_sessions` (BM25) on the project code + ticket id + goal keywords → prior sessions,
+     decisions, and **documented pitfalls** (`## General Rules`) / `## Open Failures`.
+   - `search_vault` / `grep_note` across `02-Notes/{Tasks, Wiki, Plans, Reports, Sessions}` (and any
+     org subfolder like `sitickets/`) for the project code and ticket ids → related **task/wiki
+     entries, plans, and reports** (the vault indexes wiki notes by Jira ticket / component).
+3. **Collect + rank** the hits as `[[wikilinks]]`, dedupe, order by recency/relevance, and present a
+   short **"Related work"** list (top ~5) with a one-line why-relevant each.
+4. **Feed it forward** as prior context into Phase R (refinement) and Phase 0 (`/prp-plan`): related
+   ACs, decisions, pitfalls, and open failures from sibling tickets inform the contract and the plan —
+   they do NOT silently become scope (drift-guard still applies; anything reused is stated explicitly).
+5. If `--jira-project` is set and the Jira MCP is available, optionally list the project's related open
+   tickets for cross-reference (read-only).
+
+Nothing is written in this step — the mediator's session-memory writes (Step 4) own persistence.
 
 ## Step R — Refine first: the Definition-of-Ready gate (hard stop)
 
@@ -135,10 +162,10 @@ Fallback table (a fallback is never a failure — every AC still holds serially)
 - `Skill(mediator)` owns territory allocation, the per-round rules verdict (`.claude/` + `CLAUDE.md`
   + `.github/` Copilot instructions, `applyTo`-scoped), the merge gate,
   the message graph, and capability fallback.
-- **Preset resolution (in order):** (a) explicit `--preset <name>`; else (b) **infer from the ticket
-  prefix** — a `SEATHQ-9999` input resolves to `presets/seathq.yaml` when that file exists (lowercase
-  the prefix before the dash); else (c) roles bind to `self` (current repo). Agents contain **no** org
-  specifics — all binding is in the preset.
+- **Preset resolution (in order):** (a) explicit `--preset <name>`; else (b) **infer from the Jira
+  project code** — `--jira-project SEATHQ` or a ticket prefix (`SEATHQ-9999` → `SEATHQ`) resolves to
+  `presets/seathq.yaml` when that file exists (lowercase the code); else (c) roles bind to `self`
+  (current repo). Agents contain **no** org specifics — all binding is in the preset.
 - `--base <branch>` overrides the auto-detected base branch every worktree forks from.
 - `--plan <path>` reuses an existing `plan.md` and skips Step 0's planning (idempotent re-runs).
 

@@ -136,7 +136,8 @@ or Y/N prompts.
 
 ```mermaid
 flowchart TD
-    IN([/prp-orchestrate<br/>goal · JIRA-TICKET · prd.md]):::start --> R[Phase R · Refine<br/>panel: product-owner + project-manager<br/>+ lead-engineer + QA lens]:::refine
+    IN([/prp-orchestrate<br/>goal · JIRA-TICKET · prd.md<br/>--jira-project CODE]):::start --> V[Phase V · Discover related vault work<br/>search Sessions/Tasks/Wiki/Plans/Reports<br/>by Jira project code + keywords]:::gate
+    V --> R[Phase R · Refine<br/>panel: product-owner + project-manager<br/>+ lead-engineer + QA lens]:::refine
     R --> DOR{Definition of Ready?<br/>ACs testable · scenarios · DoD-from-ACs<br/>zero open assumptions · QA signs off}:::decide
     DOR -->|NOT READY| STOP[STOP — no plan, no code<br/>meaningful questions → user<br/>--groom-autonomous: ratifiable decisions]:::bad
     DOR -->|READY| P[Phase 0 · Plan = the full /prp-plan<br/>session-memory + Jira + codebase agents<br/>+ ask-kb + Context7 BEFORE web + drift-guard<br/>→ durable plan.md]:::gate
@@ -182,6 +183,11 @@ flowchart TD
     classDef bad fill:#a50e0e,stroke:#6e0909,color:#fff
 ```
 
+- **Reuses related vault work (Phase V):** given `--jira-project <CODE>` (or a ticket prefix), the
+  orchestrator first searches the Obsidian vault (`search_sessions` + `search_vault`/`grep_note` across
+  `02-Notes/{Sessions,Tasks,Wiki,Plans,Reports}`) for related tasks, decisions, and documented pitfalls
+  under that project, and feeds them as prior context into refinement + planning — so sibling-ticket
+  knowledge is reused instead of re-investigated (reuse is cited, never silent scope).
 - **Refines before it plans (DoR gate):** Phase R convenes a scrum-style grooming panel
   (`product-owner` + `project-manager` + `lead-engineer` + a QA lens) that turns the goal/ticket/PRD
   into refined ACs + scenarios + a Definition of Done **derived from the ACs**, with **zero open
