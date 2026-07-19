@@ -1,0 +1,134 @@
+# seathq preset — binds the generic role agents to seathq repos/stacks.
+# The role agents (agents/*.md) are portable and contain NO seathq specifics; ALL seathq
+# binding lives here (AC-3). Swap this file (or write another preset) to retarget the same
+# agents at a different org. Loaded by /prp-orchestrate via  --preset seathq .
+#
+# Schema is documented in presets/README.md.
+
+preset: seathq
+description: >
+  Maps the seven generic role specialists onto the seathq frontend / backend / core repos.
+
+# --- role bindings -----------------------------------------------------------------------
+# Each binding: role -> { repo, stack, rule_emphases, gotchas, validation, territory }
+roles:
+  frontend-specialist:
+    repo: seathq-fe
+    stack: [Next.js 15, React, MUI 7, TypeScript]
+    rule_emphases:
+      - "MUST: components typed; no  any  in props/state."
+      - "SHOULD: colocate component + test; reuse MUI 7 primitives before hand-rolling."
+    gotchas:
+      - "MUI 7 API differs from v5/v6 — verify component props via Context7 before use."
+      - "Next 15 app-router: server vs client component boundaries are load-bearing."
+    validation:
+      - "npm ci"           # lockfile-gated install (see core npm-ci rule)
+      - "npm run type-check"
+      - "npm run lint"
+      - "npm test"
+    territory:
+      - "src/components/**"
+      - "src/app/**"
+      - "src/hooks/**"
+
+  ux-specialist:
+    repo: seathq-fe
+    stack: [Next.js 15, MUI 7]
+    rule_emphases:
+      - "SHOULD: taste rubric — design / originality / craft / functionality."
+    gotchas:
+      - "UX taste check runs on merged UI diffs only; does not write feature code."
+    validation:
+      - "npm run type-check"
+    territory:
+      - "src/styles/**"
+      - "src/theme/**"
+
+  backend-specialist:
+    repo: seathq-be
+    stack: [Fastify, TypeBox, TypeScript]
+    rule_emphases:
+      - "MUST: request/response schemas defined with TypeBox; validate at the boundary."
+      - "SHOULD: thin route handlers, logic in services."
+    gotchas:
+      - "TypeBox static types must match runtime schema — do not hand-write drifting types."
+      - "Fastify plugin registration order matters; decorators before routes."
+    validation:
+      - "npm ci"
+      - "npm run type-check"
+      - "npm run lint"
+      - "npm test"
+    territory:
+      - "src/routes/**"
+      - "src/services/**"
+      - "src/plugins/**"
+
+  core-db-specialist:
+    repo: seathq-core
+    stack: [TypeScript, SQL, shared types]
+    rule_emphases:
+      - "MUST (D-1): multi-statement writes run inside a transaction."
+      - "MUST (D-3): DB identifiers are PascalCase and double-quoted in SQL (\"UserAccount\")."
+      - "MUST NOT: hand-edit generated migration checksums."
+    gotchas:
+      - "db-migration is a RED blast-radius action — mediator escalates to a human, never auto-merges."
+      - "shared types are consumed by fe + be; a breaking change ripples — coordinate via recipients."
+    validation:
+      - "npm ci"           # RED: lockfile-gated; CI fails on lockfile drift
+      - "npm run type-check"
+      - "npm test"
+    territory:
+      - "src/db/**"
+      - "src/types/**"
+      - "migrations/**"
+
+  qa-analyst:
+    repo: seathq-be          # runs behavioral gates across bound repos
+    stack: [vitest, TypeScript]
+    rule_emphases:
+      - "MUST: every contract criterion has ≥1 behavioral gate that exits 0/non-0."
+    gotchas:
+      - "evaluator only — never authors the code it grades (fresh context)."
+    validation:
+      - "npm test"
+    territory:
+      - "**/*.test.ts"
+      - "**/*.spec.ts"
+
+  project-manager:
+    repo: seathq-core        # owns the contract, not code
+    stack: []
+    rule_emphases:
+      - "MUST: contract criteria are executable gates, not adjectives."
+    gotchas:
+      - "planner only — produces contract + disjoint territory map; writes no feature code."
+    validation: []
+    territory:
+      - ".claude/orchestration-state.json"
+
+  pr-reviewer:
+    repo: seathq-core        # reviews merged diff across repos
+    stack: []
+    rule_emphases:
+      - "MUST: harsh adversarial review vs .claude/ rules + repo conventions."
+    gotchas:
+      - "adversarial evaluator — fresh context, never the author of the reviewed diff."
+    validation: []
+    territory: []            # reviews, does not own writable files
+
+# --- org-wide gotchas (apply to every seathq role) --------------------------------------
+org_gotchas:
+  - "npm-ci lockfile gate: installs use  npm ci  (not  npm install ) — CI fails on lockfile drift."
+  - "DB identifiers: PascalCase, double-quoted in SQL."
+  - "Red blast-radius: auth / payments / deploy / db-migration always escalate to a human."
+
+# --- where seathq's MUST/SHOULD rules live (mediator parses ALL of these) -----------------
+# seathq repos carry rules as GitHub Copilot instruction files (.github/instructions/*.instructions.md,
+# each with an applyTo glob + check IDs like FQ-1) plus a repo-wide copilot-instructions.md, in
+# addition to any CLAUDE.md / .claude. The mediator applies each instruction file ONLY to diff files
+# matching its applyTo glob (e.g. react.instructions.md → **/*.{ts,tsx}).
+rule_sources:
+  - "CLAUDE.md"
+  - ".claude/**/*.md"
+  - ".github/copilot-instructions.md"
+  - ".github/instructions/*.instructions.md"

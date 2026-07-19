@@ -7,6 +7,7 @@ structural search** (single tier). Cross-session memory lives in an Obsidian vau
 the `ultimate-obsidian` MCP. **No prp-core (or any other plugin) required.**
 
 **Version history**
+- **v3.12.0** — adds the **Orchestration layer**: a `/prp-orchestrate <goal | JIRA-TICKET | prd.md>` command plus the `refinement` and `mediator` skills and **9 generic role agents** (`product-owner`, `lead-engineer`, `project-manager`, `frontend-specialist`, `backend-specialist`, `core-db-specialist`, `qa-analyst`, `ux-specialist`, `pr-reviewer`) bound to repos/stacks via swappable `presets/*.yaml`. Flow: **Phase R refinement** (a grooming panel drives a Definition-of-Ready gate — refined ACs + scenarios + DoD-from-ACs, zero open assumptions; NOT READY ⇒ STOP + clarifying questions for the user) → **Phase 0 plan** (the unchanged `/prp-plan`: session-memory + Jira + codebase agents + ask-kb + Context7-before-web + drift-guard → durable `plan.md`) → **mediator** fans work to 2-5 specialists each in their own git worktree (no two ever touch the same code — disjoint territory map), judges every diff each round against the target repo's `.claude/` MUST/SHOULD/MUST-NOT/SHOULD-NOT rules and blocks merges on 🔴, and merges passing worktrees serially. Autonomous — stops for a human only on a requirement fork or a red blast-radius action. `prp-plan` / `prp-implement` / `prp-loop` and their 4 agents are **unchanged** and remain callable building blocks. Grounded in the `claude-code`, `claude-certification`, and `llm-engineering` KB domains.
 - **v3.11.0** — adds the `worktree-lifecycle` skill: every implementation runs in a fresh git worktree off the detected base branch (ENTER), torn down on user satisfaction (EXIT: save-before-delete, confirm-before-remove). Wired into `prp-implement` (Phase 2 + Phase 7) and referenced by `prp-loop` (L.3); capability-gated with an in-place serial fallback.
 - **v3.10.0** — adds `/doctor`: a read-only preflight that checks system tools (`git`/`uv`/`python3`), MCP servers (`ultimate-obsidian` required; `serena`/`context7`/Atlassian optional), the bookrag engine, and vendored tools — printing the exact fix for anything missing.
 - **v3.9.0** — vendors the web-cache tool (`web-search-hook`): the web-only subset of memory-central (owner's own code) now lives in `vendor/memory-central-web/`, run via `uv` with ephemeral deps. No `~/Documents/ai-tools/memory-central` checkout required; cache index stays at `~/.claude/memory/WEB-CACHE-001/`.
@@ -122,6 +123,103 @@ Phase R        → loop report (full ledger, accept-rate, cost-per-accepted-chan
 
 ---
 
+## Orchestration layer — prp-orchestrate (v3.12.0)
+
+Goal-oriented, parallel, mediator-judged, collision-proof alternative to running the three commands
+by hand. One goal → a coordinator that fans work to isolated specialists, enforces the target repo's
+rule sources (`.claude/` + `CLAUDE.md` + `.github/` Copilot instructions, `applyTo`-scoped) and
+no-code-collision automatically, and returns a merged, reviewed result — without per-phase checkpoints
+or Y/N prompts.
+
+**End-to-end decision flow** — `R refine → DoR gate → 0 plan → mediator A–F`, with the two hard stops
+(NOT READY, and red blast-radius):
+
+```mermaid
+flowchart TD
+    IN([/prp-orchestrate<br/>goal · JIRA-TICKET · prd.md]):::start --> R[Phase R · Refine<br/>panel: product-owner + project-manager<br/>+ lead-engineer + QA lens]:::refine
+    R --> DOR{Definition of Ready?<br/>ACs testable · scenarios · DoD-from-ACs<br/>zero open assumptions · QA signs off}:::decide
+    DOR -->|NOT READY| STOP[STOP — no plan, no code<br/>meaningful questions → user<br/>--groom-autonomous: ratifiable decisions]:::bad
+    DOR -->|READY| P[Phase 0 · Plan = the full /prp-plan<br/>session-memory + Jira + codebase agents<br/>+ ask-kb + Context7 BEFORE web + drift-guard<br/>→ durable plan.md]:::gate
+    P --> PM[Phase A · project-manager MAPS plan.md<br/>→ testable contract + territory map<br/>activate 2-5, never all 9]:::gate
+    PM --> TERR{territories<br/>pairwise-disjoint?}:::decide
+    TERR -->|no| ABORT[abort allocation · re-partition]:::warn
+    ABORT --> PM
+    TERR -->|yes| WT[Phase B · one git worktree per specialist]:::gate
+    WT --> RJ[Phase C-E · round-judge ▸ verify ▸ serial merge]:::gate
+    RJ --> RED{red blast-radius?<br/>auth · payments · deploy · db-migration}:::decide
+    RED -->|yes| HUMAN[STOP for a human]:::bad
+    RED -->|no| DONE([merged + reviewed result]):::done
+    classDef start fill:#1a73e8,stroke:#0b4aa2,color:#fff
+    classDef refine fill:#6b46c1,stroke:#4c2889,color:#fff,font-weight:bold
+    classDef gate fill:#1a73e8,stroke:#0b4aa2,color:#fff
+    classDef decide fill:#e8710a,stroke:#a4530a,color:#fff
+    classDef done fill:#137333,stroke:#0b5323,color:#fff
+    classDef warn fill:#b06000,stroke:#7a4200,color:#fff
+    classDef bad fill:#a50e0e,stroke:#6e0909,color:#fff
+```
+
+**Per-round merge-gate decision** — how the mediator judges one specialist's diff each round:
+
+```mermaid
+flowchart TD
+    D[specialist diff this round]:::gate --> TB{touches files outside<br/>its own territory?}:::decide
+    TB -->|yes · territory breach| R1[🔴 DRIFTING]:::bad
+    TB -->|no| RULES[grade vs rule sources:<br/>.claude/ + CLAUDE.md + .github/ instructions<br/>applyTo-scoped · drift-guard Q1-8]:::gate
+    RULES --> SEV{worst finding?}:::decide
+    SEV -->|MUST / MUST-NOT violation| R2[🔴 DRIFTING]:::bad
+    SEV -->|SHOULD / SHOULD-NOT<br/>or drift 1-2| Y1[⚠️ DRIFT RISK]:::warn
+    SEV -->|clean| G1[✅ ON TRACK]:::good
+    R1 --> BLOCK[blocks THIS worktree's merge<br/>return actionable criteria → next round]:::bad
+    R2 --> BLOCK
+    Y1 --> ELIG[merge-eligible · note recorded]:::good
+    G1 --> ELIG
+    ELIG --> SER([serial merge · one worktree at a time]):::done
+    classDef gate fill:#1a73e8,stroke:#0b4aa2,color:#fff
+    classDef decide fill:#e8710a,stroke:#a4530a,color:#fff
+    classDef good fill:#137333,stroke:#0b5323,color:#fff
+    classDef done fill:#137333,stroke:#0b5323,color:#fff
+    classDef warn fill:#b06000,stroke:#7a4200,color:#fff
+    classDef bad fill:#a50e0e,stroke:#6e0909,color:#fff
+```
+
+- **Refines before it plans (DoR gate):** Phase R convenes a scrum-style grooming panel
+  (`product-owner` + `project-manager` + `lead-engineer` + a QA lens) that turns the goal/ticket/PRD
+  into refined ACs + scenarios + a Definition of Done **derived from the ACs**, with **zero open
+  assumptions**. Binary verdict: **NOT READY ⇒ the flow STOPS — no planning, no coding** — and returns
+  meaningful clarifying questions (ambiguity + why-it-blocks + options + impact) for the **user** to
+  answer (or, on `--groom-autonomous`, the panel proposes ratifiable decisions, never silent
+  assumptions). *We don't dive into code until the assignment is understood as a contract.*
+- **Plans first, full rigor:** Phase 0 runs the **unchanged `/prp-plan`** on a Jira ticket, goal, or
+  PRD — session-memory (Obsidian vault) + Jira injection + `codebase-explorer`/`codebase-analyst` +
+  **ask-kb and Context7 before any web search** + drift-guard — producing a durable `plan.md`. The
+  mediator then **maps that plan.md** (AC Traceability + owner-lanes) into the contract + territory
+  map; it never substitutes an ad-hoc decomposition. `--plan <path>` reuses an existing plan. A ticket
+  prefix infers the preset (`SEATHQ-9999` → `seathq`).
+- **Interaction (AC-1):** no mandatory Y/N gates; `PHASE_N_CHECKPOINT` verbosity collapses to
+  silent-unless-fail invariants; `ask-kb` / `context7-research` / `drift-guard` / `session-memory`
+  are auto-invoked inside the flow.
+- **Rule-aware judging (AC-2):** the mediator grades each diff against **all** of the target repo's
+  rule sources — `CLAUDE.md`, `.claude/*.md`, and the **`.github/` Copilot instructions**
+  (`.github/copilot-instructions.md` + `.github/instructions/*.instructions.md`, each applied only to
+  files matching its `applyTo` glob; checklist IDs like `FQ-4` count as SHOULD) — as
+  MUST/SHOULD/MUST-NOT/SHOULD-NOT. A MUST/MUST-NOT violation ⇒ 🔴 blocks that merge. A preset may
+  point `rule_sources` at non-standard locations.
+- **No-collision guarantee (AC-4):** one worktree per active specialist **plus** a mediator-owned
+  disjoint file-territory map; merges are serial. State is durable JSON
+  (`skills/mediator/references/orchestration-state.schema.json`) — the mediator is the sole writer.
+- **Portable roles (AC-3):** the 9 role agents contain no org specifics; a `presets/*.yaml` binds them
+  to repos/stacks (ships a `seathq` preset). See `presets/README.md`.
+- **Capability-gated (U-1/U-2):** agent teams enable via env `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`
+  and message via the `SendMessage` tool (confirmed, official docs); if absent, falls back to serial
+  single-writer worktrees — every AC still holds, only parallelism is lost.
+- **KB-grounded (AC-6):** design cites the `claude-code` (Agent Teams, Harness Patterns, Agent
+  Decomposition), `claude-certification`, and `llm-engineering` (multi-agent systems) domains.
+
+Building blocks unchanged: `prp-plan` / `prp-implement` / `prp-loop` and their 4 agents are reused,
+not modified.
+
+---
+
 ## Model-agnostic design (v3.5.0)
 
 No skill depends on a single model. Read `CI_MODEL_TIER` (`frontier | standard | light`, default `standard` when unset/unknown):
@@ -190,6 +288,23 @@ The plugin ships its own agents; `prp-plan` and `prp-implement` invoke them dire
 | `web-researcher` | External research | KB pre-check (skip web for covered topics) · Context7 API verification · drift-guard scope check on findings |
 | `codebase-researcher` | Pre-planning research | full pre-planning research pass (memory → Serena → structured file:line report) |
 
+### Orchestration role specialists (v3.12.0)
+
+Generic, portable role agents used by `/prp-orchestrate` — repo/stack binding comes from a
+`presets/*.yaml`, never hard-coded in the bodies. Activate 2-5 per goal, never all 7.
+
+| Agent | Harness role | Responsibility |
+|---|---|---|
+| `product-owner` | refinement panel | business intent + authors/challenges ACs + business scenarios; blocks readiness on vague/untestable ACs (no code) |
+| `lead-engineer` | refinement panel | technical feasibility + edge/error cases + technical DoD; blocks readiness on unmade technical decisions (no code) |
+| `project-manager` | planner / refinement | consumes plan.md → testable contract + disjoint territory map + AC traceability; also on the grooming panel (no code) |
+| `frontend-specialist` | generator | UI/components/pages in its own worktree/territory; → qa, ux |
+| `backend-specialist` | generator | APIs/services/handlers; consumes core contracts; → qa |
+| `core-db-specialist` | generator | shared types/DB/migrations; transaction + identifier rules; db-migration = red; → backend, qa |
+| `qa-analyst` | evaluator | writes + runs behavioral gates → pass/fail report; fresh context; → pr-reviewer |
+| `ux-specialist` | design taste | before/after taste rubric on UI merges (advises, doesn't block); → frontend |
+| `pr-reviewer` | adversarial evaluator | harsh fresh-context review of merged diff vs the repo's rule sources (`.claude/` + `CLAUDE.md` + `.github/` instructions) + conventions; → pm, mediator |
+
 ---
 
 ## MCP setup (Claude Code terminal)
@@ -230,10 +345,12 @@ claude mcp add atlassian \
 
 ## Commands & skills
 
-**Commands**: `/prp-plan` · `/prp-implement` · `/prp-loop` · `/setup-kb` · `/doctor`
+**Commands**: `/prp-plan` · `/prp-implement` · `/prp-loop` · `/prp-orchestrate` · `/setup-kb` · `/doctor`
 
 | Skill | Purpose |
 |---|---|
+| `refinement` | Pre-planning Definition-of-Ready gate behind `/prp-orchestrate`: grooming panel (product-owner + project-manager + lead-engineer + QA lens) → refined ACs + scenarios + DoD-from-ACs, zero open assumptions; NOT READY ⇒ STOP + clarifying questions for the user |
+| `mediator` | Coordinator + adversarial judge + serial merge-gate behind `/prp-orchestrate`: disjoint territory allocation, per-round `.claude/`-rules verdict, 🔴-blocks-merge, worktree-per-specialist, capability fallback |
 | `drift-guard` | Anchor every decision to the AC — mechanical pre-scan + 8 drift questions, at every gate |
 | `loop-contract` | Define/validate a Loop Contract (executable gate, budget, blast-radius, stop rules); refuse without a binary gate |
 | `session-memory` | Persist/restore findings, decisions, failures to the vault (BM25); write-before-stop / read-at-start gates; Loop Ledger |
