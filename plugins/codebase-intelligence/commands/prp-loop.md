@@ -193,6 +193,13 @@ repeat a past mistake). No hit → proceed. Missing search backend → skip (no-
 - On attempt n>1: read the ledger rows for attempts 1..n-1 first. State in one line what
   this attempt does **differently**. Identical retry of a failed approach = no-progress.
 
+**Working tree (capability-gated).** The attempt runs inside the loop's `worktree-lifecycle`
+working tree — `Skill(codebase-intelligence:worktree-lifecycle)` → ENTER **once at loop start**
+(not per iteration), consistent with the S8 verifier worktree, so the attempt is isolated from the
+primary checkout. Cleanup is deferred to the human-gated close (Phase R / L.7): the loop never
+auto-deletes on a red action; EXIT confirms before removal. **Serial fallback:** if worktree support
+is unavailable, run in place (one branch, no separate checkout) — the loop is otherwise identical.
+
 **Briefing contract (passed to whoever runs the attempt — this context or the L.3 delegate).**
 The briefing always carries:
 

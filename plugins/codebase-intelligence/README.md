@@ -7,6 +7,7 @@ structural search** (single tier). Cross-session memory lives in an Obsidian vau
 the `ultimate-obsidian` MCP. **No prp-core (or any other plugin) required.**
 
 **Version history**
+- **v3.11.0** — adds the `worktree-lifecycle` skill: every implementation runs in a fresh git worktree off the detected base branch (ENTER), torn down on user satisfaction (EXIT: save-before-delete, confirm-before-remove). Wired into `prp-implement` (Phase 2 + Phase 7) and referenced by `prp-loop` (L.3); capability-gated with an in-place serial fallback.
 - **v3.10.0** — adds `/doctor`: a read-only preflight that checks system tools (`git`/`uv`/`python3`), MCP servers (`ultimate-obsidian` required; `serena`/`context7`/Atlassian optional), the bookrag engine, and vendored tools — printing the exact fix for anything missing.
 - **v3.9.0** — vendors the web-cache tool (`web-search-hook`): the web-only subset of memory-central (owner's own code) now lives in `vendor/memory-central-web/`, run via `uv` with ephemeral deps. No `~/Documents/ai-tools/memory-central` checkout required; cache index stays at `~/.claude/memory/WEB-CACHE-001/`.
 - **v3.8.0** — removes the `~/Documents/ai-tools/skills-mono-repo` dependency: the `bookrag` KB engine is now **bootstrapped on first use** (`/setup-kb`) — the public upstream is cloned at a **pinned commit** and the owner's own deltas (obsidian-ingest + a Chroma batching fix) are applied as local patches. No third-party code is vendored; KB skills resolve the engine at runtime via `scripts/bookrag-home.sh`.
@@ -138,6 +139,7 @@ Every capability-dependent feature has a documented fallback:
 | Reasoning-effort matching | match effort to plan complexity | no-op |
 | No-op / refusal guard | reroute to a configured fallback model | count as an ordinary failed attempt |
 | Worktree isolation for spawned agents | isolate each in its own worktree | run serial (no parallel lanes) |
+| Worktree lifecycle for an implementation run (`worktree-lifecycle` ENTER/EXIT) | fresh worktree off detected base; removed on EXIT after save + confirm | in-place branch — same flow, no separate checkout, nothing to remove |
 | Instruction verbosity | trim on `frontier` | keep full scaffolding |
 
 No model id, effort value (`xhigh`), or benchmark statistic is ever a required threshold.
@@ -235,6 +237,7 @@ claude mcp add atlassian \
 | `drift-guard` | Anchor every decision to the AC — mechanical pre-scan + 8 drift questions, at every gate |
 | `loop-contract` | Define/validate a Loop Contract (executable gate, budget, blast-radius, stop rules); refuse without a binary gate |
 | `session-memory` | Persist/restore findings, decisions, failures to the vault (BM25); write-before-stop / read-at-start gates; Loop Ledger |
+| `worktree-lifecycle` | ENTER a fresh worktree off the detected base for an implementation run; EXIT tears it down on user satisfaction (save-before-delete, confirm-before-remove); capability-gated with an in-place serial fallback |
 | `codebase-search` | Serena LSP structural search with session-memory cache-aside |
 | `context7-research` | Fetch version-specific library docs before writing any external API call |
 | `web-search-hook` | Check the local web cache before any WebSearch to avoid redundant cost |

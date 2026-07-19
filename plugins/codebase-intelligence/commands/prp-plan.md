@@ -544,6 +544,20 @@ Blast radius: green|yellow|red
 
 ---
 
+### Worktree note (add to every generated plan)
+
+Emit this one-line note in the plan (under Metadata or the Completion Checklist) so the downstream
+implementer knows the execution environment:
+
+```markdown
+> **Execution environment**: implementation runs inside a fresh git worktree on a new branch off
+> the detected base branch (via `Skill(codebase-intelligence:worktree-lifecycle)` → ENTER), and the
+> worktree is torn down on user satisfaction (EXIT: save-before-delete, confirm-before-remove).
+> Falls back to an in-place branch if worktree support is unavailable.
+```
+
+---
+
 Then all standard plan sections:
 User Story · Problem Statement · Solution Statement · Metadata · UX Design (before/after ASCII) ·
 Mandatory Reading · Patterns to Mirror · Files to Change · NOT Building · Step-by-Step Tasks ·
