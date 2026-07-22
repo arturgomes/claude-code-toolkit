@@ -378,6 +378,22 @@ Inside a Claude Code session:
 | `prp-loop` | Bounded closed-loop runner — re-attempts a goal until an executable gate passes AND an independent fresh-context verifier agrees, or a hard stop fires |
 | `doctor` | Read-only preflight — checks system tools, MCP servers, the KB engine, and vendored tools; prints the exact fix for anything missing |
 
+### Agents
+
+The `/prp-orchestrate` team. Each agent has a **recipient-adaptive language mode** — it matches its register to who it addresses (plain **Stakeholder** language to `product-owner` / `project-manager` / **Jira** / **Slack**; technical **Engineering** language to dev peers / **GitHub**), so a project-manager never gets dev jargon. Each row links to that agent's own README describing its full capabilities.
+
+| Agent | Role | Register default | Capabilities (README) |
+|---|---|---|---|
+| `product-owner` | Refinement — business-value lens | Stakeholder | [product-owner.README.md](plugins/codebase-intelligence/agents/product-owner.README.md) |
+| `lead-engineer` | Refinement — technical-feasibility lens | Stakeholder (on panel) | [lead-engineer.README.md](plugins/codebase-intelligence/agents/lead-engineer.README.md) |
+| `project-manager` | Planner — contract + disjoint territory map | Stakeholder | [project-manager.README.md](plugins/codebase-intelligence/agents/project-manager.README.md) |
+| `core-db-specialist` | Generator — shared types / DB / migrations | Engineering | [core-db-specialist.README.md](plugins/codebase-intelligence/agents/core-db-specialist.README.md) |
+| `backend-specialist` | Generator — APIs / services / handlers | Engineering | [backend-specialist.README.md](plugins/codebase-intelligence/agents/backend-specialist.README.md) |
+| `frontend-specialist` | Generator — UI / components / pages | Engineering | [frontend-specialist.README.md](plugins/codebase-intelligence/agents/frontend-specialist.README.md) |
+| `qa-analyst` | Evaluator — behavioral gates (exit 0/non-0) | Engineering | [qa-analyst.README.md](plugins/codebase-intelligence/agents/qa-analyst.README.md) |
+| `pr-reviewer` | Evaluator — adversarial fresh-context review | Engineering | [pr-reviewer.README.md](plugins/codebase-intelligence/agents/pr-reviewer.README.md) |
+| `ux-specialist` | Evaluator/advisor — design-taste check | Engineering/craft | [ux-specialist.README.md](plugins/codebase-intelligence/agents/ux-specialist.README.md) |
+
 ### Skills
 
 | Skill | Purpose |

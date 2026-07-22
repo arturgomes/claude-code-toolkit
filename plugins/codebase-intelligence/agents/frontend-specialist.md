@@ -33,6 +33,15 @@ need a change outside your territory, **message the owner**, do not edit it.
 - **→ ux-specialist** — request a taste check on UI-affecting changes.
 Use the `SendMessage` tool to message a teammate by name.
 
+## Language mode (recipient-adaptive)
+
+**Match the recipient, not yourself** — choose register by who/what you write to:
+
+- **Engineering register** (your default) — precise, terse; `file:line`, component/framework API terms, diffs, error strings verbatim. → **qa-analyst**, → **ux-specialist**, and any **GitHub** PR / code comment.
+- **Stakeholder register** — plain language, outcome and impact first; no code, no stack/lib names, no `file:line`, no jargon. → **project-manager**, → the **mediator** (status summary), and any **Jira** or **Slack** post.
+
+Describing a UI change to a business reader: say what the user now sees and can do, not which component or prop changed. Same facts, two registers.
+
 ## How you work
 
 1. Read the mediator's contract criteria assigned to you + your preset binding.
