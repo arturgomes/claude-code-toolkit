@@ -4,35 +4,26 @@ description: >
   Scrape a documentation site or article (a URL and its sub-pages), distill each page into
   structured KB cards, and index the whole thing into the local bookrag knowledge base — fully
   autonomously, no API key and no user questions. Mirrors the add-pdf-to-kb pipeline but for the
-  web: discover -> scrape (trafilatura) -> distill (in-session, key-free) -> bookrag build --kb-dir
-  -> batched Chroma dense index -> verify -> vault reference note -> master ask-kb rebuild.
+  web: discover -> scrape (trafilatura) -> distill (in-session, key-free) -> write cards to vault
+  -> FTS5 reindex (local, no vectors) -> verify -> vault reference note.
   Trigger phrases: "/ingest-web-doc-to-kb <url>", "ingest this documentation into my KB",
   "scrape this site into my knowledge base", "add these docs to my KB from the web".
 ---
 
-> **bookrag engine path** — This skill runs the local `bookrag` engine. Resolve its path ONCE at
-> the start of a run, note the printed value, and substitute it wherever `$BOOKRAG_HOME` appears
-> below. This bootstraps a pinned, patched bookrag on first use (public base fetched from source +
-> your own patches) — no `~/Documents` path required:
->
-> ```bash
-> bash "$(find ~/.claude -type f -path '*codebase-intelligence/scripts/bookrag-home.sh' 2>/dev/null | head -1)"
-> ```
-
 
 # ingest-web-doc-to-kb
 
-End-to-end, **hands-off** ingestion of a web documentation source into the local bookrag KB.
+End-to-end, **hands-off** ingestion of a web documentation source into the local KB.
 Given one URL, it fetches that page and its sub-pages, distills each into structured knowledge
-cards, indexes them into the right domain, and makes them queryable — with **no external API key**
-(the "structure" stage is done in-session by subagents) and **no questions asked**.
+cards written to the vault, refreshes the local FTS5 index, and makes them queryable — with **no
+external API key** (the "structure" stage is done in-session by subagents) and **no questions asked**.
 
 ## Absolute rules
 
 - **NEVER call AskUserQuestion.** Make every decision automatically using the rules below and
   report the choices in the final summary. The user invoked this to be left alone.
 - **No `ANTHROPIC_API_KEY` anywhere.** Structuring is done by you/subagents; indexing is fully local.
-- Run the whole pipeline to completion, including the master `ask-kb` rebuild at the end.
+- Run the whole pipeline to completion, ending with the FTS5 `reindex_kb`.
 
 ## Inputs
 
@@ -43,14 +34,13 @@ cards, indexes them into the right domain, and makes them queryable — with **n
 ## Fixed paths (this machine)
 
 ```
-REPO=$BOOKRAG_HOME
 VAULT=~/Documents/Obsidian-Vault
-SETTINGS=$VAULT/05-Knowledge-Base/config/settings.toml
 REGISTRY=$VAULT/05-Knowledge-Base/config/domain_registry.yaml
 DOMAINS=$VAULT/05-Knowledge-Base/domains
-MASTER_DB=$REPO/master-kb/domains/obsidian-vault/bookrag.db
-MASTER_SETTINGS=$REPO/bookrag/config/settings.toml
 ```
+
+Retrieval is the local FTS5 index (`ask-kb`/`search_kb`) — no bookrag DB, no Chroma, no
+`$MASTER_DB` rebuild.
 
 **Locate this skill's bundled scripts at runtime** (works whether installed as a personal
 `~/.claude/skills/` skill or as a plugin under `~/.claude/plugins/cache/...`):
@@ -59,7 +49,7 @@ MASTER_SETTINGS=$REPO/bookrag/config/settings.toml
 SCRIPTS="$(dirname "$(find ~/.claude -type f -path '*ingest-web-doc-to-kb/scripts/discover.py' 2>/dev/null | head -1)")"
 ```
 
-Use `$SCRIPTS/discover.py`, `$SCRIPTS/scrape.py`, `$SCRIPTS/choose_domain.py`, `$SCRIPTS/rechroma.py`
+Use `$SCRIPTS/discover.py`, `$SCRIPTS/scrape.py`, `$SCRIPTS/choose_domain.py`
 throughout. Use a scratch dir for the URL list (your session scratchpad or `/tmp`).
 
 ## Derive the collection slug (deterministic)
@@ -183,65 +173,36 @@ config, numbers — from the page. If the page has no reusable framework, write 
 Subagents keep final messages brief (they are not shown to the user). After all finish, verify:
 every scraped slug has a matching kb card, each card has all 6 `##` sections. Re-run any missing.
 
-### Step 5 — Index locally (no key)
+### Step 5 — Refresh the FTS5 index (no key, no vectors)
 
-```bash
-cd $REPO && uv run bookrag build \
-  --kb-dir "$DOMAINS/<DOMAIN>/kb/$SLUG" \
-  --domain <DOMAIN> \
-  --name "$SLUG" \
-  --settings "$SETTINGS"
-```
+The distilled cards from Step 4 already live in the vault at `$DOMAINS/<DOMAIN>/kb/$SLUG/` — so
+there is nothing to "build". Just refresh the local FTS5 KB index so the new cards are queryable:
+call `mcp__ultimate-obsidian__reindex_kb` `{}` (incremental, seconds). No `bookrag`, no Chroma, no
+embedding model.
 
-`--kb-dir` skips convert + the LLM structure stage and goes straight to local indexing (chunk,
-entities, claims, embeddings, BM25, Chroma). Watch for the line
-`chroma: SKIP (... batch size ...)` — harmless here because Step 6 guarantees Chroma anyway.
+> They are auto-indexed anyway (MCP self-indexes on vault write + SessionStart catch-up); the
+> explicit `reindex_kb` just makes them queryable immediately.
 
-### Step 6 — Guarantee the Chroma dense index (batched)
+### Step 6 — Verify
 
-```bash
-cd $REPO && uv run python $SCRIPTS/rechroma.py "$DOMAINS/<DOMAIN>/bookrag.db"
-```
+Run 2-3 probes with topics from the ingested pages via
+`mcp__ultimate-obsidian__search_kb` `{ "query": "<topic from the docs>", "limit": 6 }` and confirm
+`.../kb/$SLUG/...` cards appear in the ranked hits.
 
-Idempotent: re-upserts ALL domain embeddings into Chroma in 4000-vector batches, so dense retrieval
-is complete even if the build's single-shot upsert was skipped. (The bookrag source has also been
-patched to batch internally, but this step makes the skill self-sufficient regardless.)
-
-### Step 7 — Verify
-
-Run 2-3 `query-hybrid` probes with topics drawn from the ingested pages and confirm the new
-`$SLUG/...` cards appear in results:
-
-```bash
-cd $REPO && uv run bookrag query-hybrid "<topic from the docs>" \
-  --domain <DOMAIN> --settings "$SETTINGS" --stdout
-```
-
-### Step 8 — Register the vault reference note
+### Step 7 — Register the vault reference note
 
 Create `$VAULT/01-Reference/Documentation/$SLUG.md` (via the ultimate-obsidian MCP
 `create_or_update_note`, or a plain file write) with frontmatter (title, source URL, domain, type:
-web-doc-collection, pages count, imported date, bookrag_db path, tags) plus: a Summary, Key Themes,
-a wikilinked list of every ingested page (`[[<SLUG>/<slug>|Title]]`), and the query snippet. Keep
-it consistent with existing notes under `01-Reference/Documentation/`.
+web-doc-collection, pages count, imported date, tags) plus: a Summary, Key Themes, a wikilinked list
+of every ingested page (`[[<SLUG>/<slug>|Title]]`), and a `/ask-kb` query example. Keep it
+consistent with existing notes under `01-Reference/Documentation/`. (Writing it via the MCP also
+self-indexes it into FTS5.)
 
-### Step 9 — Rebuild the master ask-kb index (background)
+### Step 8 — Report
 
-So the content is findable via `/ask-kb` (a separate vault-wide DB):
-
-```bash
-cd $REPO && uv run bookrag obsidian-ingest \
-  --vault-path "$VAULT" --db "$MASTER_DB" --settings "$MASTER_SETTINGS"
-```
-
-Run this **in the background** (it takes 20-60 min). Tell the user it's running and that you'll
-report when it finishes. Do not block the final summary on it.
-
-### Step 10 — Report
-
-Summarize: source URL, pages scraped, domain chosen (and whether newly created), SLUG, chunks
-indexed, Chroma vector count, verify result, reference-note path, and that the master ask-kb rebuild
-is running in the background. Give a ready-to-run `query-hybrid` example.
+Summarize: source URL, pages scraped, domain chosen (and whether newly created), SLUG, cards
+written, FTS5 reindex result, verify result, and reference-note path. Give a ready-to-run
+`/ask-kb "<topic>"` example. No master-DB rebuild needed — the FTS5 index is already current.
 
 ## Failure handling (self-heal, don't ask)
 

@@ -3,18 +3,8 @@ name: consult-kb
 description: >
   Review code, RFCs, ADRs, or designs against the personal KB for violations, tensions, and aligned patterns.
   Trigger on "review this against my KB", "does this follow our patterns?", "audit this design".
-version: 2.0.1
+version: 3.0.0
 ---
-
-> **bookrag engine path** — This skill runs the local `bookrag` engine. Resolve its path ONCE at
-> the start of a run, note the printed value, and substitute it wherever `$BOOKRAG_HOME` appears
-> below. This bootstraps a pinned, patched bookrag on first use (public base fetched from source +
-> your own patches) — no `~/Documents` path required:
->
-> ```bash
-> bash "$(find ~/.claude -type f -path '*codebase-intelligence/scripts/bookrag-home.sh' 2>/dev/null | head -1)"
-> ```
-
 
 # consult-kb
 
@@ -29,33 +19,31 @@ Understand what's being reviewed:
 - **Domain**: What technical/strategic area does it touch?
 - **Stated intent**: What is this artifact trying to achieve?
 
-### Step 2 — Run bookrag query for artifact domain
+### Step 2 — Query the KB via search_kb
 
-Build a query from the artifact's stated domain and key concepts. For a retry RFC:
-`"retry patterns distributed systems idempotency"`. For a product strategy doc:
-`"strategy frameworks product decision-making"`.
+Build an **expanded** term set from the artifact's domain and key concepts — salient terms plus
+synonyms (BM25 is lexical, so cover the vocabulary the KB might use). For a retry RFC:
+`"retry patterns distributed systems idempotency backoff timeout resilience"`. For a product
+strategy doc: `"strategy frameworks product decision-making playing to win"`.
 
-```bash
-uv run --directory $BOOKRAG_HOME \
-  bookrag query-hybrid "<domain-query>" \
-  --db $BOOKRAG_HOME/master-kb/domains/obsidian-vault/bookrag.db \
-  --settings $BOOKRAG_HOME/bookrag/config/settings.toml \
-  --stdout
-```
-
-Run 1-2 queries if the artifact spans multiple domains.
+Call `mcp__ultimate-obsidian__search_kb` with `{ query: "<expanded terms>", limit: 6 }`. Run 1-2
+calls if the artifact spans multiple domains. (Retrieval is the local FTS5/BM25 index over the
+vault — no model, portable, kept fresh automatically.)
 
 ### Step 3 — Load hit contexts
 
-For each hit above rrf_score threshold (~0.01):
+`search_kb` returns `{ "hits": [ { "text", "source_relpath", "heading_path", "domain", "score" } ] }`,
+best-first (`score` = `bm25()`, more negative = more relevant). For each strong hit:
 - Extract: `text` (chunk content), `source_relpath` (book/domain), `heading_path` (section)
-- Group hits by domain (software-architecture, software-craft, etc.)
+- Group hits by `domain` (software-architecture, software-craft, etc.)
+- Optionally `read_note` a hit's `source_relpath` for fuller context
 - Use these chunks as the KB reference for Step 4 review
 
-### Fallback (bookrag unavailable)
+### Fallback (search_kb unavailable)
 
-If `uv` is not found or the DB path does not exist:
-1. Say: "bookrag unavailable — falling back to kb-registry.yaml"
+If the tool errors with "KB index not built", run `mcp__ultimate-obsidian__reindex_kb` `{}` once and
+retry. If the MCP is unreachable:
+1. Say: "KB index unavailable — falling back to kb-registry.yaml"
 2. Find `kb-registry.yaml` at: `$KB_ROOT/kb-registry.yaml` → `~/kb/kb-registry.yaml` → `./kb/kb-registry.yaml`
 3. Map artifact domain to KB keywords, read relevant markdown files
 4. Run review against flat-file content

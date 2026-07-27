@@ -1,10 +1,16 @@
 ---
 name: kb-indexer
 description: >
-  Ingest ebooks, PDFs, and documents into the KB (bookrag DB + kb-registry.yaml) for use by ask-kb/consult-kb.
+  Ingest ebooks, PDFs, and documents into the KB as structured markdown cards for use by ask-kb/consult-kb.
   Trigger on "add this book to my KB", "extract principles from this PDF", "index this ebook".
-version: 2.0.1
+version: 3.0.0
 ---
+
+> **Retrieval note** — `ask-kb`/`consult-kb` search a local **FTS5 index over the Obsidian vault**
+> (no bookrag DB, no vectors). For cards to be found there, write them **inside the vault**
+> (`05-Knowledge-Base/domains/{domain}/kb/...`) and run `mcp__ultimate-obsidian__reindex_kb {}`.
+> Cards written outside the vault (e.g. `~/kb/`) remain reachable only via the `kb-registry.yaml`
+> flat-file fallback.
 
 # kb-indexer
 
@@ -74,6 +80,9 @@ Generate `topics` list from what was actually extracted — these drive KB selec
 
 ### Step 6 — Report
 Report: output path, registry update, topics list, what was skipped and why, 1-2 sample queries to verify extraction.
+
+If the card was written inside the vault, run `mcp__ultimate-obsidian__reindex_kb {}` and verify with
+`mcp__ultimate-obsidian__search_kb` so it's immediately findable via `/ask-kb`.
 
 ---
 

@@ -7,10 +7,18 @@ argument-hint: "[software-craft | functional-programming | all]"
 version: 1.0.1
 ---
 
-> **bookrag engine path** — This skill runs the local `bookrag` engine. Resolve its path ONCE at
-> the start of a run, note the printed value, and substitute it wherever `$BOOKRAG_HOME` appears
-> below. This bootstraps a pinned, patched bookrag on first use (public base fetched from source +
-> your own patches) — no `~/Documents` path required:
+> **⚠️ LEGACY — benchmarks the bookrag dense index, which `ask-kb` no longer uses.** Retrieval is now
+> a local **FTS5 (BM25)** index over the vault (`search_kb`). The numbers below (`semantic`/`hybrid`)
+> describe the retired vector path, not what production queries hit.
+>
+> **FTS5 recall benchmark is a tracked follow-up** (plan `kb-fts5-portable` AC-6): it needs new
+> fixtures mapping `query → expected source_relpath/heading_path` (bookrag chunk-IDs don't map to
+> FTS5 chunks), then: run `search_kb` per fixture, score whether the expected source appears in
+> top-k, report MRR / Recall@5 / Recall@10. That number is the **decision point** for whether to add
+> a `sqlite-vec` hybrid — do not add vectors before measuring. Until that harness exists, treat this
+> skill as informational only.
+
+> **bookrag engine path** — resolve once (only relevant while the legacy bookrag DB still exists):
 >
 > ```bash
 > bash "$(find ~/.claude -type f -path '*codebase-intelligence/scripts/bookrag-home.sh' 2>/dev/null | head -1)"

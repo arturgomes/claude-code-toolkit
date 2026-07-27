@@ -3,72 +3,73 @@ name: ask-kb
 description: >
   Query the personal knowledge base (books + validated principles) for technical or strategic questions.
   Trigger on "how should I...", "what's the pattern for...", "what does [book] say about...", "consult my KB".
-version: 2.0.1
+version: 3.0.0
 ---
-
-> **bookrag engine path** — This skill runs the local `bookrag` engine. Resolve its path ONCE at
-> the start of a run, note the printed value, and substitute it wherever `$BOOKRAG_HOME` appears
-> below. This bootstraps a pinned, patched bookrag on first use (public base fetched from source +
-> your own patches) — no `~/Documents` path required:
->
-> ```bash
-> bash "$(find ~/.claude -type f -path '*codebase-intelligence/scripts/bookrag-home.sh' 2>/dev/null | head -1)"
-> ```
-
 
 # ask-kb
 
 Answer questions by consulting the user's personal knowledge base — not from general knowledge.
 The goal: **reproducible, cited answers** grounded in principles the user has already validated.
 
+Retrieval is a **local FTS5 (BM25) index over the Obsidian vault**, served by the
+`ultimate-obsidian` MCP (`search_kb`). No embedding model, no vector store — the index is a
+disposable, machine-local, deterministic function of the markdown, so it is portable across
+machines and never goes stale (kept fresh by MCP self-index-on-write + a SessionStart catch-up).
+
 ## Workflow
 
-The obsidian-vault DB covers all KB domains (software-architecture, engineering-practices,
-llm-engineering, ml-data, functional-programming, engineering-leadership, software-craft)
-plus 02-Notes and 04-Claude-Sessions — 26,380 chunks total. Paths are baked into the Step 1
-command — do not look elsewhere.
+The index covers the whole vault except raw book-text mirrors (`/markdown/`) — i.e. the distilled
+KB cards (`05-Knowledge-Base/domains/*/kb/`), `02-Notes`, plans, reports and sessions.
 
-### Step 1 — Run bookrag query-hybrid
+### Step 1 — Expand the query (recover semantic recall)
 
-```bash
-uv run --directory $BOOKRAG_HOME \
-  bookrag query-hybrid "<question>" \
-  --db $BOOKRAG_HOME/master-kb/domains/obsidian-vault/bookrag.db \
-  --settings $BOOKRAG_HOME/bookrag/config/settings.toml \
-  --stdout
-```
+BM25 is lexical, so **do the semantic work in the query**: from the question, produce 4–10 terms —
+the salient nouns/verbs **plus synonyms and near-equivalents** the KB might actually use. Example:
+"how do I handle transient failures" → `retry backoff exponential idempotent transient timeout resilience circuit breaker`.
 
-Output is JSON: `{ "query": "...", "hits": [ { "text", "source_relpath", "heading_path", "rrf_score", ... } ] }`
+Keep terms space-separated in one string; `search_kb` tokenizes them, drops stopwords, ORs them,
+and prefix-matches longer terms (so `retry` also hits `retries`/`retrying`). More matching terms
+rank a chunk higher.
 
-Returns up to 6 ranked hits (dense + BM25 + RRF fusion).
+### Step 2 — Run search_kb
 
-### Step 2 — Parse hits and extract citations
+Call the MCP tool `mcp__ultimate-obsidian__search_kb` with `{ query: "<expanded terms>", limit: 6 }`.
+
+Output is JSON: `{ "query": "...", "hits": [ { "text", "source_relpath", "heading_path", "domain", "score" } ] }`
+— up to 6 BM25-ranked hits. `score` is `bm25()`: **more negative = more relevant** (already sorted best-first).
+
+If the first pass is thin or off-topic, **iterate once**: broaden or swap synonyms and call `search_kb`
+again. Optionally `read_note` a top hit's `source_relpath` to pull fuller context before answering.
+
+### Step 3 — Parse hits and extract citations
 
 For each hit:
-- **Source**: extract book/domain from `source_relpath` path segments
-- **Section**: use `heading_path` (already formatted as breadcrumb, e.g. `Core Principles > Explanation`)
-- **Content**: `text` field (≈1200 chars of the relevant chunk)
-- **Rank**: `rrf_score` — higher = more relevant
+- **Source**: book/domain from `source_relpath` segments (`.../domains/<domain>/kb/<book>/...`)
+- **Section**: `heading_path` breadcrumb (e.g. `Core Principles > P10: Avoid DI in Aggregates`)
+- **Content**: `text` field (the chunk body)
+- **Rank**: order is best-first; note if `score` jumps sharply after hit 2 (a relevance cliff)
 
-Use the top 3-4 hits. If scores drop sharply after hit 2, note the gap.
+Use the top 3-4 hits.
 
-### Step 3 — Formulate the Answer
+### Step 4 — Formulate the Answer
 
 - Cite every key claim: `[Source: {book-slug} — {heading_path}]`
 - Cross-reference multiple hits when they converge on the same principle
-- Note if hits are from vault session notes vs KB books (source_relpath prefix tells you)
+- Note if hits are vault notes vs KB books (`source_relpath` prefix: `02-Notes/` vs `05-Knowledge-Base/`)
 
-### Step 4 — Honest Gaps
+### Step 5 — Honest Gaps
 
-If hits are irrelevant (low rrf_score, off-topic), say: "Bookrag returned low-confidence results — outside the obsidian-vault domains. I can answer from general knowledge instead." (Domains listed at top of Workflow.)
+If hits are irrelevant (weak scores, off-topic even after one re-query), say: "The KB index returned
+low-confidence results for this topic. I can answer from general knowledge instead."
 
-### Fallback (bookrag unavailable)
+### Fallback (search_kb unavailable or empty)
 
-If `uv` is not found or the DB path does not exist:
-1. Say: "bookrag unavailable — falling back to kb-registry.yaml"
-2. Find `kb-registry.yaml` at: `$KB_ROOT/kb-registry.yaml` → `~/kb/kb-registry.yaml` → `./kb/kb-registry.yaml`
-3. Read and score KBs by keyword match, read relevant markdown files
-4. Answer with flat-file citations
+If the MCP tool errors with "KB index not built", trigger a build once via
+`mcp__ultimate-obsidian__reindex_kb` `{}` (incremental; `{ "force": true }` for a full rebuild), then
+retry Step 2. If the MCP itself is unreachable:
+1. Say: "KB index unavailable — falling back to flat-file search."
+2. Find `kb-registry.yaml` at `$KB_ROOT/kb-registry.yaml` → `~/kb/kb-registry.yaml` → `./kb/kb-registry.yaml`
+3. Score KBs by keyword match, read relevant markdown files, answer with flat-file citations.
 
 ---
 

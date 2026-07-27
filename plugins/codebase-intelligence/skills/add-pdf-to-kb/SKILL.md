@@ -77,10 +77,10 @@ uv run --directory $BOOKRAG_HOME \
   --settings ~/Documents/Obsidian-Vault/05-Knowledge-Base/config/settings.toml
 ```
 
-This runs the full pipeline:
+This runs the pipeline:
 - **Stage 1**: Convert PDF/EPUB → clean markdown (uses pymupdf4llm)
-- **Stage 2**: Structure markdown → 9-file KB (summary, principles, arguments, frameworks, failure modes, playbook, claim index) via Claude API — requires `ANTHROPIC_API_KEY`
-- **Stage 3**: Index KB → SQLite (`bookrag.db`) + ChromaDB + BM25 sparse index
+- **Stage 2**: Structure markdown → 9-file KB (summary, principles, arguments, frameworks, failure modes, playbook, claim index) via Claude API — requires `ANTHROPIC_API_KEY`. **This is the value** — the distilled cards land in the vault at `kb/{book-slug}/`.
+- **Stage 3 (ignored)**: bookrag also writes a per-domain `bookrag.db` + ChromaDB dense index — **no longer used for retrieval**. `ask-kb`/`consult-kb` now search a local FTS5 index built from the vault markdown (no vectors, no model). You can leave Stage 3's output in place or delete the per-domain `bookrag.db`; nothing reads it. The step that matters is the FTS5 reindex in Step 4.5.
 
 Output lands in: `~/Documents/Obsidian-Vault/05-Knowledge-Base/domains/{domain}/`
 - `bookrag.db` — main search index
@@ -112,46 +112,26 @@ uv run --directory $BOOKRAG_HOME \
 Use `--skip-structure` for large books or when Claude API is unavailable. Content will be indexed
 as raw chunks (no principle extraction, no claim analysis).
 
-### Step 4 — Verify Indexing
+### Step 4 — Confirm the distilled cards landed
 
 ```bash
-# Check books.yaml was updated
+# Distilled KB cards for this book (what FTS5 will index)
+ls ~/Documents/Obsidian-Vault/05-Knowledge-Base/domains/{domain}/kb/{book-slug}/
+# Optional: books.yaml updated
 cat ~/Documents/Obsidian-Vault/05-Knowledge-Base/domains/{domain}/books.yaml
-
-# Run a sample query against the new domain DB
-uv run --directory $BOOKRAG_HOME \
-  bookrag query-hybrid "key topic from the book" \
-  --domain "{domain}" \
-  --settings ~/Documents/Obsidian-Vault/05-Knowledge-Base/config/settings.toml \
-  --stdout
 ```
 
-Expected output: JSON with `hits` array containing relevant text chunks from the book.
+### Step 4.5 — Refresh the FTS5 KB index
 
-### Step 4.5 — Rebuild Master ask-kb Index
+**Required** — makes the new book findable via `/ask-kb`. This replaces the old 20–60 min
+master-ChromaDB rebuild with a **seconds-long incremental FTS5 reindex** (no vectors, no model).
 
-**Required** — without this step, the book will NOT appear in `/ask-kb` results.
+Call the MCP tool `mcp__ultimate-obsidian__reindex_kb` `{}` (incremental — picks up the new cards).
+Then verify with `mcp__ultimate-obsidian__search_kb` `{ "query": "key topic from {title}", "limit": 5 }`
+and confirm hits from `.../kb/{book-slug}/`.
 
-`add-pdf-to-kb` builds a per-domain DB inside the vault. `/ask-kb` queries a separate master
-vault DB that must be explicitly rebuilt after adding any book.
-
-```bash
-uv run --directory $BOOKRAG_HOME \
-  bookrag obsidian-ingest \
-  --vault-path ~/Documents/Obsidian-Vault \
-  --db $BOOKRAG_HOME/master-kb/domains/obsidian-vault/bookrag.db \
-  --settings $BOOKRAG_HOME/bookrag/config/settings.toml
-```
-
-Takes 20–60 minutes. Monitor for `obsidian-ingest: N vectors upserted to ChromaDB` then verify:
-
-```bash
-uv run --directory $BOOKRAG_HOME \
-  bookrag query-hybrid "key topic from {title}" \
-  --db $BOOKRAG_HOME/master-kb/domains/obsidian-vault/bookrag.db \
-  --settings $BOOKRAG_HOME/bookrag/config/settings.toml \
-  --stdout
-```
+> The new cards are auto-indexed anyway (MCP self-indexes on vault write, plus the SessionStart
+> catch-up). The explicit `reindex_kb` just makes them queryable immediately in this session.
 
 ### Step 5 — Create Obsidian Vault Reference Note
 
@@ -171,7 +151,6 @@ domain: "{bookrag-domain}"
 type: book
 source: {original-filename}.pdf
 imported: {YYYY-MM-DD}
-bookrag_db: ~/Documents/Obsidian-Vault/05-Knowledge-Base/domains/{domain}/bookrag.db
 tags: [#book, #{domain}, #imported]
 ---
 
@@ -191,11 +170,8 @@ tags: [#book, #{domain}, #imported]
 
 ## Query This Book
 
-    uv run --directory $BOOKRAG_HOME \
-      bookrag query-hybrid "your question" \
-      --domain "{domain}" \
-      --settings ~/Documents/Obsidian-Vault/05-Knowledge-Base/config/settings.toml \
-      --stdout
+Ask via `/ask-kb` (searches the local FTS5 index), or call the MCP directly:
+`mcp__ultimate-obsidian__search_kb { "query": "your question", "limit": 6 }`
 ```
 
 ### Step 6 — Report to User
@@ -207,17 +183,13 @@ Provide a clear summary:
 
 Book:       {Title} by {Author}
 Domain:     {domain}
-DB:         ~/Documents/Obsidian-Vault/05-Knowledge-Base/domains/{domain}/bookrag.db
+Cards:      05-Knowledge-Base/domains/{domain}/kb/{book-slug}/
 Vault note: 01-Reference/Books/{book-slug}.md
 
-Query now:
-  uv run --directory $BOOKRAG_HOME \
-    bookrag query-hybrid "your question about {title}" \
-    --domain "{domain}" \
-    --settings ~/Documents/Obsidian-Vault/05-Knowledge-Base/config/settings.toml \
-    --stdout
+Query now:  /ask-kb "your question about {title}"
+            (or mcp__ultimate-obsidian__search_kb)
 
-Note: Run Step 4.5 to make this book findable via /ask-kb.
+Indexed into the local FTS5 KB (reindex_kb) — no vector DB, portable across machines.
 ```
 
 ## Error Handling
@@ -285,8 +257,8 @@ echo $ANTHROPIC_API_KEY | head -c 8  # should show 'sk-ant-a'
 
 Before finalizing, verify:
 - [ ] Book title and author correctly extracted
-- [ ] `books.yaml` updated with new book entry
-- [ ] Sample `bookrag query-hybrid` returns relevant chunks
+- [ ] Distilled cards written to `.../domains/{domain}/kb/{book-slug}/`
+- [ ] `reindex_kb` run; sample `search_kb` returns relevant chunks from the new book
 - [ ] Vault note created at `01-Reference/Books/{book-slug}.md`
 - [ ] Domain exists in `domain_registry.yaml`
 

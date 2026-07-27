@@ -4,9 +4,16 @@ description: Bootstrap the local bookrag KB engine (pinned public base + your ow
 
 # /setup-kb
 
-Provision the `bookrag` engine the KB skills (`ask-kb`, `consult-kb`, `add-pdf-to-kb`,
-`ingest-web-doc-to-kb`, `benchmark-kb`) depend on — without vendoring third-party code and
-without relying on a personal `~/Documents/ai-tools/skills-mono-repo` checkout.
+> **Retrieval no longer needs bookrag.** As of the FTS5 migration, `ask-kb` and `consult-kb` search
+> a **local FTS5 (BM25) index over the Obsidian vault** served by the `ultimate-obsidian` MCP
+> (`search_kb` / `reindex_kb`) — no bookrag, no Chroma, no embedding model, portable across machines.
+> `bookrag` is now only used by **`add-pdf-to-kb`** for PDF/EPUB → markdown → distilled-card
+> generation (Stages 1–2). If you only *query* the KB (or ingest web docs, which distill in-session),
+> you can skip this command entirely.
+
+Provision the `bookrag` engine that **`add-pdf-to-kb`** uses for book distillation — without
+vendoring third-party code and without relying on a personal `~/Documents/ai-tools/skills-mono-repo`
+checkout.
 
 ## What it does
 
