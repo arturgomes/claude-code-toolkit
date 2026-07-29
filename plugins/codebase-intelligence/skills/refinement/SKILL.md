@@ -58,7 +58,9 @@ P04 — small teams).
    - **READY** (all 8 ✅, ledger empty, QA signs off) → persist the refinement contract to
      `02-Notes/Plans/<slug>.refinement.md` and hand off to Phase 0 (prp-plan consumes it as the AC source).
    - **NOT READY** → **STOP.** Do not invoke prp-plan, do not touch code. Emit the clarifying questions
-     per the question-quality rubric, grouped by category.
+     per the question-quality rubric, grouped by category, and post each to the user as one tweet-length
+     line ("we could ABC because of XYZ" / "the AC says ABC but if we did that we'd lose/expose XYZ") —
+     no multi-line labels, no re-litigating the goal just because it's not in `main` yet.
 6. **Loop.** After answers arrive, re-run steps 3-5 until READY (or the user halts).
 
 ## Answering authority (who resolves the questions)
@@ -91,7 +93,9 @@ P04 — small teams).
 - [ ] QA lens signs off (verifiable + acceptable) — else NOT READY.
 - [ ] NOT READY ⇒ **no prp-plan, no code**; questions returned to the user (or AI-proposed-for-
       ratification only on explicit delegation).
-- [ ] Questions are meaningful (ambiguity + blocks + options + impact) — no filler.
+- [ ] Questions are meaningful (ambiguity + blocks + options + impact internally); posted to the user as
+      one plain-language, tweet-length line each — no filler, no re-questioning the ticket's own goal
+      absent a real conflict with `main`.
 
 ## Dependencies
 

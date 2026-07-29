@@ -36,25 +36,40 @@ Open rows block READY. This is the mechanical "no assumptions" enforcement.
 
 ## Part 3 — Question-quality rubric (for NOT READY output)
 
-A clarifying question is only allowed if it is **meaningful** — lazy questions are rejected. Each
-question MUST state:
+A clarifying question is only allowed if it is **meaningful** — lazy questions are rejected, and so are
+questions that re-litigate the ticket's own premise. **Absence from `main` is not ambiguity** — most
+tickets exist precisely because the thing isn't built yet. Take the stated goal as given; only question
+the goal itself when an AC actively **contradicts current production behavior** in a way that changes
+correctness or risk. Otherwise ask about the *how*, never the *whether*.
+
+Internally, each question must still be traceable to:
 
 - **What is ambiguous** — the exact AC / requirement / decision that is vague, obscure, or conflicting.
 - **Why it blocks** — what cannot be built or tested until it's answered.
 - **Options considered** — the 2-3 plausible interpretations (so the answer can be a quick pick).
 - **Impact of each** — how the choice changes scope / build / test.
 
-Format:
+That's the reasoning scaffold — it is never what gets shown to the user. What gets **posted to Jira or
+Slack** is one tweet-length line per question, plain language, no labels, no multi-line structure. Pick
+whichever of these two shapes fits:
+
+- **"we could ABC because of XYZ"** — state the proposed read and the reason for it.
+- **"the AC says ABC, but if we did that we'd lose/expose/etc XYZ"** — name the conflict and its cost.
+
+One sentence. If it needs two, it's not simple enough yet — split it into two questions or cut it.
+
+Internal record format (unchanged reasoning, plus the line actually posted):
 ```
 Q{n} [category: business | acceptance-criteria | technical-decision | scope]
   Ambiguity: {exact vague thing}
   Blocks:    {what stalls without an answer}
   Options:   (a) … (b) … (c) …
   Impact:    (a) … (b) … (c) …
+  Jira line: "{the one-sentence tweet-style question actually posted to the user}"
 ```
 
-Group questions by category. No "just checking" filler — every question must be load-bearing for the
-contract.
+Group questions by category for your own bookkeeping, but present them to the user as a flat, short
+list — one line each, no filler. Every question must be load-bearing for the contract.
 
 ## Answering authority
 
