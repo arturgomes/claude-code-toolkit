@@ -23,8 +23,8 @@ P01/P02). The three existing commands stay unchanged and remain callable buildin
 
 Read `CI_MODEL_TIER` (`frontier | standard | light`, default `standard`). `frontier`: sub-steps are
 intent. `standard`/`light`: follow verbatim. Invariants mandatory at every tier: the disjoint-territory
-assertion, the per-round rules verdict, 🔴-blocks-merge, serial merge, clean shutdown, and the
-requirement-fork / red-blast-radius human gate.
+assertion, the per-round rules verdict, 🔴-blocks-merge, serial merge, **the Phase 5.5 integration gate
+before any PR exists**, clean shutdown, and the requirement-fork / red-blast-radius human gate.
 
 ## Your Mission
 
@@ -55,6 +55,11 @@ R. **Refine (Definition-of-Ready gate)** — after discovery, convene a grooming
 4. **Verify** — `qa-analyst` runs the plan's `expected_gate`s / behavioral gates; `pr-reviewer` does
    fresh-context adversarial review.
 5. **Merge** — serial merge of passing worktrees only; `ux-specialist` taste check on UI merges.
+5.5 **Integration gate (mandatory — `pre-pr-gate`)** — on the **merged** HEAD of every repo with diffs,
+   before any PR exists: CI-parity install/typecheck/build/full-test, a dangling+unused-import sweep
+   that the repos' CI does **not** catch, a hygiene sweep, and an `applyTo`-scoped replay of the repo's
+   own `.github` rulebook citing its real rule IDs. 🔴 ⇒ **no PR** — blockers route back to the owning
+   specialist as next-round criteria (max 3 cycles). See "Phase 5.5" below.
 6. **Shutdown** — clean handshake, specialists save work as files, `session-memory` SESSION END.
 
 ## Step V — Related vault-task discovery (by Jira project code)
@@ -127,6 +132,42 @@ is inherited wholesale, nothing is discarded:
 4. If `/prp-plan` surfaces a genuine **requirement fork** or refuses on a **blocking unknown**, that is
    exactly the sanctioned AC-1 human stop — surface it and wait; do not fan out on an unresolved plan.
 
+## Phase 5.5 — Integration gate: the wall between "merged" and "PR opened" (mandatory)
+
+Per-round judging (Phase 3) grades each specialist's diff **in isolation**. That is structurally blind
+to the failures that only exist once the lanes are merged: a consumer importing an export a sibling
+deleted, a type mismatch across lanes, a build that only breaks integrated, an unused import that the
+repos' CI never fails on. **N green worktrees do not imply a green branch.** One unchecked merge in
+that gap is enough to break several PRs at once — this phase is the fix.
+
+After the last serial merge and **before any PR exists**, run
+`Skill(codebase-intelligence:pre-pr-gate)`:
+
+1. **Once per repo that has diffs.** A change spanning `seathq-fe` + `seathq-be` + `seathq-core` runs
+   three gates; the aggregate verdict is 🔴 if **any** repo is 🔴.
+2. Layers, in order: **L0** resolve real gate commands (a prescribed script that does not exist is a
+   misconfiguration, never a silent pass; never run a mutating command such as `eslint --fix` as a
+   gate) → **L1** CI-parity install → **L2** whole-repo typecheck → **L3** changed-files lint at zero
+   warnings → **L4** build → **L5** full non-watch test suite → **L6** dangling / unresolved / unused
+   import sweep → **L7** `applyTo`-scoped bot-parity rulebook replay → **L8** hygiene sweep.
+3. **Bot parity is the point of L7.** The PR is reviewed by GitHub Copilot review and Cursor bugbot,
+   which read the repo's own `.github/copilot-instructions.md` + `.github/instructions/*.instructions.md`.
+   L7 replays exactly those files over the merged diff, `applyTo`-scoped, and cites the repo's real rule
+   IDs (`FR-1`, `FQ-4`, `T-5`, `DB-3`, `PKG-1`, `CORE-002`, `SOLID-SRP-001`, `CG-003`). MUST/MUST-NOT
+   ⇒ 🔴 fix now; SHOULD ⇒ carried as an acknowledged note with a rationale.
+4. **Verdict routing:** ✅ → record the receipt in `orchestration-state.json` and continue to Phase 6.
+   🔴 → **no PR**; each blocker goes back to the owning specialist as next-round actionable criteria,
+   and a blocker crossing two territories goes to `project-manager` as a contract/territory-map bug.
+   Bounded at **3** fix→re-gate cycles, then STOP and surface the survivors to the human.
+5. **Never relax a gate to pass it.** Loosening a rule file or glob, lowering a lint severity, adding
+   `@ts-ignore` / `eslint-disable` / `.skip` — each is itself a 🔴 and a drift-guard Q5 failure.
+6. **Paste the receipt block into the PR description.** That is what lets the rest of the team skip
+   re-deriving these checks: the bots' own rule IDs are already answered, with verbatim commands and
+   exit codes, before anyone opens the diff.
+
+This phase is mandatory at every `CI_MODEL_TIER` and has **no diff-size exemption** — "it was a small
+change" is precisely the reasoning that produced the broken PRs.
+
 ## Step 1 — Capability preflight (U-1 / U-2)
 
 Detect the agent-teams runtime and choose a mode:
@@ -173,7 +214,8 @@ Fallback table (a fallback is never a failure — every AC still holds serially)
 
 Inside the flow — no manual calls required — the mediator auto-invokes `drift-guard` (per-round
 judging), `ask-kb` (pattern decisions), `context7-research` (any external API a specialist introduces),
-and `worktree-lifecycle` (ENTER/EXIT per specialist).
+`worktree-lifecycle` (ENTER/EXIT per specialist), and `pre-pr-gate` (the Phase 5.5 integration gate on
+the merged HEAD — the only one of these that can veto a PR).
 
 **Progress tracking — `session-memory` read/write throughout (not just at end):** the orchestration
 layer **reads** prior session-memory at the start (restore last-state + re-read documented pitfalls so
@@ -195,3 +237,6 @@ user at their `settings.json` allow-list if a specialist would otherwise block.
 - No Workflow-tool / Task-subagent implementation — agent-teams (tmux + worktree) model only.
 - No cron/scheduling, no new MCP, no auto-invocation from `prp-implement`.
 - Never auto-merges a red action; never invents the enable key.
+- Does not add CI jobs, install tooling, or edit the target repo's rule files — Phase 5.5 runs the
+  repo's **own** toolchain and reads the repo's **own** rulebook.
+- Never opens a PR on a 🔴 integration gate, and never weakens a gate, glob, or lint severity to clear one.

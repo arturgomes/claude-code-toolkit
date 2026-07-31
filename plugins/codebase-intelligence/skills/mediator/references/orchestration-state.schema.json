@@ -152,6 +152,39 @@
         }
       }
     },
+    "integrationGate": {
+      "type": "array",
+      "description": "Phase E2 — one entry per repo with diffs, recording the pre-pr-gate run on the MERGED HEAD. A PR may not be opened unless every entry has verdict 'pass' with a receiptSha equal to that repo's current HEAD. Populated by the mediator from each gate receipt (skills/pre-pr-gate/references/gate-receipt.schema.json).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["repo", "verdict", "receiptSha"],
+        "properties": {
+          "repo": { "type": "string" },
+          "verdict": { "type": "string", "enum": ["pass", "block"] },
+          "receiptSha": { "type": "string", "description": "HEAD SHA the gate ran against. A receipt whose sha != current HEAD is stale and counts as absent." },
+          "receiptPath": { "type": "string", "description": "Typically <repo>/.claude/pre-pr-gate.json." },
+          "attempt": { "type": "integer", "minimum": 1, "maximum": 3, "description": "Fix/re-gate cycle. After 3 the run stops and escalates to the human." },
+          "blockers": {
+            "type": "array",
+            "description": "Surviving 🔴 findings, each routed to the owning territory as next-round actionable criteria.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["layer", "summary"],
+              "properties": {
+                "layer": { "type": "string", "description": "L0-L8 of the gate." },
+                "ruleId": { "type": "string", "description": "Repo rule ID for bot-parity findings (e.g. FR-2, DB-3, CORE-002)." },
+                "location": { "type": "string", "description": "file:line." },
+                "summary": { "type": "string" },
+                "routedTo": { "type": "string", "description": "Role given the fix, or 'project-manager' when the blocker crosses two territories (a contract/territory-map bug, not a specialist error)." }
+              }
+            }
+          },
+          "receiptBlock": { "type": "string", "description": "Rendered receipt block, pasted verbatim into the PR description." }
+        }
+      }
+    },
     "territoryDisjoint": {
       "type": "boolean",
       "description": "AC-4 invariant assertion: true iff every pair of active specialists' territory globs is disjoint. The mediator MUST abort allocation (Phase B) if this is false."

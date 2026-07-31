@@ -116,6 +116,8 @@ Run EXIT **only** when the user explicitly signals satisfaction ("satisfied", "d
 1. **(Optional) Ship the work.** If the branch is not yet committed / pushed / PR'd and the user
    wants it, delegate to `Skill(codebase-intelligence:ship)` — commit → push → PR (ship runs its
    own per-step confirmations). This step is optional; EXIT does not rewrite ship.
+   **If a PR is created, ship's Step 3a `pre-pr-gate` is mandatory and a 🔴 verdict blocks the PR** —
+   EXIT must not route around it by opening the PR itself. Shipping is optional; gating a PR is not.
 2. **SAVE FIRST — before any deletion.** `Skill(codebase-intelligence:session-memory)` → SESSION END
    protocol (honours the write-before-stop gate). Record final state, the PR URL, the worktree path,
    and a resume note. **This must complete before Step 4.** Nothing below deletes anything until the
@@ -161,7 +163,8 @@ echo "order check: SESSION END written? [yes] → confirm? [yes] → then remove
 
 ## Dependencies
 
-`git` CLI (`git worktree`, `git fetch`, `git switch`, `git status`). Optional harness tools
+`git` CLI (`git worktree`, `git fetch`, `git switch`, `git status`). `Skill(codebase-intelligence:pre-pr-gate)`
+runs inside ship's Step 3a whenever EXIT ships a PR. Optional harness tools
 `EnterWorktree` / `ExitWorktree` (deferred — verify via ToolSearch; treat absence as the fallback
 trigger, never as a hard dependency). Delegates to `Skill(codebase-intelligence:ship)` (commit/push/PR)
 and `Skill(codebase-intelligence:session-memory)` (SESSION END) — both unchanged by this skill.

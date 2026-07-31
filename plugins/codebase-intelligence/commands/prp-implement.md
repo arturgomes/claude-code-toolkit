@@ -354,6 +354,16 @@ Run type-check and lint from the plan's Validation Commands. Zero errors require
 Set timeout for 30 seconds for tsc, eslint, etc. If it takes longer than this, 
 there might be hapenning a Out of Memory, and you should no longer wait.
 
+**Verify each command exists before trusting it.** A plan can name a script the repo does not have
+(`npm run type-check` in a repo whose only typecheck is `npm run build` or bare `npx tsc --noEmit`);
+that fails with `Missing script:` and is easy to read as noise rather than as an unrun gate:
+```bash
+node -e "const s=require('./package.json').scripts||{};for(const k of ['build','test','typecheck','type-check','lint'])console.log((s[k]?'have ':'MISSING ')+k+(s[k]?': '+s[k]:''))"
+```
+Substitute the real underlying tool and note the substitution in the report. Also never gate on a
+mutating command (`eslint --fix`, `prettier --write`) or a watch-mode test script — the first
+manufactures a pass, the second hangs.
+
 ### 4.2 Unit Tests
 
 Write or update tests — not optional.
@@ -414,7 +424,26 @@ If ❌ BLOCKED:
 
 Document quality score for inclusion in implementation report.
 
-### 4.7 Redaction pre-write (S4)
+### 4.7 Pre-PR gate (MANDATORY — the last thing before a PR can exist)
+
+Follow skill: `codebase-intelligence:pre-pr-gate`, once per repo with diffs.
+
+Steps 4.1–4.4 run the **plan's** commands, which are only as good as the plan; 4.6 grades quality by
+checklist. This step runs the branch as **CI and the PR bots will actually see it**, and it catches the
+class of failure the earlier steps cannot:
+
+- a prescribed script that does not exist (`npm run type-check` where the repo has no such script) —
+  L0 turns that from a silent no-op into a hard finding;
+- **unused / dangling imports** — blocking here even where the repo's own ESLint only warns and its CI
+  never runs ESLint at all (that combination is how these reach reviewers);
+- an `applyTo`-scoped replay of the repo's `.github` rulebook, citing the repo's own rule IDs, so
+  GitHub Copilot review and Cursor bugbot have nothing left to report.
+
+**GATE:** 🔴 ⇒ no PR. Fix, re-run the gate from L1 on the new HEAD, max 3 cycles, then escalate to the
+human. Paste the receipt block into the Phase 5 report and into the PR body. Never weaken a rule, glob,
+or lint severity — and never add `@ts-ignore` / `eslint-disable` / `.skip` — to clear a blocker.
+
+### 4.8 Redaction pre-write (S4)
 
 Before writing ANY validation output, AC transcript, or command transcript into the report (Phase 5) or session-memory, scan it for secrets and sensitive data:
 - API keys / access tokens
@@ -434,6 +463,8 @@ Replace every match with the marker `[REDACTED]` before the write. This runs on 
 - [ ] Every AC row has verbatim command + exit code + pasted proving output (no narrative-only claims)
 - [ ] Green AC commands appended to "## Verified Invariants" in session-memory
 - [ ] no Rule promoted without a Verify entry
+- [ ] **Pre-PR gate verdict ✅, receipt SHA-bound to current HEAD** (4.7) — every gate command verified
+      to exist; no dangling/unused imports; repo rulebook replayed `applyTo`-scoped with MUSTs clear
 - [ ] Redaction pre-write run — secrets replaced with [REDACTED] before any write
 - [ ] Quality review run on all changed files
 - [ ] All 🔴 violations fixed
@@ -629,6 +660,7 @@ Pre-phases will restore context automatically.
 - **BUILD_PASS**: Build succeeds
 - **AC_VERIFIED**: Every AC item has a named passing test
 - **QUALITY_VERIFIED**: Quality review ✅ PASS or ⚠️ NEEDS WORK (all 🔴 violations fixed)
+- **GATE_PASS**: `pre-pr-gate` verdict ✅ on the integrated HEAD of every repo with diffs — receipt written, SHA-bound, pasted into the report/PR body. No PR while 🔴.
 - **REPORT_CREATED**: Report with Intelligence Summary and AC coverage table
 - **PLAN_ARCHIVED**: Plan in completed/
 - **SESSION_SAVED**: Final session in vault at `~/Documents/Obsidian-Vault/02-Notes/Sessions/{TICKET}-{BRANCH}.md` using Obsidian MCP

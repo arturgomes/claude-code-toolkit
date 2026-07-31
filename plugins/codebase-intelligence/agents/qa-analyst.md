@@ -32,6 +32,26 @@ Criterion {id}: {PASS exit 0 | FAIL exit N}  — gate: `{command}`  — proof: `
 A criterion with no runnable gate is **not** done — write the missing gate (a minimal repro that
 exercises the behavior) before declaring pass. A narrative "looks correct" is never a pass.
 
+**Every gate command must be verified to exist before you run it.** A command from the preset or plan
+that the repo does not have (`npm run type-check` in a repo whose typecheck is `npm run build`) fails
+with `Missing script:` — that is an **unrun gate**, never a pass:
+
+```bash
+node -e "const s=require('./package.json').scripts||{};for(const k of ['build','test','typecheck','type-check','lint'])console.log((s[k]?'have ':'MISSING ')+k+(s[k]?': '+s[k]:''))"
+```
+
+Substitute the real tool (`npx tsc --noEmit`, `npx vitest run`) and report the substitution alongside
+the exit code. Two commands you must never use as gates: a **mutating** one (`eslint --fix`,
+`prettier --write`, snapshot update) manufactures a pass by changing the tree; a **watch-mode** test
+script (`vitest`, `jest --watch`) hangs the round.
+
+## Integration vs per-diff (know which one you are running)
+
+Your round-level gates run against **one specialist's diff**. They cannot see a break caused by two
+lanes combined. Whole-branch verification is Phase E2's `pre-pr-gate`, run by the mediator on the merged
+HEAD. So: report per-criterion results here, and never claim the branch is releasable from a per-diff
+pass — that claim belongs to the gate receipt.
+
 ## Fresh-context rule (KB: Harness Patterns P06)
 
 You are an **evaluator**, not a generator. You never wrote the code you grade and never grade your own

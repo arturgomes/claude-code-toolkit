@@ -24,8 +24,9 @@ Read `CI_MODEL_TIER` (`frontier | standard | light`, default `standard`).
 - `frontier`: numbered sub-steps are intent; skip redundant narration.
 - `standard`/`light`: follow every step verbatim.
 Invariants mandatory at EVERY tier: the disjoint-territory assertion, the per-round rules verdict,
-the 🔴-blocks-merge gate, serial merge, clean shutdown, write-before-stop of `orchestration-state.json`,
-and the fresh-context adversarial evaluator (never self-grade).
+the 🔴-blocks-merge gate, serial merge, **the Phase E2 integration gate (`pre-pr-gate`) before any PR
+exists**, clean shutdown, write-before-stop of `orchestration-state.json`, and the fresh-context
+adversarial evaluator (never self-grade).
 
 ---
 
@@ -148,9 +149,14 @@ Each round, for every `working`/`submitted` specialist:
 3. **Gate:** a 🔴 verdict (any MUST/MUST-NOT violation, a territory breach, or drift 3+) sets
    `blocksMerge: true` and returns **actionable criteria** to that specialist for the next round.
    ⚠️ is recorded but does not block; ✅ is merge-eligible.
-4. Auto-invoke `drift-guard`, `ask-kb` (pattern decisions), and `context7-research` (any external API
+4. **Pre-submit smoke (cheap, in the specialist's own worktree).** Before a specialist may move to
+   `submitted`, it runs the repo's typecheck + a changed-files lint at zero warnings and reports both
+   exit codes. This is deliberately *not* the full gate — it is the cheap half that stops obviously
+   broken work from ever reaching the merge queue. An unused or stale import found here is a 🔴 for
+   that specialist even where the repo's own lint config only warns.
+5. Auto-invoke `drift-guard`, `ask-kb` (pattern decisions), and `context7-research` (any external API
    the specialist introduces) **inside** this loop — no manual calls required (AC-5).
-5. A **red blast-radius** change in any diff (auth/payments/deploy/db-migration) ⇒ append a
+6. A **red blast-radius** change in any diff (auth/payments/deploy/db-migration) ⇒ append a
    `humanGates` entry and STOP for a human (AC-1) — never auto-merge a red action.
 
 Write each round's verdicts into `rounds[]`. Loop until every active specialist is `verdict-pass` or
@@ -179,6 +185,42 @@ the goal's contract criteria are all met (or a hard stop / human gate fires).
 
 ---
 
+## Phase E2 — Integration gate (mandatory; the branch as CI and the bots will see it)
+
+Phases C and D judge **per-specialist diffs**. They structurally cannot catch what only appears once
+the worktrees are merged: a consumer importing an export a sibling deleted, a type that no longer
+lines up across lanes, a build that only breaks integrated. **N green worktrees do not imply a green
+branch** — that gap is how one unchecked merge breaks several PRs at once.
+
+So after the last serial merge, and **before any PR exists**, run
+`Skill(codebase-intelligence:pre-pr-gate)` on the integration branch:
+
+1. **Once per repo that has diffs.** A change spanning `fe` + `be` + `core` runs three gates; the
+   aggregate verdict is 🔴 if **any** repo is 🔴. Cross-repo contract changes are green only together.
+2. The gate resolves real commands from the active preset's `pre_pr_gate` block (or verifies derived
+   ones exist), then runs: install parity → **whole-repo typecheck** → changed-files lint at zero
+   warnings → build → full non-watch test suite → **dangling/unresolved/unused import sweep** →
+   **`applyTo`-scoped bot-parity replay of the repo's `.github` rulebook** → hygiene sweep.
+3. **Verdict routing:**
+   - ✅ → write the receipt path + block into `orchestration-state.json`, continue to Phase F.
+   - 🔴 → **no PR.** Map every blocker back to the owning territory, hand it to that specialist as
+     next-round *actionable criteria* (Phase C format), and re-enter the round loop. Bounded: at most
+     **3** fix→re-gate cycles, then STOP and surface the surviving blockers to the human.
+4. **A blocker that spans two territories** (e.g. a deleted export in `core` breaking a consumer in
+   `fe`) is a territory-map or contract bug, not a specialist's mistake — route it to
+   `project-manager` for a re-partition or a contract amendment (back to Phase B), not to whichever
+   specialist happens to own the file that fails to compile.
+5. **The mediator never relaxes the gate to pass it.** Loosening a rule file, a glob, a lint severity,
+   `@ts-ignore`, or `.skip` to clear a blocker is itself a 🔴 and a drift-guard Q5 failure.
+6. Record the receipt block verbatim; it is what goes into the PR description so the reviewers and the
+   PR bots have their own rule IDs already answered with commands and exit codes.
+
+The gate's own findings are session-memory material: a repeat blocker becomes a
+`## General Rules (distilled)` entry, and its `symptom → rule` line lands in `## Lessons` — so drift-guard
+Q8 (incident repeat) can catch it next run.
+
+---
+
 ## Phase F — Shutdown (clean handshake)
 
 1. Issue a shutdown handshake to each specialist; each **confirms and saves** its work as files, not
@@ -198,6 +240,8 @@ the goal's contract criteria are all met (or a hard stop / human gate fires).
 - [ ] Every round emits a rules verdict per specialist; 🔴 blocks that merge.
 - [ ] Recipients named for every specialist (message graph).
 - [ ] Merges are serial; `mergeLog[]` ordered.
+- [ ] Phase E2 integration gate ran on the merged HEAD of **every** repo with diffs, verdict ✅, receipt
+      SHA-bound to that HEAD — before any PR exists. No diff-size exemption; no gate relaxed to pass.
 - [ ] State persisted as JSON; mediator is sole writer.
 - [ ] session-memory READ at start (restore pitfalls/last-state) + WRITTEN per round/milestone
       (progress, findings, common pitfalls, lessons); mediator is the sole session-memory writer.
@@ -208,5 +252,7 @@ the goal's contract criteria are all met (or a hard stop / human gate fires).
 
 - `references/rules-rubric.md` — the per-round grading rubric.
 - `references/orchestration-state.schema.json` — the durable state contract.
-- Auto-invoked skills: `drift-guard`, `ask-kb`, `context7-research`, `session-memory`, `worktree-lifecycle`.
+- `pre-pr-gate` — the Phase E2 integration gate (mechanical + bot-parity) run on the merged HEAD.
+- Auto-invoked skills: `drift-guard`, `ask-kb`, `context7-research`, `session-memory`, `worktree-lifecycle`,
+  `pre-pr-gate`.
 - The 7 role agents in `agents/` + a `presets/*.yaml` binding.

@@ -37,6 +37,25 @@ Severity vocabulary: 🔴 blocking (MUST/MUST-NOT violation, correctness, securi
 🟢 nit. No praise, no scope creep, no restating the diff. Skip pure formatting unless it changes
 meaning.
 
+## Mechanical evidence first — read the gate receipt, do not re-run it
+
+The Phase E2 `pre-pr-gate` receipt (`<repo>/.claude/pre-pr-gate.json`, or the block the mediator
+injects) is your mechanical ground truth. Before reviewing:
+
+1. **Check it exists and its `sha` equals the reviewed HEAD.** A missing or stale receipt is itself your
+   first 🔴 finding: *"integration gate not run on this HEAD — merge not reviewable."* Do not review a
+   diff whose branch was never gated; say so and stop.
+2. **Trust its layers; do not repeat them.** Typecheck / build / test / import-sweep exit codes are
+   already established with evidence. Re-running them burns context and adds nothing.
+3. **Read its `notes[]` (the accepted ⚠️ SHOULDs).** Re-reporting a finding already acknowledged with a
+   rationale is noise; *disagreeing* with the rationale is a legitimate finding — say why.
+4. **Spend your whole budget on what the gate structurally cannot judge:** correctness against the AC,
+   race conditions and error paths, security reasoning, whether a passing test actually tests the
+   behavior, and design decisions no rule file encodes. The gate proves the code compiles and obeys the
+   rulebook; only you can say it is *right*.
+5. **A gate `verdict: block` means there should be no PR.** If you are reviewing one anyway, your first
+   line reports that as blocking.
+
 ## Fresh-context rule
 
 You **never** authored the code you review — generator ≠ evaluator, separate contexts (KB: Harness
@@ -62,3 +81,7 @@ The line-level findings are Engineering register; the contract-satisfaction answ
 - Fresh-context, adversarial, evidence-based (`file:line`); never the author.
 - One line per finding, severity-tagged; findings only, no praise.
 - A 🔴 finding blocks the merge (the mediator enforces the gate).
+- Cite the repo's own rule ID (`FR-2`, `DB-3`, `CORE-002`, `PKG-1`) — never a paraphrase. Same IDs the
+  PR bots use, so a finding here pre-empts a bot comment instead of duplicating it.
+- No stale/missing gate receipt ⇒ that is your first finding, and it is blocking.
+- Never re-run the gate's mechanical layers; review what they cannot see.

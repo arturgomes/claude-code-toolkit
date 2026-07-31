@@ -21,11 +21,14 @@ roles:
     gotchas:
       - "MUI 7 API differs from v5/v6 — verify component props via Context7 before use."
       - "Next 15 app-router: server vs client component boundaries are load-bearing."
+    # VERIFIED against seathq-fe/package.json — there is NO  type-check  script, and  npm run lint
+    # is  eslint --fix  (mutating: unusable as a gate). Use the real tools directly.
     validation:
-      - "npm ci"           # lockfile-gated install (see core npm-ci rule)
-      - "npm run type-check"
-      - "npm run lint"
-      - "npm test"
+      - "npm ci --no-audit"                       # same install CI uses
+      - "npx tsc --noEmit"                        # tsconfig has noEmit; no type-check script exists
+      - "npx eslint <changed-files> --max-warnings=0"   # NOT  npm run lint  (that one auto-fixes)
+      - "npm run build"                           # next build — CI's real gate
+      - "npm run test:ci"                         # non-watch; TZ + CI already set by the script
     territory:
       - "src/components/**"
       - "src/app/**"
@@ -39,7 +42,7 @@ roles:
     gotchas:
       - "UX taste check runs on merged UI diffs only; does not write feature code."
     validation:
-      - "npm run type-check"
+      - "npx tsc --noEmit"       # no  type-check  script exists in seathq-fe
     territory:
       - "src/styles/**"
       - "src/theme/**"
@@ -53,11 +56,12 @@ roles:
     gotchas:
       - "TypeBox static types must match runtime schema — do not hand-write drifting types."
       - "Fastify plugin registration order matters; decorators before routes."
+    # VERIFIED against seathq-be/package.json —  build  IS the typecheck (tsc --noEmit), there is no
+    # lint script, and  npm test  is watch-mode  vitest  (hangs locally): use  test:run .
     validation:
-      - "npm ci"
-      - "npm run type-check"
-      - "npm run lint"
-      - "npm test"
+      - "npm ci --no-audit --include=optional"    # CI uses --include=optional; keep it
+      - "npm run build"                           # = tsc --noEmit
+      - "npm run test:run"                        # = vitest run;  npm test  is watch mode
     territory:
       - "src/routes/**"
       - "src/services/**"
@@ -73,10 +77,14 @@ roles:
     gotchas:
       - "db-migration is a RED blast-radius action — mediator escalates to a human, never auto-merges."
       - "shared types are consumed by fe + be; a breaking change ripples — coordinate via recipients."
+    # VERIFIED against seathq-core/package.json —  build  is  tsc ,  test  is  jest , and Prisma
+    # clients + Zod schemas are generated (postinstall). Regenerate before typechecking or a schema
+    # change typechecks against a stale client.
     validation:
-      - "npm ci"           # RED: lockfile-gated; CI fails on lockfile drift
-      - "npm run type-check"
-      - "npm test"
+      - "npm ci --no-audit"        # RED: lockfile-gated; CI fails on lockfile drift
+      - "npm run prisma:generate"  # regenerate clients + zod-prisma-types before build (DB-14)
+      - "npm run build"            # = tsc
+      - "npm test"                 # = jest
     territory:
       - "src/db/**"
       - "src/types/**"
@@ -89,8 +97,9 @@ roles:
       - "MUST: every contract criterion has ≥1 behavioral gate that exits 0/non-0."
     gotchas:
       - "evaluator only — never authors the code it grades (fresh context)."
+      - "test command differs per repo: fe  npm run test:ci  · be  npm run test:run  · core  npm test ."
     validation:
-      - "npm test"
+      - "npm run test:run"     # seathq-be; see repos: block for the per-repo command
     territory:
       - "**/*.test.ts"
       - "**/*.spec.ts"
@@ -121,6 +130,92 @@ org_gotchas:
   - "npm-ci lockfile gate: installs use  npm ci  (not  npm install ) — CI fails on lockfile drift."
   - "DB identifiers: PascalCase, double-quoted in SQL."
   - "Red blast-radius: auth / payments / deploy / db-migration always escalate to a human."
+  - "NO repo has a  type-check  script. fe: npx tsc --noEmit · be/core:  npm run build  IS the typecheck."
+  - "fe  npm run lint  is  eslint --fix  (mutating) — never use it as a gate; call npx eslint directly."
+  - "be  npm test  is watch-mode vitest and hangs locally — use  npm run test:run ."
+  - "Neither fe nor be CI runs ESLint at all: unused/dangling imports never fail CI, so the PR bots
+     find them instead. pre-pr-gate L6 blocks them locally — that is the gap that broke past PRs."
+
+# --- pre-PR gate: per-repo commands consumed by the  pre-pr-gate  skill (Phase 5.5) ------
+# All commands VERIFIED against each repo's package.json + .github/workflows/ci.yaml.
+# The gate runs once per repo that has diffs; aggregate verdict is BLOCK if any repo blocks.
+# L2/L4/L5/L6/L7 are mandatory. `null` means the repo genuinely has no such tool — the gate records
+# that as not-applicable, never as a pass it did not earn.
+repos:
+  seathq-fe:
+    package_manager: npm
+    ci_workflow: ".github/workflows/ci.yaml"      # CI = install -> npm run build -> test:ci|test:related
+    pre_pr_gate:
+      install: "npm ci --no-audit"                # CI falls back to  npm install --no-audit --no-package-lock
+                                                  # when CodeArtifact secrets are absent; mirror that on failure
+                                                  # and record it as  degraded: install .
+      typecheck: "npx tsc --noEmit"               # no type-check script; tsconfig sets noEmit
+      lint: "npx eslint <changed-files> --max-warnings=0"   # never  npm run lint  (eslint --fix)
+      build: "npm run build"                      # next build
+      test: "npm run test:ci"                     # full suite, non-watch. CI may scope to  test:related  per
+                                                  # scripts/ci/determine-test-scope.sh — the gate does NOT scope.
+      unused_imports: "npx eslint <changed-files> --rule '{\"@typescript-eslint/no-unused-vars\":\"error\"}' --max-warnings=0"
+    rulebook:
+      - ".github/copilot-instructions.md"                     # repo-wide: CP-* TS-* CF-* DRY-* NS-*
+      - ".github/instructions/quality.instructions.md"        # applyTo **/*.{ts,tsx}   -> FQ-1..16
+      - ".github/instructions/react.instructions.md"          # applyTo **/*.{tsx,jsx}  -> FR-1..4
+      - ".github/instructions/testing.instructions.md"        # applyTo **/*.spec.ts    -> T-1..7, TQ-1..13
+    blocking_rule_families: ["FR-1", "FR-2", "FR-3", "CF-1", "CF-3", "TS-1", "TS-2", "DRY-1", "DRY-2", "NS-1", "T-1", "T-2", "T-3", "T-5", "T-7"]
+
+  seathq-be:
+    package_manager: npm
+    ci_workflow: ".github/workflows/ci.yaml"      # CI = install -> npm run test   (no build, no lint step)
+    pre_pr_gate:
+      install: "npm ci --no-audit --include=optional"
+      typecheck: "npm run build"                  # build IS  tsc --noEmit
+      lint: null                                  # no ESLint in this repo — L3 records not-applicable
+      build: "npm run build"                      # same command as typecheck; run once, note the coincidence
+      test: "npm run test:run"                    # npm test is watch-mode vitest
+      unused_imports: "npx tsc --noEmit --noUnusedLocals --noUnusedParameters"   # no eslint in this repo:
+                                                  # tsc flags + the L6 deleted-module grep. Pre-existing
+                                                  # findings are NOTE; findings inside the diff BLOCK.
+    rulebook:
+      - ".github/copilot-instructions.md"         # repo-wide, no applyTo-scoped files in this repo
+    blocking_rule_families: ["CORE-002", "CORE-005", "CORE-007", "ARCH-001", "ARCH-008", "SEC-003", "SEC-006", "SOLID-SRP-001", "SOLID-DIP-001", "CG-001", "CG-002", "CG-003", "CG-005", "API-001", "API-003"]
+    notes:
+      - "CG-001..007 is a commit gate that must be DOCUMENTED in the PR notes — paste the gate receipt
+         to satisfy it literally."
+      - "ARCH-008 / SEC-006: raw SQL is prohibited outright here; Prisma only."
+
+  seathq-core:
+    package_manager: npm
+    ci_workflow: null                             # no CI gate in this repo — the pre-PR gate IS the gate
+    pre_pr_gate:
+      install: "npm ci --no-audit"                # postinstall runs prisma:generate + tsc
+      generate: "npm run prisma:generate"         # regenerate before typecheck (DB-13/DB-14)
+      typecheck: "npm run build"                  # = tsc
+      lint: null                                  # no ESLint in this repo
+      build: "npm run build"
+      test: "npm test"                            # = jest
+      unused_imports: "npx tsc --noEmit --noUnusedLocals --noUnusedParameters"   # no eslint in this repo
+    rulebook:
+      - ".github/copilot-instructions.md"                      # QLT-* CORE-* ARCH-* QP-* VER-* SEC-*
+      - ".github/instructions/database.instructions.md"        # applyTo **/*.{prisma,ts,sql} -> DB-1..17
+      - ".github/instructions/package.instructions.md"         # applyTo **/*.{ts,json}       -> PKG-1..22
+    blocking_rule_families: ["DB-1", "DB-2", "DB-3", "DB-4", "DB-9", "DB-10", "DB-13", "PKG-1", "PKG-3", "PKG-5", "PKG-6", "PKG-7", "PKG-9", "PKG-15", "PKG-21", "QP-001", "VER-002", "CORE-002"]
+    notes:
+      - "This package is consumed by fe AND be: PKG-15 makes a removed/renamed export or a changed
+         signature a breaking change that must be documented in the PR and typechecked in BOTH
+         consumers before merge. Run the gate in the consumer repos too."
+      - "Migrations are RED blast-radius — escalate to a human, never auto-merge."
+
+  seathq-common:
+    package_manager: npm
+    ci_workflow: null
+    pre_pr_gate:
+      install: "npm ci --no-audit"
+      typecheck: "npm run typecheck"              # the ONLY repo that actually has this script
+      lint: "npm run lint"                        # eslint src --ext .ts — non-mutating, safe as a gate
+      build: "npm run build"                      # tsup
+      test: "npm test"                            # vitest run
+      unused_imports: "npm run lint"
+    rulebook:
+      - "CLAUDE.md"                               # no .github rulebook in this repo
 
 # --- where seathq's MUST/SHOULD rules live (mediator parses ALL of these) -----------------
 # seathq repos carry rules as GitHub Copilot instruction files (.github/instructions/*.instructions.md,
@@ -132,3 +227,7 @@ rule_sources:
   - ".claude/**/*.md"
   - ".github/copilot-instructions.md"
   - ".github/instructions/*.instructions.md"
+
+# The same files are read by GitHub Copilot code review and Cursor bugbot on the PR. pre-pr-gate L7
+# replays them applyTo-scoped over the MERGED diff and cites their real rule IDs, so the bots' findings
+# are already answered in the PR body. Per-repo file lists + which families block: the  repos:  block above.

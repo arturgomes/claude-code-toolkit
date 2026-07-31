@@ -58,7 +58,15 @@ Escalating a **db-migration / auth / payments** red action: lead with the Stakeh
    transaction; identifier casing/quoting as the preset specifies).
 3. Verify any external data/ORM API via `context7-research` before writing it.
 4. Minimum to satisfy the criterion (drift-guard Q4). Coordinate breaking changes with consumers.
-5. Run preset `validation`; fix failures. Escalate red actions. Save all work on shutdown.
+5. Run preset `validation`; fix failures. **Verify each command exists first** (a `Missing script:` is
+   an unrun gate, not a pass), run any codegen step *before* typechecking so you are not compiling
+   against a stale generated client, and never gate on a mutating or watch-mode command.
+6. **You are the highest-risk lane for integration breakage.** Your consumers live in other repos and
+   other specialists' territories, so a removed/renamed export or a changed signature compiles fine
+   here and breaks them at merge. Before submitting: list every symbol you removed, renamed, or
+   re-signed; announce each to its consumers; and expect the integration gate to typecheck the
+   consumer repos too. Leave zero unused or stale imports in your own diff.
+7. Escalate red actions. Save all work on shutdown.
 
 ## Rules
 

@@ -15,7 +15,13 @@ allowed-tools:
   - Bash(git merge-base *)
   - Bash(gh pr create *)
   - Bash(gh pr view *)
-version: 2.1.0
+  # Step 3a pre-PR gate — read-only project toolchain (typecheck / lint / build / test)
+  - Bash(npm ci *)
+  - Bash(npm run *)
+  - Bash(npm test *)
+  - Bash(npx *)
+  - Bash(node -e *)
+version: 2.2.0
 ---
 
 Ship the current changes through commit, push, and PR creation. Confirm with the user before each step using the AskUserQuestion tool.
@@ -46,6 +52,21 @@ Ship the current changes through commit, push, and PR creation. Confirm with the
 - If not, propose creating one with `git push -u origin <branch>`
 - **ASK the user to confirm** before pushing
 - Only after confirmation: push to remote
+
+## Step 3a: Pre-PR gate (MANDATORY — runs before the fan-out, never skipped)
+
+`Skill(codebase-intelligence:pre-pr-gate)` on the pushed HEAD, once per repo with diffs.
+
+Mechanical, non-negotiable, and **not subject to the Step 3b skip rule**: the fan-out below may be
+skipped for a tiny PR, but the gate may not. A one-line change that deletes an import breaks the build
+just as thoroughly as a large one.
+
+- ✅ → carry the receipt block into the PR body (Step 4) and continue.
+- 🔴 → **do not create the PR.** Report the blockers, fix them, re-run the gate from L1 on the new HEAD
+  (max 3 cycles), then continue. Never open a PR "so CI can tell us" — the gate already can.
+
+Confirmations: the gate is read-only, so it runs without asking. Fixing what it finds follows the
+normal edit flow.
 
 ## Step 3b: Review fan-out (parallel)
 
@@ -103,6 +124,10 @@ Surface the synthesis to the user before Step 4 drafts the PR body.
 - Draft a PR title (under 72 chars) and body with:
   - Summary: 2-4 bullet points
   - Test plan: how to verify
+  - **Pre-PR gate** section (mandatory — paste the receipt block from Step 3a verbatim, one per repo).
+    This is what lets reviewers and the PR bots skip re-deriving these checks: every layer's verbatim
+    command, its exit code, and the repo's own rule IDs already answered. A PR body without a receipt
+    block whose SHA matches the pushed HEAD is incomplete.
   - **Review fan-out** section (mandatory):
     ```
     ## Review fan-out
@@ -124,5 +149,10 @@ Surface the synthesis to the user before Step 4 drafts the PR body.
 - NEVER skip a confirmation step — each step requires explicit user approval
 - NEVER force-push
 - NEVER commit .env, secrets, or credential files
-- If the user says "skip" at any step, skip that step and move to the next
+- If the user says "skip" at any step, skip that step and move to the next — **except Step 3a**: the
+  pre-PR gate is not skippable and a 🔴 verdict blocks PR creation. If the user insists on opening a PR
+  over a 🔴, say plainly which blockers are unresolved, put them at the top of the PR body, and mark the
+  PR a draft.
+- NEVER weaken a gate, lint severity, or rule glob, and never add `@ts-ignore` / `eslint-disable` /
+  `.skip`, to make Step 3a pass — fix the code instead
 - If $ARGUMENTS is provided, use it as the commit message / PR title

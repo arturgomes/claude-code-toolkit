@@ -52,9 +52,18 @@ Describing a UI change to a business reader: say what the user now sees and can 
    instructions (`.github/copilot-instructions.md` + `.github/instructions/*.instructions.md` whose
    `applyTo` glob matches your files, e.g. a `react.instructions.md`); the mediator judges your diff
    against them every round.
-5. Run your preset `validation` commands (type-check, lint, test) before submitting; fix failures.
-6. Submit; address the mediator's actionable criteria if the verdict is not ✅.
-7. On shutdown: save all work as files, confirm the handshake (never leave transient state).
+5. Run your preset `validation` commands (typecheck, lint, test) before submitting; fix failures.
+   **Verify each command exists first** — a preset/plan command the repo lacks (`npm run type-check`
+   where none exists) fails with `Missing script:`, which is an unrun gate, not a pass. Substitute the
+   real tool (`npx tsc --noEmit`) and report the substitution. Never gate on `eslint --fix` (mutating)
+   or a watch-mode test script (hangs).
+6. **Leave zero unused or stale imports** — including imports of anything you deleted or moved, and
+   symbols you stopped using mid-task. These block at the integration gate even in repos whose ESLint
+   only warns and whose CI never runs ESLint, and they are the single most common thing the PR bots
+   flag. Before submitting:
+   `npx eslint <your changed files> --rule '{"@typescript-eslint/no-unused-vars":"error"}' --max-warnings=0`
+7. Submit; address the mediator's actionable criteria if the verdict is not ✅.
+8. On shutdown: save all work as files, confirm the handshake (never leave transient state).
 
 ## Rules
 

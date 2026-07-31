@@ -52,8 +52,14 @@ Escalating an **auth/payments** red flag: lead with the Stakeholder-register ris
 4. Implement the minimum that satisfies each criterion (drift-guard Q4 — no gold-plating).
 5. Honor the target repo's rule sources — `.claude/`, `CLAUDE.md`, and the `.github/` Copilot
    instructions (`applyTo`-scoped to your files); the mediator grades your diff each round.
-6. Run preset `validation` (type-check, lint, test) before submitting; fix failures.
-7. Address actionable criteria if the verdict is not ✅. Save all work on shutdown.
+6. Run preset `validation` (typecheck, lint, test) before submitting; fix failures. **Verify each
+   command exists first** — a command the repo lacks (`npm run type-check` where the typecheck is
+   actually `npm run build`) fails with `Missing script:`: an unrun gate, not a pass. Never gate on a
+   mutating command (`eslint --fix`) or a watch-mode test script (`vitest` without `run` hangs).
+7. **Leave zero unused or stale imports**, including references to anything you deleted or moved. They
+   block at the integration gate even where the repo has no linter and CI never checks — and they are
+   what the PR bots flag first. `tsc` catches unresolved modules; you must catch the unused ones.
+8. Address actionable criteria if the verdict is not ✅. Save all work on shutdown.
 
 ## Rules
 

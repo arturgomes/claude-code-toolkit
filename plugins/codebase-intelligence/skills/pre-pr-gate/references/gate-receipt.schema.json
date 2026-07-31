@@ -1,0 +1,145 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "pre-pr-gate/gate-receipt.schema.json",
+  "title": "Pre-PR gate receipt",
+  "description": "Written to <repo>/.claude/pre-pr-gate.json by the pre-pr-gate skill. SHA-bound: a receipt whose sha is not the current HEAD is stale and must be treated as absent. No valid receipt with verdict 'pass' => no PR and no merge.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "repo", "branch", "baseBranch", "sha", "verdict", "layers", "blockers", "receiptBlock"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "repo": { "type": "string", "description": "Repo name (basename of the toplevel)." },
+    "branch": { "type": "string" },
+    "baseBranch": { "type": "string", "description": "Detected base branch — never hardcoded to main." },
+    "sha": { "type": "string", "description": "Full HEAD SHA the gate ran against. Binds the receipt to a commit." },
+    "mergeBase": { "type": "string", "description": "git merge-base HEAD origin/<baseBranch> — the diff range floor." },
+    "ranAt": { "type": "string", "description": "ISO-8601 timestamp of the run." },
+    "context": {
+      "type": "string",
+      "enum": ["prp-orchestrate", "prp-implement", "ship", "worktree-lifecycle", "manual"],
+      "description": "Which caller invoked the gate."
+    },
+    "packageManager": { "type": "string", "enum": ["npm", "pnpm", "yarn", "none"] },
+    "attempt": { "type": "integer", "minimum": 1, "maximum": 3, "description": "Fix/re-run cycle number. >3 => stop and escalate to a human." },
+    "verdict": {
+      "type": "string",
+      "enum": ["pass", "block"],
+      "description": "'block' forbids opening a PR or merging. 'pass' requires every mandatory layer green."
+    },
+    "diff": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "filesChanged": { "type": "integer", "minimum": 0 },
+        "filesDeletedOrRenamed": { "type": "integer", "minimum": 0 },
+        "linesChanged": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "layers": {
+      "type": "array",
+      "description": "One entry per layer L0-L8. Mandatory layers (L0, L2, L4, L5, L6, L7) must be present with status pass|block — never skipped, regardless of diff size.",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status"],
+        "properties": {
+          "id": { "type": "string", "enum": ["L0", "L1", "L2", "L3", "L4", "L5", "L6", "L7", "L8"] },
+          "name": { "type": "string" },
+          "mandatory": { "type": "boolean" },
+          "status": {
+            "type": "string",
+            "enum": ["pass", "block", "note", "degraded", "not-applicable"],
+            "description": "'degraded' = layer could not run for an environment reason (e.g. private registry unavailable) and MUST be disclosed in the PR body. 'not-applicable' is only legal for non-mandatory layers with an empty scope (e.g. L3 with zero changed lintable files)."
+          },
+          "command": { "type": "string", "description": "Verbatim command executed. Required whenever status is pass or block." },
+          "exitCode": { "type": "integer" },
+          "evidence": { "type": "string", "description": "Decisive output line(s) — the proof. An adjective is not evidence." },
+          "substitution": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Recorded when a prescribed script did not exist or was mutating/watch-mode, and a real command was used instead.",
+            "properties": {
+              "intended": { "type": "string" },
+              "used": { "type": "string" },
+              "reason": { "type": "string", "enum": ["missing-script", "mutating-command", "watch-mode", "ci-parity", "preset-override"] }
+            },
+            "required": ["intended", "used", "reason"]
+          },
+          "counts": {
+            "type": "object",
+            "description": "Layer-specific tallies, e.g. L6 {dangling, unresolved, unused}; L7 {must, should}; L5 {passed, total}.",
+            "additionalProperties": { "type": "integer" }
+          }
+        }
+      }
+    },
+    "ruleSources": {
+      "type": "array",
+      "description": "Rule files actually loaded in L7, with the applyTo glob and whether it intersected the diff.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "applied"],
+        "properties": {
+          "path": { "type": "string" },
+          "applyTo": { "type": "string", "description": "Glob from frontmatter; absent/empty means repo-wide." },
+          "applied": { "type": "boolean", "description": "false = glob matched no changed file; recorded so coverage is auditable." },
+          "matchedFiles": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "blockers": {
+      "type": "array",
+      "description": "Every 🔴. Empty array is required for verdict 'pass'.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["layer", "summary"],
+        "properties": {
+          "layer": { "type": "string" },
+          "ruleId": { "type": "string", "description": "Repo rule ID when the blocker came from L7 (e.g. FR-2, DB-3, CORE-002, PKG-1)." },
+          "severity": { "type": "string", "enum": ["MUST", "MUST NOT"] },
+          "location": { "type": "string", "description": "file:line." },
+          "summary": { "type": "string" },
+          "fix": { "type": "string", "description": "Concrete fix, not generic advice (repo rule RF-002/RF-003C)." }
+        }
+      }
+    },
+    "notes": {
+      "type": "array",
+      "description": "⚠️ non-blocking findings, carried into the PR body so a reviewer spends no round-trip on them.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["summary"],
+        "properties": {
+          "layer": { "type": "string" },
+          "ruleId": { "type": "string" },
+          "severity": { "type": "string", "enum": ["SHOULD", "SHOULD NOT"] },
+          "location": { "type": "string" },
+          "summary": { "type": "string" },
+          "rationale": { "type": "string", "description": "Why it is accepted rather than fixed." }
+        }
+      }
+    },
+    "siblingRepos": {
+      "type": "array",
+      "description": "Multi-repo runs: the other repos' receipts in this change set. Aggregate verdict is 'block' if ANY sibling is 'block'.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["repo", "verdict"],
+        "properties": {
+          "repo": { "type": "string" },
+          "verdict": { "type": "string", "enum": ["pass", "block"] },
+          "receiptPath": { "type": "string" }
+        }
+      }
+    },
+    "receiptBlock": {
+      "type": "string",
+      "description": "The rendered markdown receipt block, verbatim as it must be pasted into the PR description."
+    }
+  }
+}

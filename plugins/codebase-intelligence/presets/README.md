@@ -29,6 +29,23 @@ roles:                         # one entry per role you want bound (activate 2-5
 org_gotchas:                   # gotchas that apply to every role in this org
   - "<gotcha>"
 
+repos:                         # OPTIONAL but STRONGLY recommended — per-repo pre-PR gate commands,
+  <repo-name>:                 #   consumed by the  pre-pr-gate  skill (prp-orchestrate Phase 5.5).
+    package_manager: npm       #   Without this block the gate derives commands and must verify each
+    ci_workflow: <path|null>   #   one exists; with it, the commands are authoritative.
+    pre_pr_gate:               # every command VERIFIED to exist in that repo's package.json
+      install:   "<cmd>"       #   lockfile-gated, same as CI
+      generate:  "<cmd>"       #   OPTIONAL — codegen (e.g. prisma:generate) that must precede typecheck
+      typecheck: "<cmd>"       #   whole-repo; use  npx tsc --noEmit  if no script exists
+      lint:      "<cmd>|null"  #   MUST be non-mutating (never  eslint --fix );  null  = repo has no linter
+      build:     "<cmd>"       #   CI parity
+      test:      "<cmd>"       #   full suite, NON-watch (never a bare  vitest / jest --watch )
+      unused_imports: "<cmd>"  #   the dangling/unused-import check (L6) — blocking even if the repo warns
+    rulebook:                  # the files pre-pr-gate L7 replays, in precedence order; annotate the
+      - "<path>"               #   applyTo glob + rule-ID family per file
+    blocking_rule_families: ["FR-1", ...]   # rule IDs treated as MUST for this repo
+    notes: ["<cross-repo or gate caveat>"]
+
 rule_sources:                  # OPTIONAL — where this org's MUST/SHOULD rules live. Omit to use the
   - "CLAUDE.md"                #   mediator's default discovery (CLAUDE.md, .claude/*.md,
   - ".claude/**/*.md"          #   .github/copilot-instructions.md, .github/instructions/*.instructions.md).
@@ -48,12 +65,24 @@ rule_sources:                  # OPTIONAL — where this org's MUST/SHOULD rules
   `pr-reviewer`.
 - **Red blast-radius emphases** (auth / payments / deploy / db-migration) cause the mediator to
   escalate to a human rather than auto-merge (AC-1).
+- **Every command in `validation` / `pre_pr_gate` must be verified to exist** in that repo's
+  `package.json` before it is written here. A preset naming a script the repo lacks (`npm run type-check`
+  in a repo with no such script) produces a gate that errors or silently no-ops — worse than no gate.
+  Check with:
+  ```bash
+  node -e "const s=require('./package.json').scripts||{};for(const k of ['build','test','typecheck','type-check','lint'])console.log((s[k]?'have ':'MISSING ')+k+(s[k]?': '+s[k]:''))"
+  ```
+- **Gate commands must be read-only and non-watch.** `eslint --fix` / `prettier --write` mutate the tree
+  and manufacture a pass; a bare `vitest` / `jest --watch` hangs the run. Record the real command instead.
+- **`ci_workflow` is the floor, not the ceiling.** Read it so the gate matches CI's install flags and
+  build step — then add what CI omits (most repos here never run ESLint in CI, which is exactly how
+  unused/dangling imports reach the PR bots).
 
 ## Shipped presets
 
 | Preset | Roles bound | Notes |
 |---|---|---|
-| `seathq` | fe → Next15/MUI7 · be → Fastify/TypeBox · core → shared DB/types (PascalCase quoted, D-1/D-3) · qa/pm/ux/pr | npm-ci lockfile gate; db-migration = red |
+| `seathq` | fe → Next15/MUI7 · be → Fastify/TypeBox · core → shared DB/types (PascalCase quoted, D-1/D-3) · qa/pm/ux/pr | npm-ci lockfile gate; db-migration = red; per-repo `pre_pr_gate` + `rulebook` for all 4 repos (fe/be/core/common) |
 
 To add a preset: copy `seathq.yaml`, retarget `roles.*.repo` / `stack` / `territory`, and run
 `/prp-orchestrate "<goal>" --preset <yourname>`.

@@ -40,6 +40,9 @@ order (later sources refine earlier ones; a preset `rule_sources` list overrides
 
 - A **checklist item under a `.github/instructions` file** that carries no modal verb defaults to
   **SHOULD** (advisory) — cite it by its **check ID** (e.g. `FQ-4`) in the verdict evidence.
+- **Always cite the repo's own rule ID.** These files are the same ones GitHub Copilot review and
+  Cursor bugbot read on the PR. Citing `FR-2` / `DB-3` / `CORE-002` (never a paraphrase) makes a
+  verdict line match the bot comment it pre-empts, which is what lets a reviewer skip re-deriving it.
 - Genuinely ambiguous lines default to **SHOULD**, never MUST — do not manufacture a blocking rule the
   repo did not clearly state.
 
@@ -77,6 +80,15 @@ violation}:
 
 Red blast-radius change (auth / payments / deploy / db-migration) detected in the diff ⇒ record a
 `humanGates` entry and STOP for a human regardless of verdict (AC-1) — never auto-merge a red action.
+
+### What this per-round verdict cannot do
+
+This rubric grades **one specialist's diff in isolation**. It cannot see integration failures — a
+consumer importing an export another lane deleted, a build that only breaks merged, an unused import
+the repo's own lint only warns about. Those are the Phase E2 job: `pre-pr-gate` runs the mechanical
+layers plus this same rule classification over the **merged HEAD** before any PR exists. The two must
+never disagree, so both read Step 1 of this file for bucketing; `pre-pr-gate/references/bot-parity.md`
+is the replay procedure. **A ✅ here is necessary but not sufficient for a PR.**
 
 ---
 
