@@ -1,7 +1,7 @@
 {
   "name": "codebase-intelligence",
-  "version": "3.13.1",
-  "description": "Standalone PRP workflow (prp-plan / prp-implement / prp-loop) with Serena LSP structural codebase search, cross-session task memory keyed by Jira ticket + branch, live Jira ticket context injection, a personal KB (local FTS5 vault index), prp-loop (a bounded closed-loop runner with contract-mandated stop rules and an independent verifier), and prp-orchestrate: a mediator-judged parallel agent-team layer (7 generic role specialists in isolated git worktrees, per-round .claude/-rules verdicts, serial merge gate). Self-contained — no prp-core required.",
+  "version": "3.14.0",
+  "description": "Standalone PRP workflow (prp-plan / prp-implement / prp-loop) with Serena LSP structural codebase search, cross-session task memory keyed by Jira ticket + branch, live Jira ticket context injection, a personal KB (local FTS5 vault index), prp-loop (a bounded closed-loop runner with contract-mandated stop rules and an independent verifier), and prp-orchestrate: a mediator-judged parallel agent-team layer (7 generic role specialists in isolated git worktrees, per-round .claude/-rules verdicts, serial merge gate), and pre-pr-gate: a mandatory mechanical + bot-parity gate on the integrated branch before any PR opens (CI-parity typecheck/build/test, dangling+unused-import sweep, applyTo-scoped replay of the repo's own .github rulebook citing its real rule IDs). Self-contained — no prp-core required.",
   "author": {
     "name": "Artur Gomes",
     "url": "https://github.com/arturgomes"
@@ -24,6 +24,9 @@
     "mediator",
     "worktree",
     "refinement",
-    "definition-of-ready"
+    "definition-of-ready",
+    "pre-pr-gate",
+    "code-quality",
+    "ci-parity"
   ]
 }
