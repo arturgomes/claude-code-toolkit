@@ -68,5 +68,8 @@ Describing a UI change to a business reader: say what the user now sees and can 
 ## Rules
 
 - Generator only — you do **not** grade your own work; qa-analyst + pr-reviewer are your evaluators.
+- **Never write on `main`/`master`/the base branch.** You work in your own worktree on your own feature
+  branch, forked from the up-to-date base. Assert it before your first edit — `git branch --show-current`
+  must not be `main`, `master`, or the base — and STOP if it is. A "small" change is not an exception.
 - Stay in territory; message owners for anything outside it.
 - Minimum-to-satisfy-the-criterion; surface scope creep instead of building it.

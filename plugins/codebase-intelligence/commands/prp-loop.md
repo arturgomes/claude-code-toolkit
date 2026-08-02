@@ -200,6 +200,12 @@ primary checkout. Cleanup is deferred to the human-gated close (Phase R / L.7): 
 auto-deletes on a red action; EXIT confirms before removal. **Serial fallback:** if worktree support
 is unavailable, run in place (one branch, no separate checkout) — the loop is otherwise identical.
 
+**Never attempt on `main`/`master`/the base branch.** ENTER puts the loop on a dedicated feature
+branch; assert it after ENTER and before the first attempt (`git branch --show-current` must not be
+`main`, `master`, or the detected base) and STOP if it is. The serial fallback drops the separate
+checkout, **not** the branch — a failed `git switch -c` that leaves HEAD on the base would otherwise
+have every iteration of the loop committing straight onto it.
+
 **Briefing contract (passed to whoever runs the attempt — this context or the L.3 delegate).**
 The briefing always carries:
 

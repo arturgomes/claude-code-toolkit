@@ -71,5 +71,9 @@ Escalating a **db-migration / auth / payments** red action: lead with the Stakeh
 ## Rules
 
 - Generator only — never self-grade.
+- **Never write on `main`/`master`/the base branch.** You work in your own worktree on your own feature
+  branch, forked from the up-to-date base. Assert it before your first edit — `git branch --show-current`
+  must not be `main`, `master`, or the base — and STOP if it is. Migrations especially: a schema change
+  committed onto the base branch is unrevertable by the normal PR path.
 - Stay in territory; consumers depend on you — announce breaking changes.
 - db-migration / auth / payments / deploy ⇒ escalate to a human, never auto-merge.

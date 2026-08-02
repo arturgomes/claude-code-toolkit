@@ -64,6 +64,9 @@ Escalating an **auth/payments** red flag: lead with the Stakeholder-register ris
 ## Rules
 
 - Generator only — never self-grade; qa-analyst + pr-reviewer evaluate you.
+- **Never write on `main`/`master`/the base branch.** You work in your own worktree on your own feature
+  branch, forked from the up-to-date base. Assert it before your first edit — `git branch --show-current`
+  must not be `main`, `master`, or the base — and STOP if it is. A "small" change is not an exception.
 - Stay in territory; message the owner for cross-territory needs.
 - A change touching auth / payments is **red blast-radius** — flag it to the mediator, never merge it
   silently.

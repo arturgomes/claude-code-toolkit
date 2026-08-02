@@ -21,6 +21,45 @@ isolated worktree) and **EXIT** (persist, then safely tear the worktree down).
 The point of the worktree: an implementation run never mutates the primary checkout, always starts
 from current base code, and leaves no stale worktree or uncommitted work behind.
 
+## The hard rule — never implement on `main`/`master`
+
+**Any implementation on an existing git project happens on a dedicated feature branch, inside a
+worktree, forked from the up-to-date base. Never on `main`, never on `master`, never on the detected
+base branch under any other name, and never on a branch that belongs to someone else's task.**
+
+This is not a preference and it has no size exemption — a one-line fix on `main` is the same class of
+mistake as a refactor on `main`, and it is worse in practice because it looks harmless enough to skip
+the branch. It applies to every entry point in this plugin (`prp-implement`, `prp-loop`,
+`prp-orchestrate`'s specialists, `ship`) and to **every** repo a run touches, including this toolkit
+itself.
+
+**Assert it mechanically before the first write.** Judgment is not the control here; this predicate is:
+
+```bash
+BASE=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
+[ -z "$BASE" ] && BASE=$(git remote show origin 2>/dev/null | sed -n 's/.*HEAD branch: //p')
+[ -z "$BASE" ] && BASE=main
+CUR=$(git branch --show-current)
+case "$CUR" in
+  main|master|"$BASE"|"") echo "🔴 STOP: on '$CUR' — branch into a worktree before writing anything"; exit 1 ;;
+  *) echo "ok: on '$CUR' (base=$BASE)" ;;
+esac
+```
+
+Three ways this rule gets broken in practice, all of them covered above:
+
+1. **The serial fallback.** `git switch -c` fails (branch exists, dirty tree) and the run continues on
+   whatever HEAD was — usually `main`. The fallback loses *isolation*, never the branch. Re-run the
+   predicate after ENTER, not just before.
+2. **A repo already on an unrelated branch.** Finding the checkout on `chore/some-other-thing` is not
+   permission to work there: fork a fresh branch off the **detected base**, not off current HEAD.
+   Only the *task's own* branch is reusable.
+3. **Multi-repo runs.** The rule is per repo. A run touching three repos asserts it three times — one
+   of them being clean on a feature branch says nothing about the other two.
+
+If the predicate fails and no branch can be created (detached HEAD, no remote, permissions), **STOP
+and report** — do not "just make the change and sort the branch out after". There is no after.
+
 ## Model capability (read first)
 
 This skill is model-agnostic. Read `CI_MODEL_TIER` (values: `frontier` | `standard` | `light`; default `standard` when unset or unknown).
@@ -62,7 +101,12 @@ inside the repo tree (where it could be accidentally committed or scanned):
    git status --porcelain | head -1 | grep -q . && echo "STOP: commit or stash changes before ENTER" || echo "clean — ok to ENTER"
    ```
    If dirty → STOP and ask the user to commit or stash first. Do not create a worktree over a dirty tree.
-2. If already inside a worktree for this task (`git worktree list` shows it), **reuse it** — do not nest a second worktree.
+2. If already inside a worktree **for this task** (`git worktree list` shows it), **reuse it** — do not
+   nest a second worktree. A worktree or branch belonging to a *different* task is not reusable, no
+   matter how convenient: fork a new one off the base.
+3. Record the pre-ENTER branch. If it is `main` / `master` / the detected base, ENTER is **mandatory**
+   before any edit — the serial fallback's "branch in place" still counts as branching, and still has
+   to leave you off the base branch.
 
 ### Steps
 
@@ -96,7 +140,12 @@ inside the repo tree (where it could be accidentally committed or scanned):
    git worktree list | grep -q "<branch-slug>" || git branch --show-current | grep -q "<branch-slug>" \
      && echo "ENTER OK" || echo "ENTER FAILED"
    ```
-7. **Report the active working path** to the caller — subsequent edits happen there.
+7. **Re-assert the hard rule at the new HEAD** — run the never-on-`main` predicate again, *inside the
+   working path*. Step 6 proves a branch exists; only this proves you are standing on it. In the
+   serial fallback a failed `git switch -c` leaves you on the base with a green Step 6.
+   A 🔴 here means **no edits happen** — fix the branch or STOP.
+8. **Report the active working path + the branch name** to the caller — subsequent edits happen there,
+   on that branch.
 
 ---
 
@@ -159,6 +208,9 @@ echo "order check: SESSION END written? [yes] → confirm? [yes] → then remove
   unchanged.)
 - No auto-delete and no silent `--force` on a dirty tree.
 - No hardcoding of `main` — the base is always the detected default.
+- **No implementation on `main` / `master` / the detected base, ever** — not in the serial fallback,
+  not for a one-line change, not because the checkout was already sitting there.
+- No reuse of a branch or worktree belonging to a different task.
 - No new tools, MCP servers, or dependencies; no rewrite of `ship` or `session-memory` internals.
 
 ## Dependencies
