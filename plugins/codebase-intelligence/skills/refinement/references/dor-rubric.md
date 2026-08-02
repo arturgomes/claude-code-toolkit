@@ -7,24 +7,43 @@ code). "We don't dive into coding unless the assignment is fully understood as a
 ## Part 1 — Definition of Ready checklist (all MUST be ✅ to pass)
 
 1. **Goal is a story.** The goal is expressed as ≥1 user story with an explicit *why* (business value).
-2. **ACs are testable.** Every acceptance criterion is observable and verifiable — an outsider could
-   write a pass/fail check for it. No "good / fast / nice / robust" adjectives standing in for outcomes.
-3. **Scenarios cover the AC.** Each AC has scenarios spanning **happy path + the material edge cases +
-   the failure/refusal behavior**. No AC with only a happy path.
-4. **DoD derived from ACs.** A Definition of Done exists and **every DoD item traces back to an AC**;
-   **every AC produces ≥1 DoD item**. No orphan DoD, no AC without a DoD.
-5. **Zero unresolved assumptions.** The assumption ledger has **no open rows** — each is either
+2. **Stories are prioritized.** Every story carries a priority (P1, P2, P3…) and P1 alone is a viable
+   slice — the MVP. Priorities that are all P1 are not priorities.
+3. **Every story is independently testable.** Each story states an **Independent Test**: how it is
+   verified *alone*, delivering value *alone*. A story that can only be tested together with another
+   is not a slice — merge them or re-cut. The mediator runs one round per story and checkpoints after
+   each, so a bad cut costs a whole round.
+4. **FRs are testable.** Every functional requirement is numbered (`FR-###`), observable, and
+   verifiable — an outsider could write a pass/fail check for it. No "good / fast / nice / robust"
+   adjectives standing in for outcomes.
+5. **Success criteria are measurable and technology-agnostic.** Every `SC-###` carries a number, a
+   unit, or an observable threshold, names no library/endpoint/file, and is tagged `buildable` or
+   `outcome`. A feature whose only definition of done is "the gates went green" is not ready — gates
+   can be green on something useless.
+6. **Scenarios cover the requirements.** Each FR has scenarios spanning **happy path + the material
+   edge cases + the failure/refusal behavior**. No FR with only a happy path.
+7. **DoD derived from the FRs.** A Definition of Done exists and **every DoD item traces back to an
+   FR**; **every FR produces ≥1 DoD item**. No orphan DoD, no FR without a DoD.
+8. **Zero unresolved assumptions.** The assumption ledger has **no open rows** — each is either
    confirmed-as-requirement or converted to a clarifying question (and answered). A silent assumption
    is an automatic NOT READY.
-6. **Technical decisions made.** No AC hides an unmade technical decision (data model, API shape,
-   auth/permission model, migration, third-party contract, performance target).
-7. **Unknowns routed.** Every unknown is classified: **library/API fact** (answerable by ask-kb /
-   Context7 at plan time — not a blocker) vs **business/requirement decision** (must be answered by a
-   human before READY).
-8. **QA would sign off.** The QA lens confirms: given these ACs + scenarios + DoD, QA can fully verify
-   the deliverable and would accept it. If QA can't test it, it's NOT READY.
+9. **Technical decisions made.** No requirement hides an unmade technical decision (data model, API
+   shape, auth/permission model, migration, third-party contract, performance target).
+10. **Unknowns routed.** Every unknown is classified: **library/API fact** (answerable by ask-kb /
+    Context7 at plan time — not a blocker, and never a user question) vs **business/requirement
+    decision** (must be answered by a human before READY).
+11. **Requirements checklist passes its threshold.** The generated `checklists/requirements.md` has
+    every `[Clarity]`, `[Completeness]`, and `[Acceptance Criteria Quality]` item passing, and no
+    failing item that the user has not been shown. Knowingly-accepted gaps live in the ledger with a
+    rationale; unexamined ones block.
+12. **QA would sign off.** The QA lens confirms: given these stories + FRs + SCs + scenarios + DoD, QA
+    can fully verify the deliverable and would accept it. If QA can't test it, it's NOT READY.
 
-Verdict: **READY** iff all 8 are ✅. Any ✅-miss ⇒ **NOT READY**.
+Verdict: **READY** iff all 12 are ✅. Any ✅-miss ⇒ **NOT READY**.
+
+Constitution interaction: a ratified constitution MUST principle that a requirement violates is a
+NOT READY on its own — the requirement changes, or the constitution is amended as a separate,
+explicit act. Never carried forward as "we'll deal with it in the plan".
 
 ## Part 2 — Assumption ledger (must end empty of open rows)
 
@@ -35,6 +54,11 @@ Verdict: **READY** iff all 8 are ✅. Any ✅-miss ⇒ **NOT READY**.
 Open rows block READY. This is the mechanical "no assumptions" enforcement.
 
 ## Part 3 — Question-quality rubric (for NOT READY output)
+
+> **Format and budget live in `clarify-protocol.md`** — max 5 per session, one at a time, each
+> answerable by picking, each carrying a recommendation. This part governs whether a question is
+> *worth* one of those five slots. The tweet-length shape below is what gets posted to **Jira or
+> Slack**; the in-session form is the multiple-choice block from the protocol.
 
 A clarifying question is only allowed if it is **meaningful** — lazy questions are rejected, and so are
 questions that re-litigate the ticket's own premise. **Absence from `main` is not ambiguity** — most

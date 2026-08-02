@@ -1,7 +1,7 @@
 ---
 name: prp-implement
 description: >
-  Implements a .plan.md end-to-end: restores session memory, verifies library APIs via Context7 before each task, consults KB for pattern decisions, and runs drift-guard before every task.
+  Implements a .plan.md end-to-end: restores session memory, audits the plan's own requirement→task→gate coverage before the first task, verifies library APIs via Context7 before each task, consults KB for pattern decisions, runs drift-guard before every task, gates the branch with pre-pr-gate, and reconciles the finished code against the plan before reporting.
   Pass path/to/plan.md.
 argument-hint: <path/to/plan.md> [--base <branch>]
 ---
@@ -27,6 +27,10 @@ Fix issues immediately. Working implementation, not just existing code.
 - Context7 verifies every library API before you write the call
 - KB is consulted when an implementation decision has a principled answer
 - Drift-guard checks before EVERY task — "does this serve an AC?"
+- `spec-analyze` (Step 1.5) grades the plan's own coverage **before the first task** — a requirement
+  with no task, or a task with no requirement, is caught before it costs a session
+- `spec-converge` (Step 4.7b) reconciles the finished branch against the plan — the gates being green
+  is not the same as the thing being built
 
 ---
 
@@ -160,6 +164,24 @@ Extract:
 - [ ] AC Traceability table read
 - [ ] Tasks list extracted
 
+### Step 1.5 — Analyze the artifact chain (gate, before the first task)
+
+Follow skill: `codebase-intelligence:spec-analyze` — read-only, one pass, before any code is written.
+
+The plan's AC Traceability table is written by the planner, so it cannot be the last word on its own
+coverage. This step re-derives it: every requirement → ≥1 task → ≥1 executable gate, plus the reverse
+direction — **a task that maps to no requirement is scope creep you are about to spend a session
+building**. It also catches unquantified success criteria, placeholders left in the plan, and (when a
+`spec.md` exists) requirements the plan never picked up.
+
+**GATE:** CRITICAL findings ⇒ do not start Phase 3. Fix at the source — a requirement problem goes
+back to the spec / `/prp-plan`, not into a task bolted onto an ambiguous requirement — then re-analyze.
+Bounded at **3** cycles, then stop and surface the survivors.
+
+**Skip conditions (state which one applies, never skip silently):** the run is a resume of an
+already-analyzed plan on an unchanged chain, or the plan predates the `story:`/`files:` task fields and
+carries no `spec.md` — in which case run the coverage and unmapped-task passes only, and say so.
+
 ---
 
 ## Phase 2: PREPARE - Git State
@@ -180,17 +202,34 @@ git worktree list
 
 | Current State | Action |
 |---|---|
-| Already in the task's worktree | Reuse it (ENTER detects and does not nest) |
-| On {base-branch}, clean | `worktree-lifecycle` → ENTER creates `feature/{plan-slug}` worktree off `origin/{base-branch}` |
+| Already in **this task's** worktree | Reuse it (ENTER detects and does not nest) |
+| On {base-branch} (incl. `main`/`master`), clean | `worktree-lifecycle` → ENTER creates `feature/{plan-slug}` worktree off `origin/{base-branch}` |
 | On {base-branch}, dirty | STOP: "Stash or commit changes first" (ENTER precondition) |
-| On feature branch | Use it |
+| On **this task's** feature branch | Use it |
+| On **another task's** feature branch | ENTER anyway — fork `feature/{plan-slug}` off `origin/{base-branch}`. Finding the checkout parked on someone else's branch is not permission to build there |
+
+**The hard rule — never implement on `main`/`master`.** Implementation happens on a dedicated feature
+branch inside a worktree, forked from the up-to-date base. No size exemption: a one-line fix on `main`
+is the same mistake as a refactor on `main`. Assert it mechanically **after** ENTER, not just before —
+Phase 3 does not begin while HEAD is the base branch:
+
+```bash
+CUR=$(git branch --show-current)
+case "$CUR" in
+  main|master|"{base-branch}"|"") echo "🔴 STOP: on '$CUR' — no edits until branched"; exit 1 ;;
+  *) echo "ok: implementing on '$CUR'" ;;
+esac
+```
 
 **Capability gate:** ENTER is capability-gated — `EnterWorktree` tool → `git worktree add` →
 **serial fallback** (new branch in the current checkout, isolation skipped). If no worktree support
-exists, the run continues in-place; no step hard-requires a worktree.
+exists, the run continues in-place; no step hard-requires a worktree. **The fallback drops isolation,
+never the branch** — a failed `git switch -c` that silently leaves you on `main` is the exact failure
+the post-ENTER assertion above exists to catch.
 
 **PHASE_2_CHECKPOINT:**
 - [ ] `worktree-lifecycle` → ENTER run (or serial fallback stated)
+- [ ] Post-ENTER branch assertion passed — HEAD is **not** `main`/`master`/{base-branch}
 - [ ] On correct branch, inside the worktree (or in-place branch on fallback)
 - [ ] Working directory clean
 - [ ] Up to date with remote
@@ -443,6 +482,29 @@ class of failure the earlier steps cannot:
 human. Paste the receipt block into the Phase 5 report and into the PR body. Never weaken a rule, glob,
 or lint severity — and never add `@ts-ignore` / `eslint-disable` / `.skip` — to clear a blocker.
 
+### 4.7b Converge — did we build the plan? (runs on the gated HEAD)
+
+Follow skill: `codebase-intelligence:spec-converge`, after 4.7 returns ✅.
+
+4.5 verifies each AC has a passing command; 4.7 proves the branch is green. Neither asks the question
+the ticket was opened for: **is every requirement actually implemented, and is there code here nobody
+asked for?** A task dropped during a mid-run re-scope leaves no failing gate behind — nothing
+mechanical knows it existed.
+
+Converge re-reads every requirement (and buildable `SC-###`) against the code and classifies each gap
+`missing | partial | contradicts | unrequested`:
+
+- **Converged** → the append target is left byte-for-byte unchanged. Continue to 4.8. In a plain
+  `prp-implement` run there is usually no repo `specs/<slug>/tasks.md`, so the target resolves to the
+  **plan note's task section in the vault** — the skill names which one it used.
+- **Tasks appended** → implement them (back to Phase 3 for those tasks only), re-run 4.1–4.7, converge
+  again. Bounded at **3** passes, each strictly smaller than the last; a pass that isn't smaller is not
+  converging — stop and surface it.
+- **`unrequested`** → reported with `file:line` for you to justify or remove. This command never
+  deletes it: that judgment has real blast radius and belongs to a human.
+
+Append-only, never rewrites the plan or existing tasks, never edits code.
+
 ### 4.8 Redaction pre-write (S4)
 
 Before writing ANY validation output, AC transcript, or command transcript into the report (Phase 5) or session-memory, scan it for secrets and sensitive data:
@@ -465,6 +527,8 @@ Replace every match with the marker `[REDACTED]` before the write. This runs on 
 - [ ] no Rule promoted without a Verify entry
 - [ ] **Pre-PR gate verdict ✅, receipt SHA-bound to current HEAD** (4.7) — every gate command verified
       to exist; no dangling/unused imports; repo rulebook replayed `applyTo`-scoped with MUSTs clear
+- [ ] **Converged** (4.7b) — no `missing`/`partial`/`contradicts` gap remains; any `unrequested` code
+      reported with `file:line` rather than deleted
 - [ ] Redaction pre-write run — secrets replaced with [REDACTED] before any write
 - [ ] Quality review run on all changed files
 - [ ] All 🔴 violations fixed
@@ -660,7 +724,9 @@ Pre-phases will restore context automatically.
 - **BUILD_PASS**: Build succeeds
 - **AC_VERIFIED**: Every AC item has a named passing test
 - **QUALITY_VERIFIED**: Quality review ✅ PASS or ⚠️ NEEDS WORK (all 🔴 violations fixed)
+- **COVERAGE_VERIFIED**: `spec-analyze` returned 0 CRITICAL before Phase 3 — every requirement has ≥1 task with an executable gate, and every task traces to a requirement
 - **GATE_PASS**: `pre-pr-gate` verdict ✅ on the integrated HEAD of every repo with diffs — receipt written, SHA-bound, pasted into the report/PR body. No PR while 🔴.
+- **CONVERGED**: `spec-converge` found no `missing` / `partial` / `contradicts` gap; any `unrequested` code is reported with `file:line`, never deleted
 - **REPORT_CREATED**: Report with Intelligence Summary and AC coverage table
 - **PLAN_ARCHIVED**: Plan in completed/
 - **SESSION_SAVED**: Final session in vault at `~/Documents/Obsidian-Vault/02-Notes/Sessions/{TICKET}-{BRANCH}.md` using Obsidian MCP

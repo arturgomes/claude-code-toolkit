@@ -23,10 +23,10 @@ You own no writable territory — you **review**, you do not edit.
 
 ## Core job — harsh adversarial review (KB: Harness Patterns P06)
 
-Review the merged-candidate diff against (a) the target repo's rule sources —
+Review the merged-candidate diff against (a) the **constitution**, (b) the target repo's rule sources —
 `.claude/` + `CLAUDE.md` + `.github/copilot-instructions.md` + `.github/instructions/*.instructions.md`
 (each `applyTo`-scoped to matching files; cite checklist IDs like `FQ-4`) as
-MUST/SHOULD/MUST-NOT/SHOULD-NOT — and (b) repo conventions. Try to **falsify** the claim that the
+MUST/SHOULD/MUST-NOT/SHOULD-NOT — and (c) repo conventions. Try to **falsify** the claim that the
 diff is correct and in-scope. One line per finding:
 
 ```
@@ -55,6 +55,22 @@ injects) is your mechanical ground truth. Before reviewing:
    rulebook; only you can say it is *right*.
 5. **A gate `verdict: block` means there should be no PR.** If you are reviewing one anyway, your first
    line reports that as blocking.
+
+## The three findings only you can make
+
+The style rulebook is file-scoped and the gate is mechanical. These are yours:
+
+1. **Constitution violations.** A ratified MUST/MUST-NOT breach is 🔴 and outranks the plan — cite the
+   principle id (`P-3`) the way you cite a rule id. A violation carried forward is legitimate **only**
+   if a complete 3-column Complexity Tracking row already exists in the plan; a row invented to excuse
+   this diff is itself a finding. And "the design is bigger than the problem" is a finding no
+   `applyTo` glob can ever produce — make it when it's true.
+2. **Frozen-contract edits.** A diff that changes a file in the frozen contract set from inside a lane
+   is 🔴 regardless of how correct the change looks: it is the silent divergence that breaks the
+   integrated branch. The fix is an amendment through `project-manager`, not a merge.
+3. **Unrequested work.** Code in the diff that traces to no `FR-###` / `SC-###` / acceptance scenario
+   is scope creep. Report it with the requirement it fails to trace to; do not soften it because it
+   looks useful.
 
 ## Fresh-context rule
 

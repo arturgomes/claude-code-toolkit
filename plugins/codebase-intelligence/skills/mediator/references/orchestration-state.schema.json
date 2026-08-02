@@ -40,9 +40,117 @@
       },
       "required": ["mode"]
     },
+    "analyze": {
+      "type": "object",
+      "description": "Phase 0.5 — the spec-analyze cross-artifact gate, run in a fresh context BEFORE any worktree exists. CRITICAL > 0 blocks fan-out.",
+      "additionalProperties": false,
+      "required": ["verdict"],
+      "properties": {
+        "verdict": { "type": "string", "enum": ["proceed", "blocked"] },
+        "attempt": { "type": "integer", "minimum": 1, "maximum": 3, "description": "analyze→fix→re-analyze cycle. After 3 the run stops and escalates to the human." },
+        "coveragePct": { "type": "number", "description": "Requirements (FR + buildable SC + scenarios) with ≥1 task, as a percentage." },
+        "metrics": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "requirements, buildableSC, tasks, unmappedTasks, ambiguities, duplicates, criticals, territoryOverlaps."
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "category", "severity", "summary"],
+            "properties": {
+              "id": { "type": "string" },
+              "category": { "type": "string", "enum": ["coverage", "unmapped-task", "ambiguity", "underspecification", "constitution", "inconsistency", "territory", "contract"] },
+              "severity": { "type": "string", "enum": ["CRITICAL", "HIGH", "MEDIUM", "LOW"] },
+              "location": { "type": "string" },
+              "summary": { "type": "string" },
+              "routedTo": { "type": "string", "description": "Owning phase: refinement | prp-plan | project-manager | contract-freeze." }
+            }
+          }
+        }
+      }
+    },
+    "contracts": {
+      "type": "array",
+      "description": "Phase A2 — the frozen cross-lane interface set. Published on the base branch with FAILING contract tests before any lane forks. Immutable for the slice: a lane editing one of these files is a 🔴 routed to project-manager as an amendment request.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "path", "provides", "consumes", "test"],
+        "properties": {
+          "id": { "type": "string", "description": "Stable id, e.g. 'K1'." },
+          "path": { "type": "string", "description": "File that declares the interface (shared type, endpoint schema, migration, event payload)." },
+          "provides": { "type": "string", "description": "Role that owns/declares it." },
+          "consumes": { "type": "array", "items": { "type": "string" }, "description": "Roles that depend on it. An empty list is a speculative interface — drop it (G-SIMPLICITY)." },
+          "test": { "type": "string", "description": "Contract test command. MUST fail against the pre-change code at freeze time." },
+          "failedAtFreeze": { "type": "boolean", "description": "Confirmation that the contract test failed before implementation existed. A contract test green at freeze proves nothing." },
+          "frozenAt": { "type": "string", "description": "SHA on the base branch where the contract landed." }
+        }
+      }
+    },
+    "slices": {
+      "type": "array",
+      "description": "Vertical increments: S0 = Foundational (blocking shared groundwork, kept as small as possible), then one slice per user story in priority order. Each ends in a demoable checkpoint. Territories are disjoint WITHIN a slice; different slices may touch the same file because they are separated in time.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "kind", "status"],
+        "properties": {
+          "id": { "type": "string", "description": "e.g. 'S0', 'S1'." },
+          "kind": { "type": "string", "enum": ["foundational", "story"] },
+          "story": { "type": "string", "description": "Story id from spec.md, e.g. 'US1'. Absent for the foundational slice." },
+          "priority": { "type": "string", "description": "P1, P2, … — the order slices run in." },
+          "independentTest": { "type": "string", "description": "How this slice is verified ALONE. It is the checkpoint criterion; a slice whose Independent Test fails is not a checkpoint whatever its unit gates say." },
+          "status": { "type": "string", "enum": ["planned", "active", "merged", "checkpointed", "blocked"] },
+          "specialists": { "$ref": "#/properties/specialists" },
+          "rounds": { "$ref": "#/properties/rounds" },
+          "mergeLog": { "$ref": "#/properties/mergeLog" },
+          "territoryDisjoint": { "type": "boolean", "description": "Set-intersection check over the union of each lane's task files:. False ⇒ ABORT allocation for this slice." },
+          "checkpoint": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "sha": { "type": "string", "description": "Integration SHA the next slice's worktrees fork from." },
+              "independentTestPassed": { "type": "boolean" },
+              "demoable": { "type": "boolean", "description": "If the run stopped here, what is on the branch works and is worth having." },
+              "gateReceiptSha": { "type": "string", "description": "pre-pr-gate receipt bound to this checkpoint, when the gate ran here." }
+            }
+          }
+        }
+      }
+    },
+    "convergence": {
+      "type": "object",
+      "description": "Phase E3 — spec-converge reconciliation of the gated branch against spec.md. Append-only; unrequested code is surfaced, never deleted.",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": { "type": "string", "enum": ["converged", "tasks-appended", "escalated"] },
+        "pass": { "type": "integer", "minimum": 1, "maximum": 3, "description": "Converge pass number. Each pass must find strictly fewer findings than the last; ≤3 passes." },
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "sourceRef", "gapType", "severity"],
+            "properties": {
+              "id": { "type": "string" },
+              "sourceRef": { "type": "string", "description": "FR-###, SC-###, US1/AC2, or a constitution principle id." },
+              "gapType": { "type": "string", "enum": ["missing", "partial", "contradicts", "unrequested"] },
+              "severity": { "type": "string", "enum": ["CRITICAL", "HIGH", "MEDIUM", "LOW"] },
+              "evidence": { "type": "string", "description": "file:line. No finding without evidence." },
+              "appendedTask": { "type": "string", "description": "Task id appended to the Convergence phase of tasks.md." },
+              "routedTo": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
     "contract": {
       "type": "array",
-      "description": "Granular, testable 'done' criteria negotiated on disk BEFORE any code is written (KB: Harness Patterns F05). Each maps to ≥1 AC of the goal.",
+      "description": "Granular, testable 'done' criteria negotiated on disk BEFORE any code is written (KB: Harness Patterns F05). Each maps to ≥1 FR / buildable SC / acceptance scenario of the spec.",
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -51,13 +159,16 @@
           "id": { "type": "string", "description": "Stable id, e.g. 'C1'." },
           "criterion": { "type": "string", "description": "Human-readable testable outcome." },
           "gate": { "type": "string", "description": "Executable predicate (shell command) that proves the criterion — never an adjective." },
-          "acRef": { "type": "string", "description": "Which goal AC this criterion serves." }
+          "acRef": { "type": "string", "description": "Which requirement this criterion serves: FR-###, SC-###, or US#/AC#." },
+          "sliceId": { "type": "string", "description": "Slice this criterion belongs to (S0, S1, …)." },
+          "files": { "type": "array", "items": { "type": "string" }, "description": "Exact files this criterion's tasks write. The union per lane IS the territory — derived, not hand-drawn, which is what makes disjointness provable." },
+          "parallel": { "type": "boolean", "description": "[P] — safe to run concurrently with other [P] criteria in the same lane (no shared file, no dependency)." }
         }
       }
     },
     "specialists": {
       "type": "array",
-      "description": "Active specialists (mediator enforces 2-5, never all 7 — KB: Agent Teams P04/X04).",
+      "description": "Active specialists in the CURRENT slice (mediator enforces 2-5, never all 7 — KB: Agent Teams P04/X04). Per-slice history lives in slices[].specialists.",
       "minItems": 1,
       "maxItems": 5,
       "items": {
@@ -114,12 +225,13 @@
                 },
                 "ruleViolations": {
                   "type": "array",
-                  "description": "Specific .claude/ rules violated, severity-tagged.",
+                  "description": "Specific rules violated, severity-tagged. A ratified-constitution MUST violation and a frozen-contract edit are 🔴 regardless of what the style rulebook says.",
                   "items": {
                     "type": "object",
                     "additionalProperties": false,
                     "properties": {
                       "rule": { "type": "string" },
+                      "source": { "type": "string", "enum": ["repo-rules", "constitution", "contract-freeze", "territory", "drift-guard"], "description": "Which authority the violation comes from. Defaults to repo-rules." },
                       "severity": { "type": "string", "enum": ["MUST", "SHOULD", "MUST-NOT", "SHOULD-NOT"] },
                       "evidence": { "type": "string", "description": "file:line or diff hunk." }
                     },
@@ -173,7 +285,7 @@
               "additionalProperties": false,
               "required": ["layer", "summary"],
               "properties": {
-                "layer": { "type": "string", "description": "L0-L8 of the gate." },
+                "layer": { "type": "string", "description": "L0-L9 of the gate." },
                 "ruleId": { "type": "string", "description": "Repo rule ID for bot-parity findings (e.g. FR-2, DB-3, CORE-002)." },
                 "location": { "type": "string", "description": "file:line." },
                 "summary": { "type": "string" },

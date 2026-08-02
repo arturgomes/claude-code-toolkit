@@ -13,6 +13,17 @@ orchestrator runs in generic single-repo mode (roles bind to `self` = the curren
 preset: <name>                 # preset identifier
 description: <one-line>
 
+spec_artifacts: both           # both (default) | repo | vault — where spec.md / plan.md / tasks.md /
+spec_repo_path: specs          #   contracts/ / checklists/ are written. The repo copy is what makes
+                               #   intent reviewable in the PR next to the code; the vault copy is
+                               #   what keeps it BM25-searchable across tickets.
+
+constitution: .claude/constitution.md   # OPTIONAL — architectural non-negotiables + the three
+                               #   Phase -1 gates. Read by refinement, prp-plan, spec-analyze, the
+                               #   mediator's round verdict, and pre-pr-gate L9. Absent ⇒ silent
+                               #   no-op; Status: draft ⇒ advisory only; Status: ratified ⇒ a MUST
+                               #   violation is 🔴 and blocks fan-out, merge, and PR.
+
 roles:                         # one entry per role you want bound (activate 2-5 per goal, not all 7)
   <role-name>:                 # MUST be one of the seven agent names
     repo: <repo-id-or-path>    # where this role's worktree is created; "self" = current repo
@@ -24,7 +35,12 @@ roles:                         # one entry per role you want bound (activate 2-5
     validation:                # executable gates this role's diff must pass
       - "<shell command>"
     territory:                 # glob patterns this role EXCLUSIVELY owns; MUST be pairwise-disjoint
-      - "<glob>"               #   with every other active role's territory (AC-4)
+      - "<glob>"               #   with every other active role's territory, within a slice (AC-4).
+                               #   These are the FALLBACK bounds: when the plan's tasks carry  files: ,
+                               #   the actual territory is DERIVED from the union of those paths, which
+                               #   is what lets spec-analyze prove disjointness instead of trusting it.
+                               #   A derived territory that escapes these globs is a preset/plan
+                               #   mismatch — report it, do not silently widen the preset.
 
 org_gotchas:                   # gotchas that apply to every role in this org
   - "<gotcha>"
@@ -45,6 +61,16 @@ repos:                         # OPTIONAL but STRONGLY recommended — per-repo 
       - "<path>"               #   applyTo glob + rule-ID family per file
     blocking_rule_families: ["FR-1", ...]   # rule IDs treated as MUST for this repo
     notes: ["<cross-repo or gate caveat>"]
+
+baseline_rules: true           # OPTIONAL (default true) — apply the project-agnostic JS/TS floor
+                               #   (skills/mediator/references/baseline-js-ts.md, JT-* ids) on top of
+                               #   whatever the repo ships. A repo with no rulebook classifies to
+                               #   NOTHING without this, so a diff can be merge-eligible while
+                               #   floating promises or swallowing errors. Repo rules win on conflict;
+                               #   baseline severity is never escalated above the repo's.
+baseline_rules_exclude:        # OPTIONAL — drop a family or a single rule. Exclusions are RECORDED in
+  - "JT-TEST"                  #   the verdict and the gate receipt, never silently dropped, so a
+  - "JT-DEP-3"                 #   switched-off rule stays visible.
 
 rule_sources:                  # OPTIONAL — where this org's MUST/SHOULD rules live. Omit to use the
   - "CLAUDE.md"                #   mediator's default discovery (CLAUDE.md, .claude/*.md,

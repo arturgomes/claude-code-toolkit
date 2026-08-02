@@ -37,14 +37,14 @@
     },
     "layers": {
       "type": "array",
-      "description": "One entry per layer L0-L8. Mandatory layers (L0, L2, L4, L5, L6, L7) must be present with status pass|block — never skipped, regardless of diff size.",
+      "description": "One entry per layer L0-L9. Mandatory layers (L0, L2, L4, L5, L6, L7) must be present with status pass|block — never skipped, regardless of diff size. L9 (constitution + frozen contracts) is mandatory whenever a constitution file or a frozen contract set exists, and 'not-applicable' otherwise.",
       "minItems": 1,
       "items": {
         "type": "object",
         "additionalProperties": false,
         "required": ["id", "status"],
         "properties": {
-          "id": { "type": "string", "enum": ["L0", "L1", "L2", "L3", "L4", "L5", "L6", "L7", "L8"] },
+          "id": { "type": "string", "enum": ["L0", "L1", "L2", "L3", "L4", "L5", "L6", "L7", "L8", "L9"] },
           "name": { "type": "string" },
           "mandatory": { "type": "boolean" },
           "status": {

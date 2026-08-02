@@ -9,6 +9,21 @@ preset: seathq
 description: >
   Maps the seven generic role specialists onto the seathq frontend / backend / core repos.
 
+# --- spec artifacts ----------------------------------------------------------------------
+# Where the planning artifacts (spec.md / plan.md / tasks.md / contracts/ / checklists/) are
+# written.  both = repo copy under  spec_repo_path  AND the searchable vault copy (default).
+#   repo  → only the repo copy (intent ships in the PR, nothing in the vault)
+#   vault → only the vault copy (nothing added to the working repo)
+spec_artifacts: both
+spec_repo_path: specs
+
+# --- constitution ------------------------------------------------------------------------
+# Architectural non-negotiables + the three Phase -1 gates. Read by refinement, prp-plan,
+# spec-analyze, the mediator's round verdict, and pre-pr-gate L9. Path is per-repo unless one
+# file governs the whole org. Absent file ⇒ every constitution check is a silent no-op; a
+# Status: draft file advises without blocking.
+constitution: .claude/constitution.md
+
 # --- role bindings -----------------------------------------------------------------------
 # Each binding: role -> { repo, stack, rule_emphases, gotchas, validation, territory }
 roles:
@@ -227,6 +242,13 @@ rule_sources:
   - ".claude/**/*.md"
   - ".github/copilot-instructions.md"
   - ".github/instructions/*.instructions.md"
+
+# The JT-* baseline floor stays ON here even though seathq ships a real rulebook: the two cover
+# different ground. seathq's rules are org- and framework-specific (FR-1 MUI theme tokens, DRY-2
+# utils/ placement, T-1 spec-file mirroring); the baseline covers the language-level defects no
+# repo bothered to write down — floating promises, swallowed catches, double type assertions,
+# import-time side effects. On any conflict the seathq rule wins.
+baseline_rules: true
 
 # The same files are read by GitHub Copilot code review and Cursor bugbot on the PR. pre-pr-gate L7
 # replays them applyTo-scoped over the MERGED diff and cites their real rule IDs, so the bots' findings
