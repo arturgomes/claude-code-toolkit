@@ -33,6 +33,31 @@ the branch. It applies to every entry point in this plugin (`prp-implement`, `pr
 `prp-orchestrate`'s specialists, `ship`) and to **every** repo a run touches, including this toolkit
 itself.
 
+### The gap this rule does not close by itself
+
+Every assertion above hangs off a *command* — ENTER, spawn, commit. **An ad-hoc editing session has
+none of them.** A user who says "add a section to that skill file" gets `Edit`/`Write` calls with no
+`worktree-lifecycle` in the path, no ENTER, and therefore no predicate — and the work lands on
+whatever branch the checkout happened to be on.
+
+This is not hypothetical: the v3.15.0 change set that introduced this very rule was authored across
+~35 files **on `main`**, and only reached a branch when the first `git commit` ran the predicate. The
+commit was clean; the six hours of editing before it were not. Branching at commit time is not the
+same as working on a branch — it just means the violation is invisible until the end, and it is
+unrecoverable if the session is interrupted or the tree is dirtied by something else meanwhile.
+
+Two ways to close it, in order of strength:
+
+1. **A `PreToolUse` hook on `Edit|Write|NotebookEdit`** that runs the predicate and denies (or asks)
+   when HEAD is `main`/`master`/the detected base. This is the only *mechanical* fix, and it is the
+   one consistent with the rest of this file: judgment is not the control.
+2. **A repo-root `CLAUDE.md` line** stating the rule. Cheaper, always loaded, and advisory — it makes
+   the model aware, which is strictly weaker than making the action impossible.
+
+Neither ships with this plugin, because both are user-environment configuration rather than plugin
+behavior, and a skill that silently installs hooks into someone's settings is a worse problem than the
+one it solves. Recommend them; do not install them unasked.
+
 **Assert it mechanically before the first write.** Judgment is not the control here; this predicate is:
 
 ```bash
