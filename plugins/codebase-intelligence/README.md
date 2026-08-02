@@ -7,6 +7,7 @@ structural search** (single tier). Cross-session memory lives in an Obsidian vau
 the `ultimate-obsidian` MCP. **No prp-core (or any other plugin) required.**
 
 **Version history**
+- **v3.15.0** — **spec-driven orchestration**: closes the gaps between `/prp-orchestrate` and GitHub's spec-kit methodology, shifting failure detection left of the first worktree. (1) **Vertical slices replace layer-only lanes** — refinement now emits *prioritized user stories, each with an Independent Test*, and the mediator builds a small blocking **Foundational** slice then **one slice per story**, each ending in a merged, gated, **demoable checkpoint**. A run stopped at any checkpoint leaves a working feature instead of three-fifths of one. (2) New **`spec-analyze` skill** (Phase 0.5) — a read-only, fresh-context gate over the whole artifact chain (spec → plan → tasks → territory → contracts → constitution): coverage matrix, requirements with zero tasks, **tasks mapped to no requirement (scope creep caught before it is written)**, ambiguity, terminology drift, **a file claimed by two lanes**, an idle lane, a missing contract. CRITICAL ⇒ **no fan-out**; findings route to the phase that owns them, max 3 cycles. (3) New **contract freeze (Phase 1.5)** — every cross-boundary interface is published on the base branch with **failing** contract tests *before any worktree forks*, and is immutable to lanes (an edit is 🔴 routed to `project-manager`). This removes the cause of the integration breakage Phase 5.5 was built to catch. (4) New **`constitution` skill** — versioned architectural non-negotiables plus the three Phase -1 gates (Simplicity / Anti-Abstraction / Integration-First) and a **Complexity Tracking** table where every carried violation needs a *"simpler alternative rejected because"*; `draft` advises, `ratified` blocks, absent is a silent no-op. Read by refinement, `prp-plan`, `spec-analyze`, every round verdict, and the new **pre-pr-gate L9**. (5) New **`spec-converge` skill** (Phase 5.75) — append-only reconciliation of the gated branch against the spec, classifying gaps `missing | partial | contradicts | **unrequested**`; converged means `tasks.md` byte-for-byte unchanged; unrequested code is surfaced with evidence, never deleted. (6) **Bounded clarify loop** replaces the question dump: max **5** questions per session, one at a time, each answerable by picking from 2-4 options with a **stated recommendation** (via `AskUserQuestion`), every answer written straight back into the spec under a dated `## Clarifications` session, plus a generated **requirements checklist** ("unit tests for English") re-scored after each answer. (7) **Measurable `SC-###` success criteria** — technology-agnostic, tagged `buildable` or `outcome`, so "done" can no longer collapse into "the gates went green". (8) **Territory is now derived, not asserted** — plan tasks carry `story:` / `parallel:` / `files:`, and a lane's territory is the union of its tasks' files, which is what lets `spec-analyze` *prove* disjointness. (9) **`prp-implement` inherits both gates** — **Step 1.5** runs `spec-analyze` before the first task (CRITICAL ⇒ Phase 3 does not start) and **Step 4.7b** runs `spec-converge` on the gated HEAD before the report, so the same coverage and reconciliation guarantees hold whether you orchestrate or implement a plan by hand. (10) **Dual-write artifacts** — `specs/<slug>/{spec,plan,tasks}.md` + `contracts/` + `checklists/` land in the repo so intent ships in the PR next to the code, while the vault copy stays BM25-searchable (`spec_artifacts: both | repo | vault`).
 - **v3.14.0** — adds the **`pre-pr-gate` skill**: a mandatory mechanical + bot-parity gate on the **integrated** branch before any PR exists. `/prp-orchestrate` gains **Phase 5.5** (run on the merged HEAD of every repo with diffs, after serial merge, before shutdown), `prp-implement` gains **Step 4.7**, and `ship` gains **Step 3a** (not subject to its tiny-PR skip rule) — so every route to a PR passes through it. Layers: **L0** resolve *real* gate commands (a prescribed script the repo lacks is a misconfiguration, never a silent pass; no mutating or watch-mode command may be a gate) → **L1** CI-parity install → **L2** whole-repo typecheck → **L3** changed-files lint at zero warnings → **L4** build → **L5** full non-watch suite → **L6** dangling/unresolved/**unused**-import sweep (blocking even where the repo's lint only warns and its CI never runs ESLint — the hole that let broken imports reach reviewers) → **L7** `applyTo`-scoped replay of the repo's own `.github` rulebook citing its real rule IDs (`FR-1`, `FQ-4`, `T-5`, `DB-3`, `PKG-1`, `CORE-002`, `SOLID-*`, `CG-*`) so GitHub Copilot review and Cursor bugbot have nothing left to report → **L8** hygiene sweep. Emits a SHA-bound **gate receipt** pasted into the PR body; 🔴 ⇒ no PR (blockers route back to the owning territory, max 3 re-gate cycles). Also **fixes `presets/seathq.yaml`**, whose `npm run type-check` existed in none of the four repos: per-repo `pre_pr_gate` + `rulebook` blocks, all commands verified against each `package.json` and `.github/workflows/ci.yaml`. `pr-reviewer` now reads the receipt instead of re-running its layers (a missing/stale receipt is its first blocking finding); `qa-analyst` and the three generator specialists must verify a command exists before trusting it.
 - **v3.13.1** — refinement fix: Jira/Slack clarifying questions are now a single tweet-length line ("we could ABC because of XYZ" / "the AC says ABC but if we did that we'd lose/expose XYZ") instead of a multi-line structured breakdown; the ambiguity/blocks/options/impact analysis stays internal-only reasoning. Absence of matching code in `main` is no longer treated as ambiguity to interrogate — only an actual conflict with current production behavior triggers a question.
 - **v3.13.0** — replaces the bookrag/Chroma dense index with a **local FTS5 (BM25) index over the Obsidian vault**, served by the `ultimate-obsidian` MCP (`search_kb` / `reindex_kb`). No embedding model, no vector store — the index is a disposable, machine-local, deterministic function of the markdown, kept fresh by MCP self-index-on-write plus a SessionStart catch-up (`kb-cli`). `ask-kb` / `consult-kb` / `benchmark-kb` now do their semantic work in the query (term expansion) instead of in embedding space. Env: `OBSIDIAN_VAULT_PATH`, `CI_KB_INDEX`, `CI_KB_EXCLUDE`.
@@ -73,6 +74,9 @@ Post-gen       → session-memory: save planning session
 ```
 Pre-Phase I    → session-memory: restore prior context + task completion state
 Pre-Phase II   → drift-guard: load TASK ANCHOR from plan
+Step 1.5       → spec-analyze: grade the plan's own coverage BEFORE the first task —
+                 requirement with no task, task with no requirement (scope creep), untestable gate.
+                 CRITICAL ⇒ do not start Phase 3; fix at the source, max 3 cycles
 
 Per-task (Phase 3):
   3.0 / 3.0b   → session-memory cache pre-load + Context7 signatures; full-brief load when context fits
@@ -87,6 +91,9 @@ Per-task (Phase 3):
 
 Phase 4.5      → AC verification = pasted command + exit code + proving output (no narrative claims);
                  each green AC appended to a "## Verified Invariants" block in session-memory
+Phase 4.7      → pre-pr-gate on the integrated HEAD (L0-L9) — 🔴 ⇒ no PR
+Phase 4.7b     → spec-converge on the gated HEAD: missing / partial / contradicts / unrequested;
+                 gaps appended as gated tasks (≤3 passes, each smaller); unrequested reported, not deleted
 Phase 5        → Intelligence Summary · AC coverage table · "## Lessons" · optional skillify (5.6)
                  all vault writes pass a pre-write secret scrub → [REDACTED]
 ```
@@ -126,33 +133,52 @@ Phase R        → loop report (full ledger, accept-rate, cost-per-accepted-chan
 
 ---
 
-## Orchestration layer — prp-orchestrate (v3.12.0)
+## Orchestration layer — prp-orchestrate (v3.15.0)
 
 Goal-oriented, parallel, mediator-judged, collision-proof alternative to running the three commands
-by hand. One goal → a coordinator that fans work to isolated specialists, enforces the target repo's
-rule sources (`.claude/` + `CLAUDE.md` + `.github/` Copilot instructions, `applyTo`-scoped) and
-no-code-collision automatically, and returns a merged, reviewed result — without per-phase checkpoints
-or Y/N prompts.
+by hand. One goal → a spec, an independently-audited plan, frozen cross-lane contracts, then a
+coordinator that fans work to isolated specialists, enforces the constitution and the target repo's
+rule sources (`.claude/` + `CLAUDE.md` + `.github/` Copilot instructions, `applyTo`-scoped), and
+returns a merged, gated, spec-reconciled result — without per-phase checkpoints or Y/N prompts.
 
-**End-to-end decision flow** — `R refine → DoR gate → 0 plan → mediator A–F`, with the two hard stops
-(NOT READY, and red blast-radius):
+**Two axes:** a **slice** is *when* (a demoable vertical increment — Foundational, then one per user
+story in priority order); a **lane** is *who* (a specialist's disjoint territory inside a slice).
+Lanes alone meant nothing was demoable until every layer landed; slices mean P1 ships and is
+demoable while P2 is still being written.
+
+**End-to-end decision flow** — `V → C → R refine → 0 plan → 0.5 analyze → A slice → A2 freeze →
+B–E per slice → E2 gate → E3 converge`, with the hard stops (NOT READY, CRITICAL findings, red
+blast-radius):
 
 ```mermaid
 flowchart TD
     IN([/prp-orchestrate<br/>goal · JIRA-TICKET · prd.md<br/>--jira-project CODE]):::start --> V[Phase V · Discover related vault work<br/>search Sessions/Tasks/Wiki/Plans/Reports<br/>by Jira project code + keywords]:::gate
-    V --> R[Phase R · Refine<br/>panel: product-owner + project-manager<br/>+ lead-engineer + QA lens]:::refine
-    R --> DOR{Definition of Ready?<br/>ACs testable · scenarios · DoD-from-ACs<br/>zero open assumptions · QA signs off}:::decide
-    DOR -->|NOT READY| STOP[STOP — no plan, no code<br/>meaningful questions → user<br/>--groom-autonomous: ratifiable decisions]:::bad
-    DOR -->|READY| P[Phase 0 · Plan = the full /prp-plan<br/>session-memory + Jira + codebase agents<br/>+ ask-kb + Context7 BEFORE web + drift-guard<br/>→ durable plan.md]:::gate
-    P --> PM[Phase A · project-manager MAPS plan.md<br/>→ testable contract + territory map<br/>activate 2-5, never all 9]:::gate
-    PM --> TERR{territories<br/>pairwise-disjoint?}:::decide
+    V --> C[Phase C · load constitution<br/>ratified blocks · draft advises · absent = no-op]:::gate
+    C --> R[Phase R · Refine<br/>panel: product-owner + project-manager<br/>+ lead-engineer + QA lens<br/>bounded clarify loop: max 5 pickable questions]:::refine
+    R --> DOR{Definition of Ready?<br/>stories prioritized + independently testable<br/>FR testable · SC measurable · DoD-from-FRs<br/>zero open assumptions · QA signs off}:::decide
+    DOR -->|NOT READY| STOP[STOP — no plan, no code<br/>questions → user<br/>--groom-autonomous: ratifiable decisions]:::bad
+    DOR -->|READY| P[Phase 0 · Plan = the full /prp-plan<br/>session-memory + Jira + codebase agents<br/>+ ask-kb + Context7 BEFORE web + drift-guard<br/>+ Phase -1 gates → plan.md · contracts/ · tasks]:::gate
+    P --> AN{Phase 0.5 · spec-analyze<br/>fresh context, read-only<br/>coverage · unmapped tasks · territory · contracts}:::decide
+    AN -->|CRITICAL| ROUTE[route to the owning phase<br/>R / 0 / A / A2 · max 3 cycles]:::warn
+    ROUTE --> AN
+    AN -->|clean| PM[Phase A · project-manager MAPS spec+plan<br/>→ S0 Foundational + one slice per story<br/>contract + territory DERIVED from task files:]:::gate
+    PM --> TERR{territories<br/>pairwise-disjoint in slice?}:::decide
     TERR -->|no| ABORT[abort allocation · re-partition]:::warn
     ABORT --> PM
-    TERR -->|yes| WT[Phase B · one git worktree per specialist]:::gate
-    WT --> RJ[Phase C-E · round-judge ▸ verify ▸ serial merge]:::gate
+    TERR -->|yes| FRZ[Phase A2 · freeze cross-lane contracts<br/>published on base · contract tests FAIL first]:::refine
+    FRZ --> WT[Phase B · one git worktree per specialist]:::gate
+    WT --> RJ[Phase C-D · round-judge ▸ verify<br/>rules + constitution + frozen contracts<br/>story Independent Test · buildable SC]:::gate
     RJ --> RED{red blast-radius?<br/>auth · payments · deploy · db-migration}:::decide
     RED -->|yes| HUMAN[STOP for a human]:::bad
-    RED -->|no| DONE([merged + reviewed result]):::done
+    RED -->|no| MG[Phase E · serial merge → CHECKPOINT<br/>demoable increment · next slice forks here]:::gate
+    MG --> MORE{more slices?}:::decide
+    MORE -->|yes| WT
+    MORE -->|no| G2{Phase E2 · pre-pr-gate on merged HEAD<br/>L0-L9 · no receipt, no PR}:::decide
+    G2 -->|🔴| BACKC[blockers → owning lane<br/>max 3 re-gate cycles]:::warn
+    BACKC --> RJ
+    G2 -->|✅| CV{Phase E3 · spec-converge<br/>missing · partial · contradicts · unrequested}:::decide
+    CV -->|tasks appended| RJ
+    CV -->|converged| DONE([merged · gated · spec-reconciled]):::done
     classDef start fill:#1a73e8,stroke:#0b4aa2,color:#fff
     classDef refine fill:#6b46c1,stroke:#4c2889,color:#fff,font-weight:bold
     classDef gate fill:#1a73e8,stroke:#0b4aa2,color:#fff
@@ -168,13 +194,17 @@ flowchart TD
 flowchart TD
     D[specialist diff this round]:::gate --> TB{touches files outside<br/>its own territory?}:::decide
     TB -->|yes · territory breach| R1[🔴 DRIFTING]:::bad
-    TB -->|no| RULES[grade vs rule sources:<br/>.claude/ + CLAUDE.md + .github/ instructions<br/>applyTo-scoped · drift-guard Q1-8]:::gate
+    TB -->|no| FC{edits a FROZEN contract?}:::decide
+    FC -->|yes| R3[🔴 · amendment request → project-manager<br/>never merged as-is]:::bad
+    FC -->|no| RULES[grade vs constitution + rule sources:<br/>.claude/ + CLAUDE.md + .github/ instructions<br/>applyTo-scoped · drift-guard Q1-8]:::gate
     RULES --> SEV{worst finding?}:::decide
-    SEV -->|MUST / MUST-NOT violation| R2[🔴 DRIFTING]:::bad
+    SEV -->|ratified-constitution MUST| R2[🔴 DRIFTING]:::bad
+    SEV -->|MUST / MUST-NOT violation| R2
     SEV -->|SHOULD / SHOULD-NOT<br/>or drift 1-2| Y1[⚠️ DRIFT RISK]:::warn
     SEV -->|clean| G1[✅ ON TRACK]:::good
     R1 --> BLOCK[blocks THIS worktree's merge<br/>return actionable criteria → next round]:::bad
     R2 --> BLOCK
+    R3 --> BLOCK
     Y1 --> ELIG[merge-eligible · note recorded]:::good
     G1 --> ELIG
     ELIG --> SER([serial merge · one worktree at a time]):::done
@@ -193,11 +223,42 @@ flowchart TD
   knowledge is reused instead of re-investigated (reuse is cited, never silent scope).
 - **Refines before it plans (DoR gate):** Phase R convenes a scrum-style grooming panel
   (`product-owner` + `project-manager` + `lead-engineer` + a QA lens) that turns the goal/ticket/PRD
-  into refined ACs + scenarios + a Definition of Done **derived from the ACs**, with **zero open
-  assumptions**. Binary verdict: **NOT READY ⇒ the flow STOPS — no planning, no coding** — and returns
-  meaningful clarifying questions (ambiguity + why-it-blocks + options + impact) for the **user** to
-  answer (or, on `--groom-autonomous`, the panel proposes ratifiable decisions, never silent
-  assumptions). *We don't dive into code until the assignment is understood as a contract.*
+  into a **spec**: prioritized user stories each carrying an **Independent Test**, numbered `FR-###`,
+  **measurable technology-agnostic `SC-###`** tagged `buildable`/`outcome`, scenarios, and a Definition
+  of Done **derived from the FRs**, with **zero open assumptions**. Ambiguity is closed by a **bounded
+  clarify loop** — max 5 questions per session, one at a time, each answerable by picking from 2-4
+  options with a stated recommendation, each answer written straight back into the owning section and
+  logged under a dated `## Clarifications` heading — plus a generated **requirements checklist**
+  ("unit tests for English") re-scored after every answer. Binary verdict: **NOT READY ⇒ the flow
+  STOPS — no planning, no coding**. *We don't dive into code until the assignment is understood as a
+  contract.*
+- **Audits the artifact chain before any code exists (Phase 0.5):** `spec-analyze` runs read-only in a
+  **fresh context that authored none of it** — because the plan's own traceability table is written by
+  the planner, and self-grading is exactly what this catches. It reports a requirement→task→gate→lane
+  coverage matrix and flags requirements with zero tasks, **tasks mapped to no requirement (scope
+  creep, before it is written)**, unquantified success criteria, terminology drift, **a file claimed by
+  two lanes**, a lane with no tasks, and a consumed symbol missing from the contracts. CRITICAL ⇒ **no
+  fan-out**; each finding routes to the phase that owns it (never patched downstream), max 3 cycles.
+- **Freezes the contracts before the lanes fork (Phase 1.5):** every cross-boundary interface — shared
+  type, endpoint shape, schema delta, event payload — is published on the base branch with contract
+  tests that **fail** against the pre-change code, so every worktree forks from the agreed shape. A
+  lane editing a frozen contract is 🔴, routed to `project-manager` as an amendment. This removes the
+  *cause* of the cross-lane breakage the integration gate was built to catch.
+- **Ships in demoable slices, not one big merge:** the mediator runs a deliberately small blocking
+  **Foundational** slice, then **one slice per story in priority order**, each ending in a serial
+  merge + a **checkpoint** whose story-level Independent Test passes. Stop the run at any checkpoint
+  and what's on the branch works.
+- **Reconciles against the spec before shutdown (Phase 5.75):** `spec-converge` re-reads every FR,
+  buildable SC, and acceptance scenario against the merged code and classifies gaps
+  `missing | partial | contradicts | **unrequested**`, appending whatever remains as traceable,
+  gated tasks. Converged means `tasks.md` byte-for-byte unchanged. `unrequested` code is reported with
+  `file:line` evidence — never deleted by the flow.
+- **Constitution (architecture, not style):** `.claude/` and `.github/instructions/*` are file-scoped
+  style rules; only the constitution can say *"this design has more moving parts than the problem
+  deserves"*. It supplies the three Phase -1 gates and a **Complexity Tracking** table where every
+  carried violation must name a specific simpler alternative and a concrete reason it fails. `draft`
+  advises, `ratified` blocks, absent is a silent no-op — and it is never amended mid-run to let a gate
+  pass.
 - **Plans first, full rigor:** Phase 0 runs the **unchanged `/prp-plan`** on a Jira ticket, goal, or
   PRD — session-memory (Obsidian vault) + Jira injection + `codebase-explorer`/`codebase-analyst` +
   **ask-kb and Context7 before any web search** + drift-guard — producing a durable `plan.md`. The
@@ -207,15 +268,39 @@ flowchart TD
 - **Interaction (AC-1):** no mandatory Y/N gates; `PHASE_N_CHECKPOINT` verbosity collapses to
   silent-unless-fail invariants; `ask-kb` / `context7-research` / `drift-guard` / `session-memory`
   are auto-invoked inside the flow.
+- **A JS/TS floor under every repo (`JT-*`):** rule *classification* only works if the repo wrote
+  rules down — point it at a repo with no `.github/instructions/` and the verdict collapses to
+  drift-guard alone. `skills/mediator/references/baseline-js-ts.md` is the floor: **73**
+  framework-agnostic, org-agnostic MUST/SHOULD/MUST-NOT/SHOULD-NOT rules over types, control flow,
+  async (floating promises), errors (swallowed catches), modules (import-time side effects), purity,
+  **functional style** (`JT-FP` — actions vs calculations, the `map(parseInt)` trap, unbound method
+  callbacks, quadratic spread-in-`reduce`), **data structures & algorithms** (`JT-DSA` — nested linear
+  scans, `Set` over `Array.includes`, `.sort()` without a comparator, `Array.shift()` as a queue),
+  naming, safety, tests, and dependencies — `applyTo`-scoped, with their own `JT-` id namespace so a
+  baseline finding is never confused with one of the repo's own ids. **Repo rules win on conflict,
+  including when laxer; silence is not an opt-out.** Read by the per-round verdict and by
+  `pre-pr-gate` L7. Preset: `baseline_rules: false` / `baseline_rules_exclude: [...]`, and any
+  exclusion is recorded rather than silently dropped. Each rule states its **provenance**: the `JT-FP`
+  and `JT-DSA` families cite the vault KB (`grokking-simplicity` — whose examples are in JavaScript —
+  plus `fluent-python`, `effective-python`, `artofwritingefficientprograms`, `code-complete`,
+  `domain-model-made-functional`); the language-specific families do not, because **the KB holds no
+  JS/TS language book**, and a rule presented as book-backed when it isn't is worth less than one
+  honestly labelled a default.
 - **Rule-aware judging (AC-2):** the mediator grades each diff against **all** of the target repo's
   rule sources — `CLAUDE.md`, `.claude/*.md`, and the **`.github/` Copilot instructions**
   (`.github/copilot-instructions.md` + `.github/instructions/*.instructions.md`, each applied only to
   files matching its `applyTo` glob; checklist IDs like `FQ-4` count as SHOULD) — as
   MUST/SHOULD/MUST-NOT/SHOULD-NOT. A MUST/MUST-NOT violation ⇒ 🔴 blocks that merge. A preset may
   point `rule_sources` at non-standard locations.
-- **No-collision guarantee (AC-4):** one worktree per active specialist **plus** a mediator-owned
-  disjoint file-territory map; merges are serial. State is durable JSON
+- **No-collision guarantee (AC-4):** one worktree per active specialist **plus** a territory map
+  **derived from the tasks' own `files:`** — which makes disjointness a set-intersection check that
+  `spec-analyze` can prove before allocation, not an assertion the mediator has to trust. Merges are
+  serial. State is durable JSON
   (`skills/mediator/references/orchestration-state.schema.json`) — the mediator is the sole writer.
+- **Artifacts ship in the PR (dual-write):** `specs/<slug>/{spec,plan,tasks}.md` + `contracts/` +
+  `checklists/` are written into the working repo so a reviewer sees intent and implementation in one
+  diff, while the vault copy stays BM25-searchable across tickets. Preset key
+  `spec_artifacts: both | repo | vault` (default `both`), or `--no-repo-specs`.
 - **Portable roles (AC-3):** the 9 role agents contain no org specifics; a `presets/*.yaml` binds them
   to repos/stacks (ships a `seathq` preset). See `presets/README.md`.
 - **Tracks its own progress (session-memory read/write):** the orchestration layer keeps a durable
@@ -365,13 +450,16 @@ claude mcp add atlassian \
 
 | Skill | Purpose |
 |---|---|
-| `refinement` | Pre-planning Definition-of-Ready gate behind `/prp-orchestrate`: grooming panel (product-owner + project-manager + lead-engineer + QA lens) → refined ACs + scenarios + DoD-from-ACs, zero open assumptions; NOT READY ⇒ STOP + clarifying questions for the user |
-| `mediator` | Coordinator + adversarial judge + serial merge-gate behind `/prp-orchestrate`: disjoint territory allocation, per-round `.claude/`-rules verdict, 🔴-blocks-merge, worktree-per-specialist, capability fallback, Phase E2 integration gate |
-| `pre-pr-gate` | Mandatory pre-PR gate on the **integrated** branch: CI-parity install/typecheck/build/full-test, dangling+unused-import sweep, hygiene sweep, and an `applyTo`-scoped replay of the repo's own `.github` rulebook citing its real rule IDs (Copilot / bugbot parity). SHA-bound receipt pasted into the PR body; 🔴 ⇒ no PR |
+| `refinement` | Pre-planning Definition-of-Ready gate behind `/prp-orchestrate`: grooming panel (product-owner + project-manager + lead-engineer + QA lens) → a spec of prioritized, independently testable stories + `FR-###` + measurable `SC-###` + scenarios + DoD-from-FRs, zero open assumptions, closed by a bounded 5-question pickable clarify loop and a scored requirements checklist; NOT READY ⇒ STOP |
+| `constitution` | The project's versioned architectural non-negotiables + the three Phase -1 gates (Simplicity / Anti-Abstraction / Integration-First) + the Complexity Tracking table. `draft` advises, `ratified` blocks fan-out/merge/PR, absent is a silent no-op. Never amended mid-run to pass a gate |
+| `spec-analyze` | Read-only cross-artifact gate (Phase 0.5) run in a fresh context **before any worktree exists**: coverage matrix, requirements with zero tasks, tasks with no requirement (scope creep), ambiguity, terminology drift, two lanes claiming one file, idle lanes, missing contracts. CRITICAL ⇒ no fan-out; findings route to the owning phase, max 3 cycles |
+| `mediator` | Coordinator + adversarial judge + serial merge-gate behind `/prp-orchestrate`: slice/lane decomposition, contract freeze, derived-disjoint territory allocation, per-round rules **+ constitution** verdict, 🔴-blocks-merge, worktree-per-specialist, demoable checkpoints, capability fallback, integration gate, convergence |
+| `pre-pr-gate` | Mandatory pre-PR gate on the **integrated** branch: CI-parity install/typecheck/build/full-test, dangling+unused-import sweep, hygiene sweep, an `applyTo`-scoped replay of the repo's own `.github` rulebook citing its real rule IDs (Copilot / bugbot parity), and an L9 constitution + frozen-contract check. SHA-bound receipt pasted into the PR body; 🔴 ⇒ no PR |
+| `spec-converge` | Append-only reconciliation (Phase 5.75) of the gated branch against the spec: classifies every gap `missing / partial / contradicts / unrequested`, appends the remaining work as gated tasks, leaves `tasks.md` byte-for-byte unchanged when converged, and surfaces unrequested code with evidence rather than deleting it |
 | `drift-guard` | Anchor every decision to the AC — mechanical pre-scan + 8 drift questions, at every gate |
 | `loop-contract` | Define/validate a Loop Contract (executable gate, budget, blast-radius, stop rules); refuse without a binary gate |
 | `session-memory` | Persist/restore findings, decisions, failures to the vault (BM25); write-before-stop / read-at-start gates; Loop Ledger |
-| `worktree-lifecycle` | ENTER a fresh worktree off the detected base for an implementation run; EXIT tears it down on user satisfaction (save-before-delete, confirm-before-remove); capability-gated with an in-place serial fallback |
+| `worktree-lifecycle` | ENTER a fresh worktree off the detected base for an implementation run; EXIT tears it down on user satisfaction (save-before-delete, confirm-before-remove); capability-gated with an in-place serial fallback. Owns the **never-implement-on-`main`/`master`** rule: work happens on a dedicated feature branch forked from the up-to-date base, asserted mechanically **after** ENTER (the serial fallback drops isolation, never the branch), per repo, with no diff-size exemption |
 | `codebase-search` | Serena LSP structural search with session-memory cache-aside |
 | `context7-research` | Fetch version-specific library docs before writing any external API call |
 | `web-search-hook` | Check the local web cache before any WebSearch to avoid redundant cost |
