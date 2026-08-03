@@ -656,7 +656,7 @@ Optionally invoke the existing `Skill(codebase-intelligence:skillify)` on the pl
 
 ## Phase 6: OUTPUT - Report to User
 
-Report: plan path, branch, ticket, validation table (type-check/lint/tests/build/AC coverage — all ✅), intelligence counts (Memory sessions/saves/hits, Context7 verifications, KB patterns, drift checks/removals), artifact paths (report, archived plan, session vault path), and next steps (review report → `/prp-pr` → if QA rejects: `/codebase-intelligence:prp-plan "fix {TICKET} QA failures"`).
+Report: plan path, branch, ticket, validation table (type-check/lint/tests/build/AC coverage — all ✅), intelligence counts (Memory sessions/saves/hits, Context7 verifications, KB patterns, drift checks/removals), artifact paths (report, archived plan, session vault path), and next steps (review report → `/codebase-intelligence:ship` to open the PR → after it merges, `/codebase-intelligence:prp-checkup` finishes the cleanup → if QA rejects: `/codebase-intelligence:prp-plan "fix {TICKET} QA failures"`).
 
 ---
 
@@ -682,6 +682,42 @@ EXIT removes only the worktree checkout — never the branch or the PR.
 - [ ] Uncommitted/unpushed guard passed (or STOP reported)
 - [ ] User confirmed removal (or worktree kept on "no")
 - [ ] Worktree removed (or serial-fallback "nothing to remove" stated); branch/PR untouched
+
+---
+
+## Phase 8: FINISH - The post-merge checklist (after the PR merges, not before)
+
+Phase 7 runs at user satisfaction, which is **before the PR merges** — that is why it leaves the
+branch and the PR alone. Something still has to close them afterwards, and until this phase existed
+nothing did: the branch, its remote copy, any surviving worktree, and a session note whose last words
+are "resume here" all outlived the merge, one set per ticket.
+
+Follow skill: `codebase-intelligence:post-merge-cleanup`. It owns the safety predicates; do not
+re-derive them here.
+
+**Which branch of this phase runs depends on the PR's state, checked — never assumed:**
+
+```bash
+gh pr view --json state,mergedAt,headRefName,headRefOid --jq '.state'
+```
+
+- **MERGED** → run the checklist now: remove the worktree, delete the branch locally and on the
+  remote (one confirmation, because the remote deletion is outward-facing), then
+  `Skill(codebase-intelligence:session-memory)` → **SESSION CLOSE** with the conclusion, the PR URL,
+  and what was cleaned up.
+- **OPEN** (the normal case at the end of a run) → **do not clean anything.** Say so in one line:
+  the PR is open, cleanup is deferred, and `/codebase-intelligence:prp-checkup` will finish it once it
+  merges. Leaving it pending is the correct outcome, not an incomplete one.
+- **CLOSED, not merged** → report only. That branch holds work that landed nowhere; deleting it is a
+  decision for the user, per item.
+
+**PHASE_8_CHECKPOINT:**
+- [ ] PR state read from GitHub (`gh`), never inferred from `git branch --merged` — a squash merge
+      leaves the branch looking unmerged to git
+- [ ] On MERGED: P1–P4 predicates passed before any deletion (nothing local-only destroyed)
+- [ ] On MERGED: session closed with a Conclusion and a `Carried forward` line — any unresolved Open
+      Failure named and rehomed, never dropped because the PR merged
+- [ ] On OPEN: nothing deleted, deferral stated once
 
 ---
 

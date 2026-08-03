@@ -10,9 +10,10 @@ description: >
   2-5 specialists each in their OWN git worktree (no two ever touch the same code), judging every diff
   each round against the constitution + the repo's rule sources, gating merges on a 🔴 verdict,
   merging serially, gating the integrated branch before any PR, and reconciling the result against the
-  spec. No mandatory Y/N gates — stops for a human ONLY on a requirement fork or a red blast-radius
+  spec. Can ship the result as a GitHub stacked-PR chain — one PR per slice — with --stack, or by
+  accepting the one-time offer made after decomposition. No mandatory Y/N gates — stops for a human ONLY on a requirement fork or a red blast-radius
   action (auth/payments/deploy/db-migration).
-argument-hint: <goal | JIRA-TICKET | path/to/prd.md> [--jira-project <CODE>] [--preset <name>] [--plan <path>] [--spec <path>] [--base <branch>] [--groom-autonomous] [--no-repo-specs]
+argument-hint: <goal | JIRA-TICKET | path/to/prd.md> [--jira-project <CODE>] [--preset <name>] [--plan <path>] [--spec <path>] [--base <branch>] [--stack | --no-stack] [--groom-autonomous] [--no-repo-specs]
 ---
 
 # /prp-orchestrate — spec-driven, mediator-judged agent teams
@@ -58,6 +59,9 @@ R. **Refine (Definition-of-Ready gate)** — convene the grooming panel via `Ski
    territory map **derived from the tasks' own `files:`**.
 1.5 **Freeze the contracts** — publish the cross-lane interface on the base branch with **failing**
    contract tests before any worktree forks. See "Phase 1.5".
+1.9 **Decide the shipping shape** — one PR for the run, or a **GitHub stacked PR per slice**. Opt-in
+   via `--stack`; otherwise offered once when the decomposition produced ≥2 slices. Default is the
+   single PR. See "Phase 1.9".
 2. **Activate** — one git **worktree** per active specialist off the slice's base, each on its **own
    new feature branch**; assert territories are pairwise-disjoint (AC-4) — abort if they intersect —
    and assert no specialist's HEAD is `main`/`master`/the base branch (see "The branch rule").
@@ -75,7 +79,13 @@ R. **Refine (Definition-of-Ready gate)** — convene the grooming panel via `Ski
    constitution + frozen-contract check. 🔴 ⇒ **no PR**. See "Phase 5.5".
 5.75 **Converge** — `Skill(spec-converge)` reconciles the gated branch against the spec and appends
    whatever is `missing | partial | contradicts | unrequested`. See "Phase 5.75".
+5.9 **Submit the stack** — only when Phase 1.9 enabled stacking: adopt the slice branches with
+   `gh stack init` / `push` / `submit`, then verify the on-GitHub topology with `gh stack view --json`.
+   Skipped entirely otherwise. See "Phase 5.9".
 6. **Shutdown** — clean handshake, specialists save work as files, `session-memory` SESSION END.
+7. **Finish (post-merge)** — once the PR(s) actually merge: worktrees removed, branches deleted local
+   + remote, session closed with a conclusion. Deferred to `/prp-checkup` when the PRs are still open
+   at shutdown, which is the normal case. See "Phase 7".
 
 ## Slices and lanes (the shape of the work)
 
@@ -244,6 +254,31 @@ Before any worktree forks for a slice:
    what breaks the integrated branch.
 4. A contract with **no consumer** is speculative: drop it.
 
+## Phase 1.9 — Stacked PRs: one PR per slice, or one PR for the run
+
+A slice is already what GitHub defines a **stack layer** as: merged, gated, independently testable, in
+priority order. Shipping N of them as a single PR throws away the increment boundary the decomposition
+just paid for. Shipping them as a stack keeps it — the bottom PR targets the trunk, each next PR
+targets the branch below it, and reviewers get one focused diff per layer while the layers above are
+still being written. GitHub's own docs give this as the motivating case for AI-generated changes:
+each task maps to one PR rather than combining unrelated changes.
+
+**It is opt-in, sized by the implementation, and decided once — here, after slice count is known and
+before any branch is named.**
+
+1. `--no-stack` → single PR, no prompt. `--stack` → stack, no prompt.
+2. No flag, and **≥2 slices**, and `gh stack --help` succeeds, and the run is not on a fork → **offer
+   it once** with the layer order it would produce (`AskUserQuestion`). Fewer than 2 slices, no
+   extension, or a fork → single PR, stated once, not prompted.
+3. **Default on no answer / non-interactive / ambiguity: single PR.** The offer never blocks the run.
+4. **Linear only.** `layerOrder` = slice ids in priority order. A slice that depends on two prior
+   slices in a non-chain shape cannot be a stack ("stacks with branching structures … aren't
+   supported") — fall back to a single PR rather than flattening a DAG to fit.
+5. **One stack per repo.** Stacks cannot span repositories; a `fe` + `be` + `core` run produces three
+   independent stacks, the same per-repo shape Phase 5.5 already uses.
+
+Lanes are never layers — a lane is parallel work inside one slice and merges into that slice's branch.
+
 ## Phase 5.5 — Integration gate: the wall between "merged" and "PR opened" (mandatory)
 
 Per-round judging grades each specialist's diff **in isolation**. That is structurally blind to what
@@ -264,7 +299,10 @@ After a slice's last serial merge — and always after the final slice, **before
    **L9** constitution + frozen-contract check.
 3. **Cadence.** Mandatory before any PR; run it at **every checkpoint** that is shipped or reviewed
    separately, and whenever a slice touched a frozen contract. A break found at checkpoint 1 costs one
-   slice to fix; found after checkpoint 4 it costs four.
+   slice to fix; found after checkpoint 4 it costs four. **Under stacking this is unconditional** —
+   every checkpoint is a PR, GitHub enforces required checks and CODEOWNERS against the trunk for
+   *every* layer, so each layer needs its own receipt bound to its own tip. One receipt for the top of
+   the stack says nothing about the layers below it.
 4. **Bot parity is the point of L7.** The PR is reviewed by GitHub Copilot review and Cursor bugbot,
    which read the repo's own `.github/copilot-instructions.md` + `.github/instructions/*`. L7 replays
    exactly those files over the merged diff, `applyTo`-scoped, citing the repo's real rule IDs
@@ -298,6 +336,54 @@ and acceptance scenario against the code and classifies each gap as
 - **`unrequested` code is surfaced, never deleted** — with `file:line` evidence, for the human to
   justify or remove. A red-blast-radius one is a human gate.
 
+## Phase 5.9 — Submit the stack (only when Phase 1.9 enabled it)
+
+Skipped entirely when stacking is off — PR creation then stays exactly where it already was.
+
+1. **Precondition:** every layer holds a passing Phase 5.5 receipt bound to **its own tip**. A missing
+   or stale receipt on any layer blocks the whole stack, because merging is bottom-up.
+2. **Adopt the slice branches** the mediator already created and pushed — do not let the tool invent
+   branches:
+   ```bash
+   gh stack init -b "$TRUNK" "$LAYER0" "$LAYER1" ...   # bottom → top
+   gh stack push
+   gh stack submit
+   ```
+   A layer that already has an open PR is adopted with `gh stack link --base "$TRUNK" <branch|pr> ...`.
+3. **Verify on GitHub, don't assume:** `gh stack view --json` must show position 0 on the trunk and
+   every other layer based on the one below it. A mismatch is a 🔴 — fix with `gh stack modify`, never
+   by opening loose PRs.
+4. **Per-layer PR body:** that layer's own receipt block, plus one line on what the layer is and what
+   it depends on. A body copy-pasted across layers defeats the point of splitting the diffs.
+5. **Never auto-merge a stack.** Merging is bottom-up and `gh pr merge` cannot do it — the legacy merge
+   endpoints can't merge a stack. `gh stack merge` runs only when the human asks.
+6. **A stack closes when fully merged.** Follow-up work starts a new stack; record that in
+   session-memory so a resumed run doesn't try to extend a closed chain.
+
+## Phase 7 — Finish: the post-merge checklist
+
+Shutdown ends with N worktrees removed *for the specialists* and one or more PRs **open**. Nothing in
+the flow has ever closed what comes after the merge — the feature branches, their remote copies, and
+session notes ending in "resume here" survive every run, one set per ticket, until someone notices.
+
+Follow `Skill(codebase-intelligence:post-merge-cleanup)`; it owns the safety predicates.
+
+1. **Read each PR's real state** — `gh pr view --json state,mergedAt,headRefOid`. A squash merge leaves
+   the branch looking unmerged to git, so `git branch --merged` is not the authority here and never
+   decides a deletion.
+2. **Merged** → remove the worktree, delete the branch locally and on the remote (one confirmation for
+   the batch — remote deletion is outward-facing), then `session-memory` **SESSION CLOSE**: what
+   shipped, the PR URL, what was cleaned, and a `Carried forward` line for any Open Failure that
+   outlives the ticket. An unresolved failure does not disappear because the PR merged.
+3. **Open** (the normal case at shutdown) → clean nothing. State once that cleanup is pending and that
+   `/codebase-intelligence:prp-checkup` will finish it. A pending cleanup is a correct outcome.
+4. **Stacked runs** — a layer's branch is **not** deleted while any open PR still targets it, even if
+   that layer merged. Bottom-up merging means the layer above would lose its base. The guard is
+   mechanical (`post-merge-cleanup` P3), and it usually resolves itself once GitHub retargets the
+   stack.
+5. **Multi-repo runs** — the checklist is per repo, exactly like Phase 5.5's gate. Three repos with
+   diffs means three sweeps; one clean repo says nothing about the other two.
+
 ## Step 1 — Capability preflight (U-1 / U-2)
 
 Detect the agent-teams runtime and choose a mode:
@@ -315,10 +401,15 @@ Fallback table (a fallback is never a failure — every AC still holds serially)
 |---|---|---|
 | `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` + `SendMessage` | parallel: worktree-per-specialist fan-out inside each slice | serial: one specialist worktree at a time, single writer; slices still checkpoint in priority order |
 | Model tiers | planner/generator/evaluator in separate contexts | single-tier: all roles on one model (no-op) |
+| `gh` + `gh-stack` extension (`gh stack --help`) | Phase 1.9 may offer stacked PRs | single PR for the run, as before — stated once, never prompted (fix: `gh extension install github/gh-stack`) |
 
 ## Step 2 — Interaction policy (AC-1)
 
 - **No Y/N gates.** Run goal → done without per-step approval prompts.
+- **The Phase 1.9 stack offer is not a Y/N gate either** — it is asked at most once, only when the
+  decomposition produced ≥2 slices and the tooling supports it, and **no answer resolves to the safe
+  default (single PR)** rather than blocking. It is a shipping-shape choice the user asked to size
+  against the implementation; `--stack` / `--no-stack` skip it entirely.
 - **The clarify loop in Step R is not a Y/N gate** — it is bounded (≤5), each question is a pick, and
   it happens once, before anything is built. That is the cheapest interaction in the flow and it is
   the one that prevents building the wrong thing.
@@ -341,15 +432,16 @@ Fallback table (a fallback is never a failure — every AC still holds serially)
 - `--base <branch>` overrides the auto-detected base branch every worktree forks from.
 - `--plan <path>` / `--spec <path>` reuse existing artifacts and skip the phase that produces them
   (idempotent re-runs).
+- `--stack` / `--no-stack` force the Phase 1.9 shipping shape and suppress its offer.
 
 ## Step 4 — Auto-invoked skills (AC-5)
 
 Inside the flow — no manual calls required — the flow auto-invokes `refinement` (Step R),
 `constitution` (read), `spec-analyze` (Phase 0.5), `drift-guard` (per-round judging), `ask-kb`
 (pattern decisions), `context7-research` (any external API a specialist introduces),
-`worktree-lifecycle` (ENTER/EXIT per specialist), `pre-pr-gate` (Phase 5.5) and `spec-converge`
-(Phase 5.75). Three of these can veto: `spec-analyze` vetoes fan-out, `pre-pr-gate` vetoes the PR,
-`spec-converge` vetoes shutdown.
+`worktree-lifecycle` (ENTER/EXIT per specialist), `pre-pr-gate` (Phase 5.5), `spec-converge`
+(Phase 5.75) and `post-merge-cleanup` (Phase 7, only once a PR has actually merged). Three of these
+can veto: `spec-analyze` vetoes fan-out, `pre-pr-gate` vetoes the PR, `spec-converge` vetoes shutdown.
 
 **Progress tracking — `session-memory` read/write throughout (not just at end):** the orchestration
 layer **reads** prior session-memory at the start (restore last-state + re-read documented pitfalls so
@@ -377,3 +469,10 @@ user at their `settings.json` allow-list if a specialist would otherwise block.
 - Never opens a PR on a 🔴 integration gate, and never weakens a gate, glob, or lint severity to clear
   one.
 - Never deletes `unrequested` code found at convergence — it reports it with evidence.
+- Never deletes a branch, a remote branch, or a worktree before its PR is **merged on GitHub**, and
+  never deletes the branch of a closed-unmerged PR as routine cleanup. Phase 7 defers to
+  `/prp-checkup` rather than guessing.
+- Does not stack by default, does not install the `gh-stack` extension, and does not merge a stack —
+  `gh stack merge` is bottom-up and human-initiated. It also does not edit the target repo's workflows
+  to deduplicate per-layer CI (`github.event.pull_request.stack` is reported as an option, never
+  applied), and never flattens a non-linear slice dependency to make a stack possible.

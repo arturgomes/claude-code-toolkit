@@ -104,6 +104,20 @@
           "priority": { "type": "string", "description": "P1, P2, … — the order slices run in." },
           "independentTest": { "type": "string", "description": "How this slice is verified ALONE. It is the checkpoint criterion; a slice whose Independent Test fails is not a checkpoint whatever its unit gates say." },
           "status": { "type": "string", "enum": ["planned", "active", "merged", "checkpointed", "blocked"] },
+          "stackLayer": {
+            "type": "object",
+            "description": "Present only when stack.enabled. This slice's layer in the GitHub stack: its own named branch, its PR, and the layer below it. Layer order MUST equal slice priority order — GitHub stacks are linear and merge bottom-up.",
+            "additionalProperties": false,
+            "required": ["branch", "position"],
+            "properties": {
+              "branch": { "type": "string", "description": "Named, pushed branch holding this slice's merged lanes, e.g. 'stack/<slug>/s1-<story-slug>'. Not a throwaway sha on a shared integration branch — the stack layer IS this branch." },
+              "position": { "type": "integer", "minimum": 0, "description": "0 = bottom layer (targets trunk). Each subsequent layer targets the branch of position-1." },
+              "baseBranch": { "type": "string", "description": "What this layer's PR targets: the trunk for position 0, otherwise the position-1 layer's branch." },
+              "prNumber": { "type": "integer", "description": "PR number created by 'gh stack submit'. Absent until submission." },
+              "prUrl": { "type": "string" },
+              "gateReceiptSha": { "type": "string", "description": "pre-pr-gate receipt bound to this layer's tip. Every layer carries its own receipt — branch protection and required checks are enforced per layer, so one receipt for the whole stack is not sufficient." }
+            }
+          },
           "specialists": { "$ref": "#/properties/specialists" },
           "rounds": { "$ref": "#/properties/rounds" },
           "mergeLog": { "$ref": "#/properties/mergeLog" },
@@ -300,6 +314,23 @@
     "territoryDisjoint": {
       "type": "boolean",
       "description": "AC-4 invariant assertion: true iff every pair of active specialists' territory globs is disjoint. The mediator MUST abort allocation (Phase B) if this is false."
+    },
+    "stack": {
+      "type": "object",
+      "description": "Phase A3 — whether this run ships as a GitHub stacked-PR chain (one PR per slice) instead of one PR for the whole run. Opt-in: --stack, or the user accepting the post-decomposition offer. Absent or enabled=false ⇒ the existing single-PR behaviour, unchanged.",
+      "additionalProperties": false,
+      "required": ["enabled"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "decidedBy": { "type": "string", "enum": ["flag", "user-offer", "declined", "unavailable"], "description": "'unavailable' = gh or the gh-stack extension is missing, or the run is on a fork; the flow falls back to a single PR and says so." },
+        "extensionAvailable": { "type": "boolean", "description": "Result of 'gh stack --help'. Absent extension is a fallback trigger, never a hard failure." },
+        "repo": { "type": "string", "description": "Repo this stack belongs to. Stacks cannot span repositories — a multi-repo run produces one independent stack per repo, and stacks[] is recorded per repo." },
+        "trunk": { "type": "string", "description": "Branch the bottom layer targets — the detected base, or --base." },
+        "branchPrefix": { "type": "string", "description": "e.g. 'stack/<slug>/'. Every layer branch lives under it." },
+        "layerOrder": { "type": "array", "items": { "type": "string" }, "description": "Slice ids bottom-to-top. MUST be linear and MUST match slice priority order; a non-linear (DAG) slice dependency cannot be represented as a stack and forces enabled=false." },
+        "submitted": { "type": "boolean", "description": "True once 'gh stack submit' has created/updated every layer's PR." },
+        "verifiedBy": { "type": "string", "description": "Verbatim 'gh stack view --json' output (or its path) confirming the on-GitHub topology matches layerOrder. Submission is not complete until this agrees." }
+      }
     },
     "humanGates": {
       "type": "array",

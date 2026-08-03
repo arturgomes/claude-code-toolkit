@@ -215,6 +215,11 @@ Run EXIT **only** when the user explicitly signals satisfaction ("satisfied", "d
    - **serial fallback** → **nothing to remove.** There is no separate checkout; the feature branch
      remains (it is the PR branch). State this explicitly and skip removal.
 6. **Never** delete the branch or the PR as part of EXIT — only the worktree checkout is removed.
+   EXIT runs at user satisfaction, which is **before the PR merges**; the branch is still the PR's head
+   and deleting it would close the PR out from under the reviewers. What closes the branch, its remote
+   copy, and the session note is `Skill(codebase-intelligence:post-merge-cleanup)`, run *after* GitHub
+   reports the PR merged — in bulk by `/prp-checkup`, or as the finish checklist of the run that
+   shipped it. EXIT owns the pre-merge half of the lifecycle; that skill owns the post-merge half.
 7. **Report**: session saved (path), PR URL, and worktree removed / branch retained.
 
 ### EXIT invariant (self-check)
@@ -237,6 +242,9 @@ echo "order check: SESSION END written? [yes] → confirm? [yes] → then remove
   not for a one-line change, not because the checkout was already sitting there.
 - No reuse of a branch or worktree belonging to a different task.
 - No new tools, MCP servers, or dependencies; no rewrite of `ship` or `session-memory` internals.
+- **No post-merge cleanup** — no branch deletion (local or remote), no session closure. That half of
+  the lifecycle is `post-merge-cleanup` / `/prp-checkup`, and it is gated on GitHub reporting the PR
+  merged.
 
 ## Dependencies
 

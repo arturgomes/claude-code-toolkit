@@ -48,12 +48,14 @@ need the other:
 | **Phase 0.5** | **Phase 0.5** | `spec-analyze` — the artifact-chain gate |
 | Phase 1 | Phase A | decompose into slices + lanes |
 | **Phase 1.5** | **Phase A2** | contract freeze |
+| **Phase 1.9** | **Phase A3** | stacked-PR decision (opt-in) |
 | Phase 2 | Phase B | allocate worktrees |
 | Phase 3 | Phase C | round loop (judge) |
 | Phase 4 | Phase D | verify |
 | Phase 5 | Phase E | serial merge → checkpoint |
 | **Phase 5.5** | **Phase E2** | `pre-pr-gate` integration gate |
 | **Phase 5.75** | **Phase E3** | `spec-converge` |
+| **Phase 5.9** | **Phase E4** | stack submission (only when stacking) |
 | Phase 6 | Phase F | shutdown |
 
 ## The two axes: slices (when) and lanes (who)
@@ -73,6 +75,11 @@ is a working feature rather than three-fifths of one.
 Territories are disjoint **within a slice**. Two different slices may touch the same file — they are
 separated in time, not in space, and the checkpoint between them is what makes that safe.
 
+A slice is therefore already the unit a **GitHub stacked PR** layer is defined as — merged, gated, and
+independently testable on its own. Phase A3 decides whether to ship it that way. Lanes are never
+layers: a lane is parallel-in-space and merges into its slice's branch, and GitHub stacks are strictly
+linear.
+
 ---
 
 ## State: `orchestration-state.json` (single writer = the mediator)
@@ -82,8 +89,8 @@ structured JSON (KB: Harness Patterns F03). Schema: `references/orchestration-st
 Written to `<repo>/.claude/orchestration-state.json`. Only the mediator writes it; specialists read it.
 
 Top-level: `capability` · `analyze` (verdict + findings + cycles) · `contracts[]` (the freeze) ·
-`slices[]` (id, story, priority, status, `specialists[]`, `rounds[]`, `mergeLog[]`, `checkpoint`) ·
-`gateReceipts[]` · `convergence` · `humanGates[]`.
+`slices[]` (id, story, priority, status, `specialists[]`, `rounds[]`, `mergeLog[]`, `checkpoint`,
+`stackLayer`) · `gateReceipts[]` · `convergence` · `stack` · `humanGates[]`.
 
 ## Progress log: session-memory (read + write, throughout — the mediator is the single writer)
 
@@ -124,6 +131,14 @@ Detect the agent-teams runtime and pick a mode:
 |---|---|---|
 | `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` + `SendMessage` | `capability.mode = "parallel"` — worktree-per-specialist fan-out inside each slice | `capability.mode = "serial"` — one specialist worktree at a time, single writer, no parallelism |
 | Model tiers (routing) | separate contexts for planner/generator/evaluator | single-tier: all roles on one model (no-op) |
+| `gh` + the `gh-stack` extension (`gh stack --help`) | stacked-PR shipping is *offerable* in Phase A3 | `stack.decidedBy = "unavailable"` — one PR for the whole run, as today; say so once, do not prompt |
+
+Probe the stack capability with the other two — it costs one command and it decides whether Phase A3
+has anything to offer:
+```bash
+gh stack --help >/dev/null 2>&1 && echo "gh-stack available" \
+  || echo "no gh-stack — single-PR mode (fix: gh extension install github/gh-stack)"
+```
 
 The fallback is **not** a failure — every AC still holds serially, and slices still checkpoint in
 priority order; only wall-clock parallelism is lost.
@@ -211,6 +226,42 @@ Before creating worktrees for a slice:
    contract inside its own worktree is a **🔴** in Phase C — that is exactly the silent divergence
    that breaks the integrated branch.
 5. A contract with **no consumer** is a speculative interface: drop it (G-SIMPLICITY).
+
+## Phase A3 — Stacked-PR decision (opt-in; decided once, before any branch is named)
+
+Slices are already the thing a GitHub stack layer is: *"the first, or bottom, pull request targets the
+stack's trunk"* and each subsequent one targets the branch below it, merged bottom-up. Shipping N
+slices as one PR discards the increment boundary the decomposition just paid for; shipping them as a
+stack preserves it — each layer is reviewed against its own focused diff while the ones above it are
+still being written.
+
+This is a **shipping-shape** choice, not an architectural one, so it is decided here — after slice
+count is known, before any branch is named — and never re-decided mid-run.
+
+1. **Resolve the decision, in order:**
+   - `--no-stack` → `stack.enabled = false`, `decidedBy: "declined"`. No prompt.
+   - `--stack` → `enabled = true`, `decidedBy: "flag"`.
+   - the capability probe failed, or the run is on a **fork** → `enabled = false`,
+     `decidedBy: "unavailable"`. Say it once; do not prompt for something that cannot work.
+   - fewer than **2** slices → `enabled = false`, `decidedBy: "declined"`. A one-layer stack is a PR
+     with ceremony. No prompt.
+   - otherwise → **offer it to the user** (see below).
+2. **The offer** (the sanctioned exception to the no-Y/N-gate policy — the user asked for this
+   decision explicitly, and it is sized by the implementation): present the slice list with the layer
+   order it would produce and ask once, via `AskUserQuestion`. **Default on no answer, a
+   non-interactive run, or anything ambiguous: `enabled = false`** — the existing single-PR behaviour.
+   The offer never blocks: an unanswered offer resolves to the safe default and the run continues.
+3. **Assert linearity before enabling.** `layerOrder` is the slice ids in priority order. If any slice
+   depends on two prior slices in a shape that is not a chain, the stack cannot represent it —
+   *"stacks with branching structures … aren't supported"* — so set `enabled = false` with that reason
+   recorded. Do not flatten a DAG into a chain to make stacking possible.
+4. **One stack per repo.** Stacks cannot span repositories. A run touching `fe` + `be` + `core`
+   produces three independent stacks, one per repo, each with its own trunk and `layerOrder` — the
+   same per-repo shape Phase E2 already uses.
+5. **Record `stack` in the state file** before Phase B. Every later phase reads it; nothing re-decides
+   it.
+
+When `enabled = false`, every phase below behaves exactly as it did before this section existed.
 
 ## Phase B — Allocate (disjoint territory + worktrees, per slice)
 
@@ -305,6 +356,27 @@ slice is `verdict-pass` or the slice's criteria are met (or a hard stop / human 
    true }`. A checkpoint means exactly this: *if the run stopped here, what is on the branch works and
    is worth having.* Then start the next slice — the next slice's worktrees fork from **this** sha.
 
+### Branch topology when `stack.enabled`
+
+The merge order and the merge gate are unchanged. What changes is *where the merged slice lands*: a
+named, pushed branch per slice instead of successive shas on one shared integration branch.
+
+```bash
+# position 0 — the bottom layer targets the trunk
+git switch -c "${PREFIX}s0-foundational" "origin/$TRUNK"
+# position N — each layer forks from the layer below it, never from the trunk
+git switch -c "${PREFIX}s1-<story-slug>" "${PREFIX}s0-foundational"
+```
+
+- The slice's lanes merge serially into **that slice's branch**; its tip is the checkpoint sha, and it
+  is what the next slice forks from. That is the same sequencing as before, just named and pushed.
+- Record `slices[].stackLayer` — `branch`, `position`, `baseBranch` (the trunk at position 0, else the
+  position-1 branch).
+- **Push each layer as its checkpoint is declared**, and never force-push a layer another layer is
+  stacked on: rewriting a lower layer invalidates every layer above it. Restacking is
+  `gh stack rebase` / `gh stack sync`, never a hand-rolled cascade.
+- A checkpoint whose Independent Test fails is not a layer. Do not push it and do not stack on it.
+
 ---
 
 ## Phase E2 — Integration gate (mandatory; the branch as CI and the bots will see it)
@@ -327,6 +399,12 @@ run `Skill(codebase-intelligence:pre-pr-gate)` on the integration branch:
 3. **Cadence.** Mandatory before any PR. Run it at **every checkpoint** when checkpoints are shipped
    or reviewed separately, and whenever a slice touched a frozen contract — an integration break found
    at checkpoint 1 costs one slice to fix; found after checkpoint 4 it costs four.
+   **When `stack.enabled` this stops being conditional: every checkpoint IS shipped separately**, so
+   the gate runs once per layer, on that layer's tip, and its receipt is recorded in
+   `slices[].stackLayer.gateReceiptSha`. GitHub enforces *"required reviews, required status checks,
+   and CODEOWNERS … against the stack's base branch for every pull request in the stack"* — every
+   layer is judged on its own, so one receipt for the top of the stack proves nothing about the
+   layers below it. A layer without a passing receipt bound to its own tip is not submittable.
 4. **Verdict routing:**
    - ✅ → write the receipt path + block into `gateReceipts[]`, continue.
    - 🔴 → **no PR.** Map every blocker back to the owning territory, hand it to that specialist as
@@ -365,6 +443,48 @@ drift-guard Q8 (incident repeat) can catch it next run.
 
 ---
 
+## Phase E4 — Submit the stack (only when `stack.enabled`; skipped entirely otherwise)
+
+Runs after E3 converges and after **every** layer holds a passing E2 receipt bound to its own tip. If
+`stack.enabled` is false this phase does not exist and PR creation stays where it already was.
+
+1. **Precondition, asserted not assumed.** Every entry in `layerOrder` has
+   `stackLayer.gateReceiptSha == that branch's tip`. A missing or stale receipt on **any** layer blocks
+   submission of the **whole** stack — not just that layer. Bottom-up merging means a bad lower layer
+   is a bad everything-above-it.
+2. **Adopt the existing branches into a stack** (they already exist — the mediator created them in
+   Phase E; do not let the tool create branches):
+   ```bash
+   gh stack init -b "$TRUNK" "${PREFIX}s0-foundational" "${PREFIX}s1-<slug>" ...   # bottom → top
+   gh stack push
+   gh stack submit
+   ```
+   If a layer already has an open PR, adopt instead of recreating:
+   `gh stack link --base "$TRUNK" <branch-or-pr> <branch-or-pr> ...`.
+3. **Verify the topology on GitHub before declaring success** — the local order is an intention, the
+   remote order is the fact:
+   ```bash
+   gh stack view --json
+   ```
+   Store it (or its path) in `stack.verifiedBy` and assert each layer's base is the layer below it,
+   with position 0 on the trunk. A mismatch is a 🔴: fix with `gh stack modify`, never by opening
+   loose PRs and hoping.
+4. **Each layer's PR body carries its own receipt block** — that layer's verbatim commands, exit
+   codes, and the repo's own rule IDs — plus a one-line statement of what the layer is and what it
+   depends on. A shared body pasted across layers defeats the reason the diffs were split.
+5. **Merging is not this phase's job.** Bottom-up only, and `gh pr merge` cannot merge a stack —
+   *"the legacy pull request merge endpoints can't merge a stack"*. Use `gh stack merge` when the
+   human asks for it. The mediator never auto-merges a stack.
+6. **The stack is finite.** Once every PR merges, that stack is closed; follow-up work is a new stack,
+   not an extension of this one. Record that in the session-memory Last-Session State so a resumed run
+   does not try to stack onto a closed chain.
+7. **Cost note, stated once:** CI triggers on every layer. Where the target repo runs CI only on merge
+   to trunk this is free; where it runs per-PR it multiplies by layer count. GitHub exposes
+   `github.event.pull_request.stack` for skipping redundant jobs — **report it, never implement it**:
+   this flow does not edit the target repo's workflows.
+
+---
+
 ## Phase F — Shutdown (clean handshake)
 
 1. Issue a shutdown handshake to each specialist; each **confirms and saves** its work as files, not
@@ -374,6 +494,12 @@ drift-guard Q8 (incident repeat) can catch it next run.
    Lessons, Last-Session State. Append proven contract gates to `## Verified Invariants`.
 3. Remove specialist worktrees only after their work is merged or explicitly saved (mirror
    `worktree-lifecycle` EXIT: save-before-delete, confirm-before-remove).
+4. **Hand off the post-merge cleanup — do not perform it.** At shutdown the PR(s) are open, so the
+   feature branches, their remote copies, and the session note's open status all still belong to
+   in-flight work. Record the pending cleanup in the run's Last-Session State (branch names, worktree
+   paths, PR URLs) and state once that `/prp-checkup` finishes it after the merge. The only case the
+   mediator cleans up itself is a PR that GitHub already reports as `MERGED`, and then only via
+   `Skill(codebase-intelligence:post-merge-cleanup)` with its predicates intact.
 
 ---
 
@@ -396,6 +522,10 @@ drift-guard Q8 (incident repeat) can catch it next run.
       SHA-bound to that HEAD — before any PR exists. No diff-size exemption; no gate relaxed to pass.
 - [ ] Phase E3 convergence reached (or its survivors surfaced to the human); `unrequested` code
       reported, never deleted.
+- [ ] `stack` decided exactly once in Phase A3 and never re-decided; absent decision ⇒ single PR.
+- [ ] When stacking: `layerOrder` linear and equal to slice priority order; one stack per repo; every
+      layer carries its own E2 receipt bound to its own tip; `gh stack view --json` agrees with
+      `layerOrder` before submission is declared done. No layer force-pushed under another.
 - [ ] State persisted as JSON; mediator is sole writer.
 - [ ] session-memory READ at start + WRITTEN per round/checkpoint; mediator is the sole writer.
 - [ ] Human asked ONLY on requirement fork or red blast-radius.
@@ -411,6 +541,9 @@ drift-guard Q8 (incident repeat) can catch it next run.
 - `constitution` — the architectural authority read in Phase 0, C, and E2.
 - `pre-pr-gate` — the Phase E2 integration gate run on the merged HEAD.
 - `spec-converge` — the Phase E3 spec↔code reconciliation.
+- `gh` + the `gh-stack` extension (`gh extension install github/gh-stack`) — **optional**, and only
+  for Phase E4. Absent ⇒ `stack.decidedBy = "unavailable"` and the run ships one PR. Never a hard
+  dependency, never installed by this skill.
 - Auto-invoked skills: `drift-guard`, `ask-kb`, `context7-research`, `session-memory`,
   `worktree-lifecycle`.
 - The 7 role agents in `agents/` + a `presets/*.yaml` binding.

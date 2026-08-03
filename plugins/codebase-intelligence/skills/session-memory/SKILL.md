@@ -3,8 +3,9 @@ name: session-memory
 description: >
   Persist and restore findings, decisions, and QA failures to Obsidian vault with BM25 search.
   Auto-invoked by prp-plan/prp-implement; invoke manually on "save progress", "load context for PROJ-NNN", "resume after QA failure".
-  Provides the Loop Ledger append protocol for prp-loop.
-version: 2.2.0
+  Provides the Loop Ledger append protocol for prp-loop, and the SESSION CLOSE conclusion protocol for
+  post-merge-cleanup / prp-checkup ("close the session", "the PR merged").
+version: 2.3.0
 ---
 
 # session-memory
@@ -254,6 +255,69 @@ cheap lookup layer (one line per session) that points to the right session note 
 
 ---
 
+## SESSION CLOSE — the conclusion note (used by post-merge-cleanup / prp-checkup)
+
+SESSION END is written many times: once per session, each ending in "resume here". **SESSION CLOSE is
+written once, and it is the opposite** — it states that there is nothing to resume, because the work
+merged. Without it every note in `02-Notes/Sessions/` reads as in-flight forever, and a restore months
+later goes looking for a branch and a worktree that no longer exist.
+
+Run it **only** after the work's PR is merged. It is append-only: it never rewrites or deletes prior
+session blocks, and closing is not deleting.
+
+**Step 1 — Append the conclusion block:**
+```
+mcp__ultimate-obsidian__create_or_update_note({
+  filepath: "02-Notes/Sessions/{TICKET}-{SUFFIX}.md",
+  mode: "append",
+  content: `
+## Closed: {ISO-8601 datetime}
+
+### Conclusion
+- Shipped: {what actually landed, one or two lines — the outcome, not the task list}
+- PR: {url} (merged {YYYY-MM-DD})
+- Merge commit: {sha}
+
+### Cleanup performed
+- Worktree: {path removed | none}
+- Branch: {local deleted | kept: reason} / {remote deleted | already gone}
+
+### Carried forward
+- {General Rule or Open Failure that outlives this ticket, with where it went — or "none"}
+`
+})
+```
+
+`### Carried forward` is the load-bearing one. A closed session's `## Open Failures` do not vanish
+because the PR merged — if something is still broken, it must be named here and land in a live note or
+`## General Rules (distilled)`, or it is lost. **A note closed with unresolved Open Failures and an
+empty Carried forward is a protocol violation**, not a tidy note.
+
+**Step 2 — Mark the frontmatter closed:**
+```
+mcp__ultimate-obsidian__manage_frontmatter({
+  filepath: "02-Notes/Sessions/{TICKET}-{SUFFIX}.md",
+  updates: { phase: "closed", closed: "{YYYY-MM-DD}", pr: "{url}" }
+})
+```
+
+**Step 3 — Reindex and upsert the sessions index:**
+```
+mcp__ultimate-obsidian__index_note({ vault_path: "…/02-Notes/Sessions/{TICKET}-{SUFFIX}.md" })
+```
+Then update this session's line in `02-Notes/Sessions/_index.md` **in place** to status `done`. An
+index still claiming `in-progress` for a merged ticket is worse than no index — SESSION START reads
+the index first and will restore a finished session as live work.
+
+**Gates:**
+- Merge is confirmed by GitHub (`gh pr view --json state,mergedAt`), never inferred from git.
+- The pre-write scrub and the write-scope check apply here exactly as they do to every other write.
+- **No note found for the branch is not a failure** — not every branch came from a PRP run. Report
+  `session: none` and continue.
+- A note already carrying `phase: closed` is skipped, not closed twice.
+
+---
+
 ## LOOP LEDGER — append protocol (used by prp-loop)
 
 Optional section. Only present in sessions driven by `prp-loop`; SESSION START/END are
@@ -470,4 +534,4 @@ mcp__ultimate-obsidian__search_sessions({ query: "{ticket} QA failure", limit: 3
 
 ## Dependencies
 
-Vault: `~/Documents/Obsidian-Vault/`. MCP `ultimate-obsidian` provides `create_or_update_note`, `read_note`, `check_exists`, `list_vault`, `index_note`, `search_sessions`.
+Vault: `~/Documents/Obsidian-Vault/`. MCP `ultimate-obsidian` provides `create_or_update_note`, `read_note`, `check_exists`, `list_vault`, `index_note`, `search_sessions`, `manage_frontmatter` (SESSION CLOSE Step 2). SESSION CLOSE also needs `gh` to confirm the merge — never inferred from git.

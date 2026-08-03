@@ -17,6 +17,19 @@ echo "System tools"
 command -v git     >/dev/null 2>&1 && ok "git"     || req "git not found"     "xcode-select --install"
 command -v uv      >/dev/null 2>&1 && ok "uv"      || req "uv not found"      "brew install uv   (or: pip install uv)"
 command -v python3 >/dev/null 2>&1 && ok "python3" || req "python3 not found" "brew install python"
+if command -v gh >/dev/null 2>&1; then
+  if gh auth status >/dev/null 2>&1; then
+    ok "gh (GitHub CLI, authenticated)"
+  else
+    opt "gh present but not authenticated — /prp-checkup cannot read PR merge state" "gh auth login"
+  fi
+  gh stack --help >/dev/null 2>&1 \
+    && ok "gh-stack extension (stacked PRs — /prp-orchestrate --stack)" \
+    || opt "gh-stack extension not installed — /prp-orchestrate ships one PR per run" \
+           "gh extension install github/gh-stack"
+else
+  opt "gh not found — no PR creation, no stacked PRs, no /prp-checkup" "brew install gh && gh auth login"
+fi
 
 echo
 echo "MCP servers"

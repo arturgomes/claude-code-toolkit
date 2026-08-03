@@ -9,7 +9,7 @@ description: >
   no file-scoped rulebook can make. Emits a signed gate receipt; no receipt, no PR. Auto-invoked by prp-orchestrate (Phase G), prp-implement (Phase 4.9), ship (Step 3a), and
   worktree-lifecycle EXIT. Invoke manually on "run the pre-PR gate", "is this PR-ready",
   "check before I open the PR", "will CI pass".
-version: 1.0.0
+version: 1.1.0
 ---
 
 # pre-pr-gate
@@ -41,6 +41,12 @@ exact incident this skill exists to stop.
 | 🔴 **BLOCK** | non-zero exit on a mandatory layer, or a MUST/MUST-NOT rule violation, or an unresolved/unused import | **no PR, no merge.** Fix, re-run the gate from L1. |
 | ⚠️ **NOTE** | SHOULD/SHOULD-NOT violation, or a pre-existing finding outside the diff | recorded in the receipt + PR body; does not block |
 | ✅ **PASS** | layer exited 0 with pasted evidence | merge-eligible |
+
+**One receipt per PR, bound to that PR's own HEAD.** A stacked-PR chain is N pull requests, so it is N
+gate runs — GitHub enforces required checks, required reviews, and CODEOWNERS against the trunk for
+every layer of a stack, not just the bottom one. Gating the top of a stack and inheriting that verdict
+downward is the same mistake as gating one worktree and inheriting it across lanes: a receipt whose
+SHA is not that layer's tip counts as absent.
 
 Two hard rules:
 
