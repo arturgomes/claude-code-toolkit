@@ -468,9 +468,13 @@ mcp__ultimate-obsidian__create_or_update_note({
 ```yaml
 ---
 title: {kebab-case-feature-name}
+type: plan
 created: {YYYY-MM-DD}
+schema_version: 1
 source: Planning session (vault-native)
 project: {project-root-name}
+up: "[[{TICKET}]]"
+implements: "[[{slug}.refinement]]"
 tags:
   - prp
   - {project-root-name}
@@ -478,6 +482,22 @@ tags:
   - {feature-category}
 ---
 ```
+
+**Typed relations (knowledge-graph ontology).** `schema_version: 1` opts the note into
+`02-Notes/.scripts/check-graph-acs.sh` enforcement; `up` and `implements` are the graph edges. Spec:
+`02-Notes/Wiki/knowledge-graph-ontology.md`.
+
+- `up` → the ticket node `03-Systems/tickets/{TICKET}.md`, else the project's subject MOC.
+- `implements` → the refinement contract this plan was planned from (Step R), when there is one.
+- `affects` → `03-Systems/` service / table nodes the plan will change, **only** those you can name from
+  the Files-to-Change list. Do not guess at systems.
+
+**If no target resolves to an existing note, OMIT THE KEY.** Never emit `up: "[[undefined]]"`,
+`up: "[[]]"`, or a link to a note you did not verify exists — a dangling edge is worse than a missing
+one, and the gate fails on it. An absent key is always valid (every relation key is optional by design).
+
+**File placement**: write into `02-Notes/Plans/{YYYY-MM}/` — the month bucket. A note at the `Plans/`
+root fails `check-acs.sh` AC1.
 
 ---
 

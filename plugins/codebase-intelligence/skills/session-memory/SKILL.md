@@ -133,7 +133,21 @@ mcp__ultimate-obsidian__read_note({ filepath: "02-Notes/Sessions/{TICKET}-{SUFFI
 
 **If DOES NOT EXIST** (`exists: false`):
 - Print: `🆕 No prior memory for {TICKET}. Starting fresh.`
-- Create the file:
+- Create the file with the typed-relation frontmatter below.
+
+**Typed relations (knowledge-graph ontology).** `schema_version: 1` opts the note into
+`02-Notes/.scripts/check-graph-acs.sh`; spec at `02-Notes/Wiki/knowledge-graph-ontology.md`.
+`up` → the ticket node `03-Systems/tickets/{TICKET}.md`; `related` → the plan being worked.
+`type: session` matches the ontology's node-type table (the older `session-memory` value is legacy —
+pre-existing notes keep it and stay valid, since every relation key is optional to a reader).
+
+**If a target does not resolve to an existing note, OMIT THE KEY.** Never emit `up: "[[undefined]]"`,
+`up: "[[]]"`, or a link to a note you have not verified — a dangling edge fails the gate, an absent key
+never does. With no ticket (a `GENERAL-*` or project-root-slug session), omit `up` rather than inventing
+a node.
+
+Month-bucketing of `02-Notes/Sessions/` is handled separately by `bucket-by-month.sh`; keep writing to
+the canonical path below so SESSION START can still find the file.
 
 ```
 mcp__ultimate-obsidian__create_or_update_note({
@@ -144,8 +158,11 @@ title: "Session: {TICKET} / {SUFFIX}"
 ticket: {TICKET}
 branch: {BRANCH}
 date: {YYYY-MM-DD}
-type: session-memory
+type: session
+schema_version: 1
 phase: planning
+up: "[[{TICKET}]]"
+related: "[[{plan-name}]]"
 keywords: []
 tags: [#session, #{TICKET}]
 ---

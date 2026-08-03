@@ -207,9 +207,29 @@ session**; a fresh session after real answers gets a fresh budget.
 ## Output
 
 - READY: `specs/<slug>/spec.md` + `checklists/requirements.md` (repo) and
-  `02-Notes/Plans/<slug>.refinement.md` (vault) — stories + FR + SC + scenarios + DoD + closed
+  `02-Notes/Plans/<YYYY-MM>/<slug>.refinement.md` (vault) — stories + FR + SC + scenarios + DoD + closed
   ledger + Clarifications log → consumed by Phase 0 as the authoritative requirement set.
 - NOT READY: the same files with `## Open Questions` and a hard STOP — no planning artifact, no code.
+- **Vault note frontmatter** — carry the typed relations so the contract is a graph node, not an island
+  (spec: `02-Notes/Wiki/knowledge-graph-ontology.md`):
+
+  ```yaml
+  ---
+  title: "<slug> — Refinement Contract"
+  type: refinement
+  created: {YYYY-MM-DD}
+  schema_version: 1
+  project: {project-root-name}
+  status: READY | NOT-READY
+  up: "[[{TICKET}]]"
+  tags: [{project-root-name}, refinement]
+  ---
+  ```
+
+  `schema_version: 1` opts the note into `check-graph-acs.sh`. `up` → the ticket node
+  `03-Systems/tickets/{TICKET}.md`, else the project's subject MOC. **If no target resolves to an existing
+  note, OMIT THE KEY** — never emit `[[undefined]]` or `[[]]`; a dangling edge fails the gate while an
+  absent key is always valid. Write into the `{YYYY-MM}` month bucket or `check-acs.sh` AC1 fails.
 - **session-memory (read + write):** read prior session at the start (a recurring ambiguity may
   already be answered in `## General Rules`); on the verdict, write the DoR outcome and record any
   **recurring ambiguity as a reusable pitfall** in `## General Rules` (e.g. "this domain's 'export'

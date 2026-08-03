@@ -558,9 +558,16 @@ mcp__ultimate-obsidian__create_or_update_note({
 ```yaml
 ---
 title: {plan-name}-report
+type: report
 created: {YYYY-MM-DD}
+schema_version: 1
 source: Implementation session
 project: {project-root-name}
+up: "[[{TICKET}]]"
+implements: "[[{plan-name}]]"
+documents: "[[{TICKET}]]"
+affects:
+  - "[[{system-node}]]"
 tags:
   - prp
   - {project-root-name}
@@ -569,6 +576,21 @@ tags:
 plan: "[[{plan-name}]]"
 ---
 ```
+
+**Typed relations (knowledge-graph ontology).** `schema_version: 1` opts the note into
+`02-Notes/.scripts/check-graph-acs.sh`. Spec: `02-Notes/Wiki/knowledge-graph-ontology.md`.
+
+- `implements` → the plan just implemented (this is the strongest edge a report has; the legacy `plan:`
+  key stays for backwards compatibility).
+- `up` / `documents` → the ticket node `03-Systems/tickets/{TICKET}.md`.
+- `affects` → the `03-Systems/` service / table nodes you **actually changed**, read off the real diff —
+  not the plan's intentions. If a service node does not exist yet, create it from `_templates/system.md`
+  with a canonical `id`, or omit the key.
+
+**If no target resolves to an existing note, OMIT THE KEY.** Never emit `[[undefined]]`, `[[]]`, or a
+link to a note you did not verify exists. Every relation key is optional; a dangling edge fails the gate.
+
+**File placement**: `02-Notes/Reports/{YYYY-MM}/` — the month bucket, or `check-acs.sh` AC1 fails.
 
 Include all standard report sections plus:
 

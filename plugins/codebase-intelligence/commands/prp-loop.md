@@ -495,12 +495,23 @@ mcp__ultimate-obsidian__create_or_update_note({
 
 Report sections:
 
+Write the report into `02-Notes/Reports/{YYYY-MM}/` (the month bucket — a root-level note fails
+`check-acs.sh` AC1). `schema_version: 1` opts it into `check-graph-acs.sh`; `documents` and `implements`
+are its graph edges (spec: `02-Notes/Wiki/knowledge-graph-ontology.md`). `documents` → the ticket node
+`03-Systems/tickets/{TICKET}.md`; `implements` → the plan whose Validation Commands became the gate.
+**If a target does not resolve to an existing note, OMIT THE KEY** — never emit `[[undefined]]` or `[[]]`,
+since a dangling edge fails the gate while an absent key is always valid.
+
 ```markdown
 ---
 title: {slug}-loop-report
+type: report
 created: {YYYY-MM-DD}
+schema_version: 1
 source: Loop session
 project: {project-root-name}
+documents: "[[{TICKET}]]"
+implements: "[[{plan-name}]]"
 tags: [prp, {project-root-name}, report, loop]
 ---
 
