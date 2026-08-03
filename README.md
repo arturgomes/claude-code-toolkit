@@ -88,6 +88,31 @@ Verify:
 
 You should see `codebase-intelligence` listed.
 
+**Setup runs itself, once per version, on every machine.** A bundled `SessionStart` hook
+(`hooks/hooks.json` → `scripts/on-session-start.sh`) compares the plugin's version against a stamp in
+`${CLAUDE_PLUGIN_DATA}` — which survives plugin updates, unlike `${CLAUDE_PLUGIN_ROOT}` — and runs
+`scripts/setup.sh` the first time it sees a given version on that machine. It is **check-only** and
+**silent** unless something required is missing, so there is nothing to remember and nothing to pay
+for on a healthy session.
+
+To act on what it reports, on any machine:
+
+```bash
+# from the plugin directory (the marketplace cache, or a local clone)
+./scripts/setup.sh              # check only — what is missing, and the exact fix
+./scripts/setup.sh --install    # perform the safe, idempotent installs (gh-stack, uv, bookrag)
+```
+
+Installing is opt-in on purpose: a plugin that installs software onto your machine the moment it loads
+is a worse problem than the one it solves. `/codebase-intelligence:doctor` gives the full report at any
+time.
+
+**Contributing?** `./scripts/validate.sh` is the structural contract — frontmatter, JSON, code fences,
+version consistency across `plugin.json` / `marketplace.json` / the plugin README, and dangling
+`Skill(...)` / `/prp-*` references. The same script runs in CI on every push
+(`.github/workflows/validate.yml`), so a check that passes locally passes there too. Run it before
+opening a PR; `--strict` treats warnings as errors.
+
 ### Step 2 — Set up Obsidian vault structure
 
 The plugin stores PRPs and session memory in your Obsidian vault. Create the required directories:

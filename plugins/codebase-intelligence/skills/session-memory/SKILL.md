@@ -3,8 +3,9 @@ name: session-memory
 description: >
   Persist and restore findings, decisions, and QA failures to Obsidian vault with BM25 search.
   Auto-invoked by prp-plan/prp-implement; invoke manually on "save progress", "load context for PROJ-NNN", "resume after QA failure".
-  Provides the Loop Ledger append protocol for prp-loop.
-version: 2.2.0
+  Provides the Loop Ledger append protocol for prp-loop, and the SESSION CLOSE conclusion protocol for
+  post-merge-cleanup / prp-checkup ("close the session", "the PR merged").
+version: 2.3.0
 ---
 
 # session-memory
@@ -132,7 +133,21 @@ mcp__ultimate-obsidian__read_note({ filepath: "02-Notes/Sessions/{TICKET}-{SUFFI
 
 **If DOES NOT EXIST** (`exists: false`):
 - Print: `🆕 No prior memory for {TICKET}. Starting fresh.`
-- Create the file:
+- Create the file with the typed-relation frontmatter below.
+
+**Typed relations (knowledge-graph ontology).** `schema_version: 1` opts the note into
+`02-Notes/.scripts/check-graph-acs.sh`; spec at `02-Notes/Wiki/knowledge-graph-ontology.md`.
+`up` → the ticket node `03-Systems/tickets/{TICKET}.md`; `related` → the plan being worked.
+`type: session` matches the ontology's node-type table (the older `session-memory` value is legacy —
+pre-existing notes keep it and stay valid, since every relation key is optional to a reader).
+
+**If a target does not resolve to an existing note, OMIT THE KEY.** Never emit `up: "[[undefined]]"`,
+`up: "[[]]"`, or a link to a note you have not verified — a dangling edge fails the gate, an absent key
+never does. With no ticket (a `GENERAL-*` or project-root-slug session), omit `up` rather than inventing
+a node.
+
+Month-bucketing of `02-Notes/Sessions/` is handled separately by `bucket-by-month.sh`; keep writing to
+the canonical path below so SESSION START can still find the file.
 
 ```
 mcp__ultimate-obsidian__create_or_update_note({
@@ -143,8 +158,11 @@ title: "Session: {TICKET} / {SUFFIX}"
 ticket: {TICKET}
 branch: {BRANCH}
 date: {YYYY-MM-DD}
-type: session-memory
+type: session
+schema_version: 1
 phase: planning
+up: "[[{TICKET}]]"
+related: "[[{plan-name}]]"
 keywords: []
 tags: [#session, #{TICKET}]
 ---
@@ -251,6 +269,69 @@ mcp__ultimate-obsidian__create_or_update_note({
 **Restore reads the index first:** SESSION START and QA-failure restore MUST read
 `02-Notes/Sessions/_index.md` before opening any individual session file — the index is the
 cheap lookup layer (one line per session) that points to the right session note via wikilink.
+
+---
+
+## SESSION CLOSE — the conclusion note (used by post-merge-cleanup / prp-checkup)
+
+SESSION END is written many times: once per session, each ending in "resume here". **SESSION CLOSE is
+written once, and it is the opposite** — it states that there is nothing to resume, because the work
+merged. Without it every note in `02-Notes/Sessions/` reads as in-flight forever, and a restore months
+later goes looking for a branch and a worktree that no longer exist.
+
+Run it **only** after the work's PR is merged. It is append-only: it never rewrites or deletes prior
+session blocks, and closing is not deleting.
+
+**Step 1 — Append the conclusion block:**
+```
+mcp__ultimate-obsidian__create_or_update_note({
+  filepath: "02-Notes/Sessions/{TICKET}-{SUFFIX}.md",
+  mode: "append",
+  content: `
+## Closed: {ISO-8601 datetime}
+
+### Conclusion
+- Shipped: {what actually landed, one or two lines — the outcome, not the task list}
+- PR: {url} (merged {YYYY-MM-DD})
+- Merge commit: {sha}
+
+### Cleanup performed
+- Worktree: {path removed | none}
+- Branch: {local deleted | kept: reason} / {remote deleted | already gone}
+
+### Carried forward
+- {General Rule or Open Failure that outlives this ticket, with where it went — or "none"}
+`
+})
+```
+
+`### Carried forward` is the load-bearing one. A closed session's `## Open Failures` do not vanish
+because the PR merged — if something is still broken, it must be named here and land in a live note or
+`## General Rules (distilled)`, or it is lost. **A note closed with unresolved Open Failures and an
+empty Carried forward is a protocol violation**, not a tidy note.
+
+**Step 2 — Mark the frontmatter closed:**
+```
+mcp__ultimate-obsidian__manage_frontmatter({
+  filepath: "02-Notes/Sessions/{TICKET}-{SUFFIX}.md",
+  updates: { phase: "closed", closed: "{YYYY-MM-DD}", pr: "{url}" }
+})
+```
+
+**Step 3 — Reindex and upsert the sessions index:**
+```
+mcp__ultimate-obsidian__index_note({ vault_path: "…/02-Notes/Sessions/{TICKET}-{SUFFIX}.md" })
+```
+Then update this session's line in `02-Notes/Sessions/_index.md` **in place** to status `done`. An
+index still claiming `in-progress` for a merged ticket is worse than no index — SESSION START reads
+the index first and will restore a finished session as live work.
+
+**Gates:**
+- Merge is confirmed by GitHub (`gh pr view --json state,mergedAt`), never inferred from git.
+- The pre-write scrub and the write-scope check apply here exactly as they do to every other write.
+- **No note found for the branch is not a failure** — not every branch came from a PRP run. Report
+  `session: none` and continue.
+- A note already carrying `phase: closed` is skipped, not closed twice.
 
 ---
 
@@ -470,4 +551,4 @@ mcp__ultimate-obsidian__search_sessions({ query: "{ticket} QA failure", limit: 3
 
 ## Dependencies
 
-Vault: `~/Documents/Obsidian-Vault/`. MCP `ultimate-obsidian` provides `create_or_update_note`, `read_note`, `check_exists`, `list_vault`, `index_note`, `search_sessions`.
+Vault: `~/Documents/Obsidian-Vault/`. MCP `ultimate-obsidian` provides `create_or_update_note`, `read_note`, `check_exists`, `list_vault`, `index_note`, `search_sessions`, `manage_frontmatter` (SESSION CLOSE Step 2). SESSION CLOSE also needs `gh` to confirm the merge — never inferred from git.

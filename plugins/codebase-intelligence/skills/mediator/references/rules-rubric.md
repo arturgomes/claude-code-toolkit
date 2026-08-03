@@ -26,6 +26,18 @@ order (later sources refine earlier ones; a preset `rule_sources` list overrides
 3. Any path listed in the active preset's `rule_sources` (if present) — lets a repo point at
    non-standard locations.
 4. The active preset's `rule_emphases` for this role (e.g. core-db-specialist ⇒ D-1/D-3 transactions).
+5. **`baseline-js-ts.md` — the `JT-*` floor**, applied to JS/TS diff files. Sources 1-4 are whatever
+   the repo happens to ship; a repo with no rulebook classifies to *nothing*, and a diff can be
+   merge-eligible while floating a promise or swallowing an error. This file closes that hole with
+   rules that hold in any JS/TS codebase — framework-agnostic, org-agnostic, `applyTo`-scoped like the
+   rest.
+
+   **It is a floor, not a ceiling.** The repo's own rule wins on conflict, *including when it is
+   laxer*; baseline severity is never escalated above the repo's. But **silence is not an opt-out** —
+   a repo that says nothing about floating promises still gets `JT-ASYNC-1`, which is the whole point.
+   Disable with preset `baseline_rules: false`, or drop families/rules with `baseline_rules_exclude`;
+   either way, **record the exclusion in the verdict** so a silenced rule is visible rather than
+   merely absent.
 
 **Classify every rule** into one of four buckets — by modal verb **and** by checklist convention
 (Copilot instruction files often use check IDs like `FQ-1` and imperative/▢-style lines rather than
@@ -43,6 +55,9 @@ order (later sources refine earlier ones; a preset `rule_sources` list overrides
 - **Always cite the repo's own rule ID.** These files are the same ones GitHub Copilot review and
   Cursor bugbot read on the PR. Citing `FR-2` / `DB-3` / `CORE-002` (never a paraphrase) makes a
   verdict line match the bot comment it pre-empts, which is what lets a reviewer skip re-deriving it.
+  Baseline findings cite the full `JT-*` id — deliberately distinct, so a reviewer can tell at a
+  glance whether a finding came from *their* rulebook or from the plugin's floor. The two carry
+  different authority and must never be blended into one namespace.
 - Genuinely ambiguous lines default to **SHOULD**, never MUST — do not manufacture a blocking rule the
   repo did not clearly state.
 

@@ -1,7 +1,7 @@
 {
   "name": "codebase-intelligence",
-  "version": "3.14.0",
-  "description": "Standalone PRP workflow (prp-plan / prp-implement / prp-loop) with Serena LSP structural codebase search, cross-session task memory keyed by Jira ticket + branch, live Jira ticket context injection, a personal KB (local FTS5 vault index), prp-loop (a bounded closed-loop runner with contract-mandated stop rules and an independent verifier), and prp-orchestrate: a mediator-judged parallel agent-team layer (7 generic role specialists in isolated git worktrees, per-round .claude/-rules verdicts, serial merge gate), and pre-pr-gate: a mandatory mechanical + bot-parity gate on the integrated branch before any PR opens (CI-parity typecheck/build/test, dangling+unused-import sweep, applyTo-scoped replay of the repo's own .github rulebook citing its real rule IDs). Self-contained — no prp-core required.",
+  "version": "3.18.0",
+  "description": "Standalone PRP workflow (prp-plan / prp-implement / prp-loop) with Serena LSP structural codebase search, cross-session task memory keyed by Jira ticket + branch, live Jira ticket context injection, a personal KB (local FTS5 vault index), prp-loop (a bounded closed-loop runner with contract-mandated stop rules and an independent verifier), and prp-orchestrate: spec-driven, mediator-judged parallel agent teams — a Definition-of-Ready spec (prioritized independently-testable stories, FR/SC, bounded 5-question clarify loop), a fresh-context spec-analyze gate over the whole artifact chain before any worktree exists, cross-lane contracts frozen with failing contract tests before the lanes fork, one demoable checkpoint per user story, per-round constitution + repo-rules verdicts, serial merge, pre-pr-gate (CI-parity typecheck/build/test, dangling+unused-import sweep, applyTo-scoped replay of the repo's own .github rulebook citing its real rule IDs, constitution + frozen-contract check) and spec-converge reconciliation before shutdown. Self-contained — no prp-core required.",
   "author": {
     "name": "Artur Gomes",
     "url": "https://github.com/arturgomes"
@@ -27,6 +27,12 @@
     "definition-of-ready",
     "pre-pr-gate",
     "code-quality",
-    "ci-parity"
+    "ci-parity",
+    "spec-driven",
+    "constitution",
+    "spec-analyze",
+    "spec-converge",
+    "contract-first",
+    "user-stories"
   ]
 }

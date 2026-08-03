@@ -28,19 +28,37 @@ gotchas). No preset ⇒ generic. You own **no code territory** during refinement
    party contract, performance target) that hasn't been made.
 2. **Edge cases + failure modes.** Enumerate the edge/error cases the ACs must specify (empty/null,
    concurrency, partial failure, idempotency, limits). Missing ones become questions.
-3. **Technical Definition of Done.** Derive the technical DoD **from the ACs** — what must be true in
-   code/tests/build for each AC to count as done (tests, types, migrations reversible, no red
-   blast-radius surprise). Every AC → ≥1 DoD item.
-4. **Unknowns routing.** Note which unknowns are answerable at plan time via **ask-kb / Context7**
-   (library/API facts) versus which are genuine **business/requirement decisions for the user**.
-5. **Risk + blast radius.** Flag auth/payments/deploy/db-migration touchpoints early (they force a
+3. **Technical Definition of Done.** Derive the technical DoD **from the FRs** — what must be true in
+   code/tests/build for each to count as done (tests, types, migrations reversible, no red
+   blast-radius surprise). Every FR → ≥1 DoD item.
+4. **Success criteria triage.** For each `SC-###` the product-owner writes, say whether it is
+   **buildable** (someone must build something — a performance budget, an audit hook, a load harness)
+   or an **outcome** (a post-launch metric nobody implements). Buildable SCs become tasks and are
+   verified; mislabelling one as an outcome is how a performance requirement quietly ships unbuilt.
+5. **Cross-boundary contracts.** Name every interface this work makes two parties agree on — shared
+   type, endpoint shape, DB schema delta, event payload — and who provides vs consumes each. These get
+   frozen with **failing** contract tests before anyone writes an implementation, so naming them now
+   is what stops the lanes from diverging later.
+6. **Story independence, technically.** For each story, is its **Independent Test** actually runnable
+   without the other stories' code? If US2 cannot be tested without US1's endpoint, say so — the
+   slice is wrong and it will cost a whole round to discover during the build.
+7. **Constitution feasibility.** If the project has a ratified constitution, flag any requirement that
+   cannot be met without violating a MUST principle, or that would need a Complexity Tracking
+   justification. Better to hear it now than at the Phase -1 gate.
+8. **Unknowns routing.** Note which unknowns are answerable at plan time via **ask-kb / Context7**
+   (library/API facts — never a user question) versus which are genuine **business/requirement
+   decisions for the user**.
+9. **Risk + blast radius.** Flag auth/payments/deploy/db-migration touchpoints early (they force a
    human gate downstream).
 
 ## Output (to the facilitator)
 
-- per-AC feasibility note (buildable | underspecified — what's missing)
-- edge/error cases the ACs must cover
-- technical DoD derived from the ACs
+- per-FR feasibility note (buildable | underspecified — what's missing)
+- edge/error cases the requirements must cover
+- technical DoD derived from the FRs
+- per-`SC-###` triage: `buildable` vs `outcome`
+- the cross-boundary contract list: interface · provides · consumes
+- story-independence verdict per story (is its Independent Test runnable alone?)
 - unknowns split: `ask-kb/Context7` vs `user-decision`
 - your readiness call: `technically-ready` | `NOT ready — <blocking gaps>`
 

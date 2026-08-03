@@ -374,6 +374,57 @@ Then document:
 - `ALTERNATIVES_REJECTED` with specific reasons
 - `NOT_BUILDING` — explicit scope exclusions (update TASK ANCHOR boundaries now)
 
+### Constitution check — the Phase -1 gates (run BEFORE the design is final)
+
+Load the project constitution (`.claude/constitution.md`, or the preset's `constitution:` path). Absent
+⇒ this whole subsection is a silent no-op. Present ⇒ run its three gates against the proposed design
+and record the verdict **with evidence**, not adjectives:
+
+```
+G-SIMPLICITY       : ✅|⚠️|🔴 — new components: {list}
+G-ANTI-ABSTRACTION : ✅|⚠️|🔴 — wrappers introduced: {name} · second consumer: {named, or none}
+G-INTEGRATION-FIRST: ✅|⚠️|🔴 — contracts: {list} · contract tests failing first: {yes/no}
+```
+
+A 🔴 on a **ratified** constitution has exactly two legal resolutions: **change the design**, or
+**carry the violation with a complete Complexity Tracking row**. Deleting the principle, widening a
+threshold, or reclassifying a MUST as a SHOULD *in order to pass* is itself a 🔴 and a drift-guard Q5
+failure — the same rule that forbids loosening a lint severity to clear the pre-PR gate. A `draft`
+constitution produces ⚠️ only and blocks nothing.
+
+Emit into the plan (empty table = the healthy state; all three columns mandatory):
+
+```markdown
+## Complexity Tracking
+
+| Violation | Why needed | Simpler alternative rejected because |
+|---|---|---|
+| 4th package `sync-worker` | back-pressure needs its own lifecycle | in-process queue loses jobs on deploy; measured 3% loss in staging |
+```
+
+"We needed it" is not an argument — it is the claim being tested. Name a **specific** simpler
+alternative and a **concrete** reason it fails (a measurement, a hard constraint, a named requirement).
+
+### Cross-boundary contracts (what the lanes must agree on before anyone writes code)
+
+Identify every interface that crosses a boundary — a shared type, an endpoint request/response shape,
+a DB schema delta, an event payload — and emit it as a first-class plan artifact:
+
+```markdown
+## Contracts
+
+| id | interface | file | provides | consumes | contract test |
+|---|---|---|---|---|---|
+| K1 | `LastLoginPayload` | packages/core/src/types/user.ts | core-db | backend, frontend | `npm run test:run -- contracts/last-login` |
+```
+
+Write the contract files and their tests as **the first tasks in the plan**, ordered before any task
+that consumes them, and require each contract test to **fail** against the pre-change code. A contract
+test that is green before the feature exists is testing nothing. `/prp-orchestrate` freezes this set
+before any worktree forks; `prp-implement` simply builds it first.
+
+A contract with **no consumer** is a speculative interface — delete it (G-SIMPLICITY).
+
 ### Danger-zone paths
 
 If any file in Files-to-Change lives under an **auth / payments / api / deploy** path, emit a line recommending a **localized CLAUDE.md** (or an inline warning comment) at that path documenting the constraint. Surface this recommendation as a **GOTCHA** on the relevant task so prp-implement loads it at its Step 3.0 (danger zone). Example:
@@ -417,9 +468,13 @@ mcp__ultimate-obsidian__create_or_update_note({
 ```yaml
 ---
 title: {kebab-case-feature-name}
+type: plan
 created: {YYYY-MM-DD}
+schema_version: 1
 source: Planning session (vault-native)
 project: {project-root-name}
+up: "[[{TICKET}]]"
+implements: "[[{slug}.refinement]]"
 tags:
   - prp
   - {project-root-name}
@@ -427,6 +482,22 @@ tags:
   - {feature-category}
 ---
 ```
+
+**Typed relations (knowledge-graph ontology).** `schema_version: 1` opts the note into
+`02-Notes/.scripts/check-graph-acs.sh` enforcement; `up` and `implements` are the graph edges. Spec:
+`02-Notes/Wiki/knowledge-graph-ontology.md`.
+
+- `up` → the ticket node `03-Systems/tickets/{TICKET}.md`, else the project's subject MOC.
+- `implements` → the refinement contract this plan was planned from (Step R), when there is one.
+- `affects` → `03-Systems/` service / table nodes the plan will change, **only** those you can name from
+  the Files-to-Change list. Do not guess at systems.
+
+**If no target resolves to an existing note, OMIT THE KEY.** Never emit `up: "[[undefined]]"`,
+`up: "[[]]"`, or a link to a note you did not verify exists — a dangling edge is worse than a missing
+one, and the gate fails on it. An absent key is always valid (every relation key is optional by design).
+
+**File placement**: write into `02-Notes/Plans/{YYYY-MM}/` — the month bucket. A note at the `Plans/`
+root fails `check-acs.sh` AC1.
 
 ---
 
@@ -480,17 +551,26 @@ tags:
 ```markdown
 ## AC Traceability
 
-Every AC must have ≥1 task. Every task must map to ≥1 AC.
+Every requirement must have ≥1 task. Every task must map to ≥1 requirement.
 
-| AC Item | Tasks |
-|---|---|
-| {AC 1 verbatim} | Task 3, Task 5 |
-| {AC 2 verbatim} | Task 7 |
+| Requirement | Story | Tasks | Gate |
+|---|---|---|---|
+| FR-001 {verbatim} | US1 (P1) | T003, T005 | `npm run test:run -- login` |
+| SC-002 {verbatim} *(buildable)* | — | T009 | `npm run bench -- profile-p95` |
+| US1/AC2 {verbatim} | US1 (P1) | T007 | `npm run test:run -- profile` |
 ```
 
+When the input came from a `spec.md`, list **every** `FR-###`, every **buildable** `SC-###`, and every
+acceptance scenario. `outcome`-tagged SCs (post-launch metrics, business KPIs) are tracked in the spec
+and never become tasks — do not list them as uncovered work.
+
 **DRIFT CHECK (drift-guard question #7)**:
-Any AC without a task → add the task NOW before finishing the plan.
-Any task without an AC mapping → remove it or justify it explicitly.
+Any requirement without a task → add the task NOW before finishing the plan.
+Any task without a requirement mapping → remove it or justify it explicitly.
+
+> This table is written by the planner, so it cannot be the last word on its own coverage.
+> `/prp-orchestrate` re-derives it in a fresh context via `Skill(spec-analyze)` before any code is
+> written — a gap found there routes back here, not into a worktree.
 
 ---
 
@@ -509,14 +589,22 @@ Each task MUST carry:
 
 By default, keep explicit, detailed, prescriptive steps. If the executor is a confirmed top-tier long-horizon model (per Model Routing, below), tasks MAY be expressed as goal+constraints instead of prescriptive micro-steps; otherwise keep explicit steps.
 
-**Parallel execution note**: prp-loop lanes are single-writer-per-file — no two parallel tasks may write the same file. Assign each file to exactly one lane.
+**Parallel execution note**: lanes are single-writer-per-file — no two parallel tasks may write the same file. Assign each file to exactly one lane.
+
+Three fields make that mechanical instead of aspirational, and downstream consumers depend on all
+three: `/prp-orchestrate` **derives each lane's territory from the union of its tasks' `files:`** (which
+is what lets `spec-analyze` *prove* disjointness rather than trust an assertion), slices rounds by
+`story:`, and schedules concurrency by `parallel:`.
 
 ```
 task:
   id: T{n}
   title: {imperative summary}
-  why: {AC-id + intent}          # Why (AC + intent)
-  ac_mapping: [AC-1, AC-3]
+  story: US1                     # owning user story from spec.md (or `foundational` for shared groundwork)
+  parallel: true|false           # [P] — no shared file and no dependency on another in-flight task
+  files: [src/auth/session.ts]   # EXACT paths this task writes. Union per lane == that lane's territory.
+  why: {FR-id + intent}          # Why (requirement + intent)
+  ac_mapping: [FR-001, US1/AC2, SC-002]
   mirror: `src/X/service.ts:10` — {pattern}
   imports: [ ... ]
   expected_gate: `{executable command}`
@@ -525,6 +613,12 @@ task:
     1. ...
     2. ...
 ```
+
+**Order tasks so the plan is deliverable in slices**: contract tasks first, then the `foundational`
+tasks every story needs, then all of `US1`'s tasks (P1 — the MVP), then `US2`'s, and so on. Keep the
+foundational block as small as it can be: everything parked there blocks every story, so work only P2
+needs belongs to P2's slice. A plan ordered this way can be stopped after any story and still leave
+something that works.
 
 ---
 
@@ -560,9 +654,28 @@ implementer knows the execution environment:
 
 Then all standard plan sections:
 User Story · Problem Statement · Solution Statement · Metadata · UX Design (before/after ASCII) ·
-Mandatory Reading · Patterns to Mirror · Files to Change · NOT Building · Step-by-Step Tasks ·
+Mandatory Reading · Patterns to Mirror · **Constitution Check** · **Complexity Tracking** ·
+**Contracts** · Files to Change · NOT Building · Step-by-Step Tasks · **AC Traceability** ·
 Testing Strategy · Validation Commands (6 levels) · Acceptance Criteria checklist ·
 Completion Checklist · Risks and Mitigations
+
+### Repo copy of the planning artifacts (dual-write)
+
+The vault copy stays the searchable index. **Also** write the plan into the working repo so intent
+ships in the PR next to the code and a teammate can review both in one diff:
+
+```
+specs/<TICKET-or-slug>/
+├── spec.md                  # the refinement contract (written by Skill(refinement))
+├── plan.md                  # this file
+├── tasks.md                 # the Step-by-Step Tasks block, standalone (checkboxes; converge appends here)
+├── contracts/               # the cross-boundary interfaces + their contract tests
+└── checklists/requirements.md
+```
+
+Skip the repo copy when the caller passed `--no-repo-specs`, when the preset sets
+`spec_artifacts: vault`, or when the repo is not the artifact's subject (a planning-only run). Default
+is **both**. Never write into a repo you were not asked to change.
 
 </process>
 
@@ -592,7 +705,11 @@ If PRD input: update phase status to `in-progress`, link plan.
 - [ ] NOT Building is specific and non-empty
 - [ ] All patterns from agents are ACTUAL code snippets (not invented)
 - [ ] Every task has an executable validation command
-- [ ] Each task carries Why (AC + intent), MIRROR, IMPORTS, AC mapping, expected gate command, and gotchas
+- [ ] Each task carries Why (requirement + intent), MIRROR, IMPORTS, AC mapping, expected gate command, and gotchas
+- [ ] Each task carries `story:`, `parallel:`, and exact `files:` — the fields territory derivation and slicing depend on
+- [ ] Tasks ordered contracts → foundational → US1 → US2 …, so the plan is deliverable in slices
+- [ ] Constitution Check ran (or was a documented no-op); every carried violation has a complete 3-column Complexity Tracking row
+- [ ] Contracts table lists every cross-boundary interface, each with a consumer and a contract test that fails first
 - [ ] Brief-completeness: no task assumes unlogged chat context.
 - [ ] no unverified API signature presented as confirmed.
 - [ ] Every blocking unknown from Phase 1.5 is resolved or logged as an assumption

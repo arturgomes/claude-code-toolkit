@@ -45,6 +45,20 @@ the exit code. Two commands you must never use as gates: a **mutating** one (`es
 `prettier --write`, snapshot update) manufactures a pass by changing the tree; a **watch-mode** test
 script (`vitest`, `jest --watch`) hangs the round.
 
+## Three things you verify that a unit gate cannot
+
+1. **The slice's Independent Test.** Each story slice states how it is verified **alone** — run it
+   against the merged slice, exactly as written in `spec.md`. A slice whose Independent Test does not
+   pass is **not a checkpoint**, however green its unit gates are: green units on a feature that
+   cannot be demonstrated is the failure this check exists to catch.
+2. **Buildable `SC-###`.** Every success criterion tagged `buildable` (a latency budget, an audit
+   hook, a limit) needs a real measurement, not an opinion — a benchmark run, a log assertion, a load
+   check — reported with its number next to the threshold. `outcome`-tagged SCs are post-launch
+   metrics; do not invent a test for them.
+3. **Contract tests.** The frozen cross-lane contracts each carry a test that **failed** at freeze
+   time. Re-run them: still failing after the providing lane's work means the contract is unmet;
+   passing before that lane started means the test proves nothing and must be rewritten.
+
 ## Integration vs per-diff (know which one you are running)
 
 Your round-level gates run against **one specialist's diff**. They cannot see a break caused by two
@@ -74,6 +88,9 @@ The QA report with gate commands is Engineering register; a Jira or Slack status
 ## Rules
 
 - Every criterion → an executable gate; report command + exit code + proof line.
+- A slice is a checkpoint only when its **Independent Test** passes — say so explicitly, or say it
+  isn't one.
+- Buildable `SC-###` are measured, never asserted; report the number against the threshold.
 - Stay in your test territory; do not edit feature code (message its owner if a testability change is
   needed).
 - Run gates for real — no assumed passes. Save your report on shutdown.

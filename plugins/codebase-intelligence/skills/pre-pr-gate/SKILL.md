@@ -4,12 +4,12 @@ description: >
   Mandatory mechanical + bot-parity gate that runs on the INTEGRATED branch before any PR is opened.
   Reproduces locally what CI, GitHub Copilot review, and Cursor bugbot will do to the PR: CI-parity
   install/typecheck/build/test, a dangling-and-unused-import sweep that CI does not catch, a hygiene
-  sweep, and an applyTo-scoped replay of the repo's own .github rulebook citing real rule IDs
-  (FR-1 / FQ-4 / T-5 / DB-3 / PKG-1 / CORE-002 / SOLID-*). Emits a signed gate receipt; no receipt,
-  no PR. Auto-invoked by prp-orchestrate (Phase G), prp-implement (Phase 4.9), ship (Step 3a), and
+  sweep, an applyTo-scoped replay of the repo's own .github rulebook citing real rule IDs
+  (FR-1 / FQ-4 / T-5 / DB-3 / PKG-1 / CORE-002 / SOLID-*), and a constitution + frozen-contract check
+  no file-scoped rulebook can make. Emits a signed gate receipt; no receipt, no PR. Auto-invoked by prp-orchestrate (Phase G), prp-implement (Phase 4.9), ship (Step 3a), and
   worktree-lifecycle EXIT. Invoke manually on "run the pre-PR gate", "is this PR-ready",
   "check before I open the PR", "will CI pass".
-version: 1.0.0
+version: 1.1.0
 ---
 
 # pre-pr-gate
@@ -29,7 +29,7 @@ intent, run them in the cheapest correct order. `standard`/`light`: run every la
 
 **Mandatory at every tier, never skipped, never sampled, no "small diff" exemption:**
 L0 command resolution · L2 typecheck · L4 build · L5 tests · L6 import sweep · L7 bot-parity replay ·
-the receipt · and **no PR on a 🔴**. A gate that is skipped because the diff "looked small" is the
+L9 whenever a constitution or a frozen contract set exists · the receipt · and **no PR on a 🔴**. A gate that is skipped because the diff "looked small" is the
 exact incident this skill exists to stop.
 
 ---
@@ -41,6 +41,12 @@ exact incident this skill exists to stop.
 | 🔴 **BLOCK** | non-zero exit on a mandatory layer, or a MUST/MUST-NOT rule violation, or an unresolved/unused import | **no PR, no merge.** Fix, re-run the gate from L1. |
 | ⚠️ **NOTE** | SHOULD/SHOULD-NOT violation, or a pre-existing finding outside the diff | recorded in the receipt + PR body; does not block |
 | ✅ **PASS** | layer exited 0 with pasted evidence | merge-eligible |
+
+**One receipt per PR, bound to that PR's own HEAD.** A stacked-PR chain is N pull requests, so it is N
+gate runs — GitHub enforces required checks, required reviews, and CODEOWNERS against the trunk for
+every layer of a stack, not just the bottom one. Gating the top of a stack and inheriting that verdict
+downward is the same mistake as gating one worktree and inheriting it across lanes: a receipt whose
+SHA is not that layer's tip counts as absent.
 
 Two hard rules:
 
@@ -187,7 +193,13 @@ have nothing left to say. Full procedure: `references/bot-parity.md`.
 
 1. **Load every rule source** (preset `rule_sources` wins; otherwise this default set):
    `CLAUDE.md`, `.claude/**/*.md`, `.github/copilot-instructions.md`,
-   `.github/instructions/*.instructions.md`.
+   `.github/instructions/*.instructions.md`, **plus the `JT-*` baseline floor**
+   (`../mediator/references/baseline-js-ts.md`) over JS/TS files.
+
+   The baseline is what stops this layer from passing vacuously in a repo that ships no rulebook —
+   there, sources 1-4 are empty and L7 would otherwise report "0 MUST, 0 SHOULD" on a diff that floats
+   promises and swallows errors. Repo rules win on conflict; baseline severity is never escalated;
+   `baseline_rules: false` disables it and the receipt records that it was disabled.
 2. **Honour `applyTo`.** Each `*.instructions.md` carries an `applyTo` glob in its frontmatter; its
    rules apply **only** to diff files matching that glob. A React instruction file does not judge a
    Prisma migration; a `**/*.spec.ts` testing file does not judge a component.
@@ -212,7 +224,39 @@ Each hit is 🔴 unless the diff carries an inline justification comment (a tick
 - a lockfile change with no dependency change in `package.json` (drift);
 - generated output committed by hand (`*.generated.*`, `dist/`, `.next/`) — regenerate via the repo's
   generate script instead;
-- a commit on the base branch itself (the gate runs on a feature branch, never on `main`).
+- **a commit on the base branch itself** — the gate runs on a feature branch, never on `main`/`master`.
+  This is the backstop for the never-on-`main` rule the implementing surface asserts up front: if work
+  reached this layer sitting on the base, every earlier assertion was bypassed, and the finding is
+  🔴 regardless of how clean the diff is.
+
+## L9 — Constitution + frozen-contract check (🔴 — the architecture layer nothing else covers)
+
+L7 replays the repo's file-scoped rulebook. It cannot say *"this design has more moving parts than the
+problem deserves"* or *"a lane quietly changed the interface everyone else compiled against"*. L9 does.
+
+**Skip entirely when there is no constitution and no frozen contract set** — it is a silent no-op, not
+a failure.
+
+1. **Constitution** (`.claude/constitution.md`, or the preset's `constitution:` path):
+   - `Status: ratified` → every MUST/MUST-NOT violation in the diff is **🔴**, cited by principle id
+     (`P-3`) with `file:line`. `Status: draft` → ⚠️ NOTE only.
+   - Re-run the three Phase -1 gates against the **integrated** result, not the plan's prediction:
+     `G-SIMPLICITY` (component count), `G-ANTI-ABSTRACTION` (wrappers whose second consumer never
+     materialized), `G-INTEGRATION-FIRST` (contract tests exist and were failing first).
+   - **A carried violation needs its Complexity Tracking row to already exist in `plan.md`, complete
+     in all three columns.** A missing row, an empty "simpler alternative rejected because", or a row
+     written during this run to excuse this diff ⇒ 🔴. The row is the argument; without it the
+     violation is just a violation.
+2. **Frozen contracts** (`orchestration-state.json → contracts[]`):
+   - a file in the frozen set modified by anything other than a recorded amendment ⇒ 🔴;
+   - a contract whose test does not run, or whose `failedAtFreeze` is false ⇒ 🔴 (it proved nothing);
+   - a symbol a consumer imports that is absent from the frozen set ⇒ 🔴 (L2 usually catches this
+     first; cite both so the receipt tells the whole story in one place).
+3. **Never widen a threshold to pass.** Editing the constitution, its component budget, or a contract
+   during the gate run is itself a 🔴 — the same rule as loosening a lint severity.
+
+Carry every surviving Complexity Tracking row into the receipt. The reviewer should meet the
+justification and the code that cost it on the same screen.
 
 ---
 
@@ -231,7 +275,10 @@ L4 build      : {✅|🔴} `{cmd}` exit={n}
 L5 tests      : {✅|🔴} `{cmd}` exit={n} ({passed}/{total})
 L6 imports    : {✅|🔴} dangling={n} unresolved={n} unused={n}
 L7 bot-parity : {✅|🔴} MUST={n} SHOULD={n} — sources: {rule files applied}
+                baseline JT-*: {applied | disabled | excluded: JT-TEST, …} MUST={n} SHOULD={n}
 L8 hygiene    : {✅|🔴} {findings or none}
+L9 arch       : {✅|🔴|n/a} constitution={ratified|draft|none} MUST={n} · contracts frozen={n} violated={n}
+                complexity rows carried: {violation → simpler alternative rejected because …, or none}
 Blockers      : {rule-ID/layer + file:line, one per line, or "none"}
 Verdict       : {✅ PR-ready | 🔴 BLOCKED — do not open the PR}
 ```
@@ -260,6 +307,10 @@ blockers, and hand back to the human. Do not open the PR to "let CI decide".
 - [ ] Tests ran non-watch, full suite.
 - [ ] Dangling/unresolved/unused imports block, even where the repo's own lint only warns.
 - [ ] Rule sources loaded and applied `applyTo`-scoped; MUST violations block; findings cite rule IDs.
+- [ ] Constitution (when ratified) re-checked on the integrated result; every carried violation has a
+      complete 3-column Complexity Tracking row that predates this run.
+- [ ] No frozen contract modified outside a recorded amendment; every contract test ran and had failed
+      at freeze time.
 - [ ] Receipt written, SHA-bound, and pasted into the PR body.
 - [ ] No PR / no merge while the verdict is 🔴. No exemption for diff size.
 
