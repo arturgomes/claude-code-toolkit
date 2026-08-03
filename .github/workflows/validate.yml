@@ -1,0 +1,48 @@
+name: validate
+
+# The same checks the author runs locally, run on a machine the author does not control.
+# scripts/validate.sh is the single source of truth — CI must never grow its own copy of a
+# rule, or the two drift and the local run stops meaning anything.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate the codebase-intelligence plugin
+        run: |
+          chmod +x plugins/codebase-intelligence/scripts/*.sh
+          plugins/codebase-intelligence/scripts/validate.sh
+
+      # setup.sh must be safe to run anywhere, including a machine with none of the
+      # optional tooling. Check-only mode is expected to exit 0 and install nothing —
+      # if it ever starts failing here, it has stopped being safe to run on a new laptop.
+      - name: Setup script is safe in check-only mode
+        run: plugins/codebase-intelligence/scripts/setup.sh
+
+      # The SessionStart hook runs on every session on every machine. A crash here is a
+      # crash in every user's session, so it is verified with no plugin data dir set
+      # (the --plugin-dir case) and with one (the installed case).
+      - name: SessionStart hook never fails a session
+        run: |
+          set -e
+          bash plugins/codebase-intelligence/scripts/on-session-start.sh
+          export CLAUDE_PLUGIN_ROOT="$PWD/plugins/codebase-intelligence"
+          export CLAUDE_PLUGIN_DATA="$RUNNER_TEMP/ci-plugin-data"
+          bash plugins/codebase-intelligence/scripts/on-session-start.sh
+          test -f "$CLAUDE_PLUGIN_DATA/installed-version"
+          echo "stamp: $(cat "$CLAUDE_PLUGIN_DATA/installed-version")"
+          # Second run must be a silent no-op — this is what keeps it off every session.
+          out=$(bash plugins/codebase-intelligence/scripts/on-session-start.sh)
+          test -z "$out" || { echo "hook was not silent on re-run: $out"; exit 1; }
