@@ -479,8 +479,11 @@ class of failure the earlier steps cannot:
   GitHub Copilot review and Cursor bugbot have nothing left to report.
 
 **GATE:** 🔴 ⇒ no PR. Fix, re-run the gate from L1 on the new HEAD, max 3 cycles, then escalate to the
-human. Paste the receipt block into the Phase 5 report and into the PR body. Never weaken a rule, glob,
-or lint severity — and never add `@ts-ignore` / `eslint-disable` / `.skip` — to clear a blocker.
+human. Paste the receipt block into the Phase 5 report, and hand it to
+`Skill(codebase-intelligence:pr-description)` — which writes every PR body this flow produces, under
+the mandatory `[TICKET] task description` title, into `02-Notes/pr-descriptions/` before the PR exists.
+Never weaken a rule, glob, or lint severity — and never add `@ts-ignore` / `eslint-disable` / `.skip` —
+to clear a blocker.
 
 ### 4.7b Converge — did we build the plan? (runs on the gated HEAD)
 
@@ -690,7 +693,7 @@ Report: plan path, branch, ticket, validation table (type-check/lint/tests/build
 Follow skill: `codebase-intelligence:worktree-lifecycle` → **EXIT** protocol. EXIT ordering is
 load-bearing and must not be reordered:
 
-1. **(Optional) Ship** — if not already committed/pushed/PR'd and the user wants it, `Skill(codebase-intelligence:ship)` (commit → push → PR).
+1. **(Optional) Ship** — if not already committed/pushed/PR'd and the user wants it, `Skill(codebase-intelligence:ship)` (commit → push → PR). Ship draws the PR title and body from `Skill(codebase-intelligence:pr-description)` by default — `[TICKET] task description`, written to `02-Notes/pr-descriptions/` before the PR is opened. Never asked, never hand-rolled.
 2. **Save BEFORE delete** — `Skill(codebase-intelligence:session-memory)` → SESSION END (write-before-stop). The session block must be written before anything is removed.
 3. **Uncommitted / unpushed guard** — worktree tree clean AND branch pushed, else STOP (never `--force` a dirty tree away).
 4. **Confirm before removal** — ASK the user; on "no" keep the worktree and report its path.

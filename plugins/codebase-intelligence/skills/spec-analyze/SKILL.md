@@ -49,8 +49,8 @@ Mandatory at every tier: **read-only**, the **coverage matrix**, **CRITICAL bloc
 |---|---|---|
 | `spec.md` | refinement contract — `specs/<slug>/spec.md` (repo) or `02-Notes/Plans/<slug>.refinement.md` (vault) | yes |
 | `plan.md` | `/prp-plan` output — repo `specs/<slug>/plan.md` or `02-Notes/Plans/<slug>.plan.md` | yes |
-| `tasks.md` / `contract[]` | plan tasks, or the project-manager's contract in `orchestration-state.json` | yes |
-| territory map | `orchestration-state.json → specialists[].territory` | when orchestrating |
+| `tasks.md` / `contract[]` | plan tasks, or the project-manager's contract in the vault state note (`02-Notes/Sessions/<run>.state.md`) | yes |
+| territory map | vault state note → `specialists[].territory` | when orchestrating |
 | `contracts/` | the frozen cross-lane interface set | when orchestrating |
 | constitution | `.claude/constitution.md` (or preset path) | optional |
 
@@ -212,6 +212,7 @@ the survivors to the human. Do not fan out "and let the round loop sort it out".
 ## Dependencies
 
 Reads `constitution` (authority), `../mediator/references/rules-rubric.md` (MUST/SHOULD vocabulary),
-`orchestration-state.json` (territory + contract state). Feeds `mediator` Phase A2 and `drift-guard`
+the vault state note `02-Notes/Sessions/<run>.state.md` (territory + contract state, read via the
+`ultimate-obsidian` MCP — there is no repo-local copy). Feeds `mediator` Phase A2 and `drift-guard`
 (Q1/Q7 at plan scope). Its findings are session-memory material: a repeat defect becomes a
 `## General Rules (distilled)` entry.

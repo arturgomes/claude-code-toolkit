@@ -30,8 +30,9 @@ Read `CI_MODEL_TIER` (`frontier | standard | light`, default `standard`).
 Invariants mandatory at EVERY tier: the **Phase 0.5 analyze gate before any worktree exists**, the
 **Phase A2 contract freeze before any lane forks**, the disjoint-territory assertion, the per-round
 rules + constitution verdict, the 🔴-blocks-merge gate, serial merge, **the Phase E2 integration gate
-before any PR exists**, **Phase E3 convergence**, clean shutdown, write-before-stop of
-`orchestration-state.json`, and the fresh-context adversarial evaluator (never self-grade).
+before any PR exists**, **Phase E3 convergence**, clean shutdown, write-before-stop of the **vault**
+state note (never a repo-local file), **every PR's description coming from `pr-description`**, and the
+fresh-context adversarial evaluator (never self-grade).
 
 ---
 
@@ -82,11 +83,71 @@ linear.
 
 ---
 
-## State: `orchestration-state.json` (single writer = the mediator)
+## State: the vault state note (single writer = the mediator)
 
-Persist all coordination state as JSON, **not markdown** — models overwrite markdown but respect
+Persist all coordination state as JSON, **not markdown prose** — models overwrite prose but respect
 structured JSON (KB: Harness Patterns F03). Schema: `references/orchestration-state.schema.json`.
-Written to `<repo>/.claude/orchestration-state.json`. Only the mediator writes it; specialists read it.
+Only the mediator writes it; specialists read it.
+
+**It lives in the Obsidian vault, via the `ultimate-obsidian` MCP — never in the repo.** The old
+`<repo>/.claude/orchestration-state.json` is gone: a repo-local file is invisible from the sibling
+worktrees that need to read it, invisible to the next session, and lost with the checkout. The vault is
+the system of record for state exactly as it already is for the narrative.
+
+**Path** — a sidecar beside the run's session note, on the canonical (unbucketed) path that
+`session-memory` writes to; `bucket-by-month.sh` files both into `YYYY-MM/` afterwards:
+
+```
+02-Notes/Sessions/{TICKET}-{SUFFIX}.md          <- narrative (session-memory)
+02-Notes/Sessions/{TICKET}-{SUFFIX}.state.md    <- machine state (this contract)
+```
+
+**Shape** — the whole note is frontmatter plus **one fenced `json` block** holding a single instance of
+`orchestration-state.schema.json`. The fence is what keeps the machine contract verbatim while leaving
+the note searchable and graph-linked:
+
+````markdown
+---
+title: "Orchestration state: {TICKET} / {SUFFIX}"
+type: session
+schema_version: 1
+run: {TICKET}-{SUFFIX}
+branch: {BRANCH}
+date: {YYYY-MM-DD}
+up: "[[{TICKET}]]"                      # only if 03-Systems/tickets/{TICKET}.md exists
+related: "[[{TICKET}-{SUFFIX}]]"        # the session note
+tags: [orchestration-state]
+---
+
+```json
+{ "capability": {...}, "analyze": {...}, "contracts": [...], "slices": [...],
+  "gateReceipts": [...], "convergence": {...}, "stack": {...}, "humanGates": [...] }
+```
+````
+
+`type: session` because the knowledge-graph ontology's node-type set is closed and this note lives
+under `02-Notes/Sessions/` — do not invent a type. Omit any relation key whose target does not resolve
+to an existing note: a dangling edge fails `check-graph-acs.sh`, an absent key never does.
+
+**Read / write protocol** (mediator only):
+
+```
+mcp__ultimate-obsidian__check_exists({ filepath: "02-Notes/Sessions/{TICKET}-{SUFFIX}.state.md" })
+mcp__ultimate-obsidian__read_note({ filepath: ... })          # parse the fenced json block
+mcp__ultimate-obsidian__create_or_update_note({ filepath: ..., mode: "overwrite", content: ... })
+```
+
+- **Always `overwrite` the whole note** with the full state instance. Never `append`, and never patch a
+  field in place — a partially-appended JSON document is an unparseable state file, which is the one
+  failure this contract exists to prevent.
+- **Read-modify-write in one step.** The mediator is the single writer precisely so this needs no lock.
+- Run the `session-memory` pre-write secret scrub before every write; gate receipts quote command
+  output, and command output carries tokens.
+
+**A failed vault write is a 🔴 blocker, not a warning.** Report it and stop the phase — do **not** fall
+back to a repo-local file. Writing `.claude/orchestration-state.json` "just to keep going" recreates
+exactly the invisible-to-everyone state this replaced. The trade is deliberate: state now requires the
+Obsidian MCP to be reachable, and a run that cannot reach it stops loudly instead of drifting silently.
 
 Top-level: `capability` · `analyze` (verdict + findings + cycles) · `contracts[]` (the freeze) ·
 `slices[]` (id, story, priority, status, `specialists[]`, `rounds[]`, `mergeLog[]`, `checkpoint`,
@@ -94,9 +155,10 @@ Top-level: `capability` · `analyze` (verdict + findings + cycles) · `contracts
 
 ## Progress log: session-memory (read + write, throughout — the mediator is the single writer)
 
-The `orchestration-state.json` is the machine contract; **session-memory is the durable narrative
-record** of the run — progress, findings, common pitfalls, and lessons — in the Obsidian vault via the
-`session-memory` skill. The orchestration layer **reads and writes it throughout**, not just at the end:
+The `.state.md` note is the machine contract; **session-memory is the durable narrative record** of the
+run — progress, findings, common pitfalls, and lessons. Both live in the Obsidian vault, side by side
+under `02-Notes/Sessions/`, written through the `ultimate-obsidian` MCP and nowhere else. The
+orchestration layer **reads and writes throughout**, not just at the end:
 
 - **READ at start (Phase R / Phase 0):** restore any prior session for this ticket/goal — resume
   `## Last-Session State`, and re-read `## General Rules` and `## Open Failures` so the team does not
@@ -174,7 +236,7 @@ returns a coverage matrix plus severity-graded findings.
 - **CRITICAL > 0 ⇒ no fan-out.** Route each finding to the phase that *owns* it (requirement → R,
   design → 0, coverage/territory → A, contract → A2) and re-analyze. Bounded at **3** cycles, then
   STOP and surface the survivors.
-- ✅ ⇒ record the verdict + metrics in `orchestration-state.json → analyze` and continue.
+- ✅ ⇒ record the verdict + metrics in the vault state note's `analyze` object and continue.
 
 This is the cheapest gate in the flow and it catches the most expensive class of defect — a
 requirement nobody was assigned, a task nobody asked for, two lanes claiming one file — at the one
@@ -197,7 +259,7 @@ moment when fixing it costs a paragraph instead of five worktrees.
    story; work parked there that only P2 needs delays the MVP for no reason. If only one story needs
    it, it belongs to that story's slice.
 3. Approve the contract **before** any specialist writes code (KB: Agent Teams P06). Write `slices[]`
-   + `contract[]` + provisional `specialists[]` into `orchestration-state.json`.
+   + `contract[]` + provisional `specialists[]` into the vault state note.
 4. **Size each slice to 2-5 active specialists** — never activate all 7 (KB: Agent Teams P04/X04:
    N sessions ≈ N× token cost). A slice needing one lane runs one specialist; that is normal, not a
    failure to parallelize.
@@ -417,8 +479,12 @@ run `Skill(codebase-intelligence:pre-pr-gate)` on the integration branch:
 6. **The mediator never relaxes the gate to pass it.** Loosening a rule file, a glob, a lint severity,
    `@ts-ignore`, `.skip`, or a constitution threshold to clear a blocker is itself a 🔴 and a
    drift-guard Q5 failure.
-7. Record the receipt block verbatim; it is what goes into the PR description so the reviewers and the
-   PR bots have their own rule IDs already answered with commands and exit codes.
+7. Record the receipt block verbatim and hand it to `Skill(codebase-intelligence:pr-description)`,
+   which writes **every** PR this run opens — stacked or single, in this repo or a sibling — with the
+   mandatory `[TICKET] task description` title and a vault note in `02-Notes/pr-descriptions/` written
+   before the PR exists. The mediator never asks whether to use it and never hand-rolls a body. The
+   receipt is what lets reviewers and the PR bots find their own rule IDs already answered, with
+   commands and exit codes.
 
 ## Phase E3 — Converge (did we build the spec?) — after the final gate, before shutdown
 
@@ -469,9 +535,13 @@ Runs after E3 converges and after **every** layer holds a passing E2 receipt bou
    Store it (or its path) in `stack.verifiedBy` and assert each layer's base is the layer below it,
    with position 0 on the trunk. A mismatch is a 🔴: fix with `gh stack modify`, never by opening
    loose PRs and hoping.
-4. **Each layer's PR body carries its own receipt block** — that layer's verbatim commands, exit
-   codes, and the repo's own rule IDs — plus a one-line statement of what the layer is and what it
-   depends on. A shared body pasted across layers defeats the reason the diffs were split.
+4. **Each layer's title and body come from `Skill(codebase-intelligence:pr-description)`, run once per
+   layer** — never once for the stack. Each call gets that layer's own diff range and its own E2
+   receipt block, so each layer gets its own `[TICKET] task description` title, its own vault note in
+   `02-Notes/pr-descriptions/` (repo suffix included — a stack spans one repo but a multi-repo run
+   produces one stack per repo), and a one-line statement of what the layer is and what it depends on.
+   A shared body pasted across layers defeats the reason the diffs were split, and the per-layer vault
+   note is what makes a half-merged stack legible to the next session.
 5. **Merging is not this phase's job.** Bottom-up only, and `gh pr merge` cannot merge a stack —
    *"the legacy pull request merge endpoints can't merge a stack"*. Use `gh stack merge` when the
    human asks for it. The mediator never auto-merges a stack.
@@ -536,7 +606,9 @@ Runs after E3 converges and after **every** layer holds a passing E2 receipt bou
 - `references/rules-rubric.md` — the per-round grading rubric.
 - `references/baseline-js-ts.md` — the project-agnostic `JT-*` JS/TS floor applied under the repo's
   own rulebook (a repo that ships no rules classifies to nothing without it).
-- `references/orchestration-state.schema.json` — the durable state contract.
+- `references/orchestration-state.schema.json` — the durable state contract, instantiated inside the
+  vault state note (`02-Notes/Sessions/{TICKET}-{SUFFIX}.state.md`), never as a repo file.
+- `pr-description` — the default title + body + vault note for every PR the run opens.
 - `spec-analyze` — the Phase 0.5 artifact-chain gate.
 - `constitution` — the architectural authority read in Phase 0, C, and E2.
 - `pre-pr-gate` — the Phase E2 integration gate run on the merged HEAD.

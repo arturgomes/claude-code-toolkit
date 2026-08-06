@@ -192,6 +192,9 @@ Run EXIT **only** when the user explicitly signals satisfaction ("satisfied", "d
    own per-step confirmations). This step is optional; EXIT does not rewrite ship.
    **If a PR is created, ship's Step 3a `pre-pr-gate` is mandatory and a 🔴 verdict blocks the PR** —
    EXIT must not route around it by opening the PR itself. Shipping is optional; gating a PR is not.
+   The PR's title and body come from `Skill(codebase-intelligence:pr-description)` by default —
+   `[TICKET] task description`, persisted to `02-Notes/pr-descriptions/` **before** the PR is opened.
+   EXIT never asks whether to use it and never hand-rolls a body in its place.
 2. **SAVE FIRST — before any deletion.** `Skill(codebase-intelligence:session-memory)` → SESSION END
    protocol (honours the write-before-stop gate). Record final state, the PR URL, the worktree path,
    and a resume note. **This must complete before Step 4.** Nothing below deletes anything until the

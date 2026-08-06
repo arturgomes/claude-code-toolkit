@@ -121,8 +121,8 @@ Actionable criteria (only if not ✅):
   1. {concrete, testable fix the specialist must make}
 ```
 
-Write the same content into `rounds[].verdicts[]` of `orchestration-state.json` (the durable
-record). The **actionable criteria** string is the contract the specialist must satisfy next
+Write the same content into `rounds[].verdicts[]` of the vault state note
+(`02-Notes/Sessions/<run>.state.md` — the durable record; there is no repo-local copy). The **actionable criteria** string is the contract the specialist must satisfy next
 round — re-grade against it, not against a fresh interpretation.
 
 ---

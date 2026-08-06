@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/arturgomes/claude-code-toolkit/codebase-intelligence/orchestration-state.schema.json",
   "title": "orchestration-state",
-  "description": "Durable JSON state contract for /prp-orchestrate. Persisted as JSON (not markdown) because models overwrite markdown but respect structured JSON (KB: Harness Patterns F03). The mediator is the single writer; specialists read it. Written to <repo>/.claude/orchestration-state.json in the coordinating checkout.",
+  "description": "Durable JSON state contract for /prp-orchestrate. Persisted as JSON (not markdown prose) because models overwrite prose but respect structured JSON (KB: Harness Patterns F03). The mediator is the single writer; specialists read it. Stored in the Obsidian vault via the ultimate-obsidian MCP as a single fenced ```json block inside 02-Notes/Sessions/{TICKET}-{SUFFIX}.state.md, the sidecar to the run's session note. NEVER written to the repo: a repo-local file is invisible to sibling worktrees, to the next session, and dies with the checkout. Writes are always a whole-note overwrite of one full instance — never an append, never a partial patch. A failed vault write is a blocker; there is no local fallback.",
   "type": "object",
   "additionalProperties": false,
   "required": ["goal", "preset", "contract", "specialists", "rounds", "mergeLog", "territoryDisjoint"],

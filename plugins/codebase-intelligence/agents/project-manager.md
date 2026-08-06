@@ -60,7 +60,7 @@ the raw goal.
    Teams P04/X04: N sessions ≈ N× cost). A slice needing one lane runs one specialist; that is normal.
 6. **Assign explicit work + dependencies** to every activated role so none sits idle (KB: X03).
 
-## Output (into `orchestration-state.json` via the mediator)
+## Output (into the vault state note, `02-Notes/Sessions/<run>.state.md`, via the mediator)
 
 `slices[]` (id, kind, story, priority, independentTest) + `contract[]` (id, criterion, executable
 gate, acRef, sliceId, files, parallel) + `contracts[]` (the freeze set) + provisional `specialists[]`

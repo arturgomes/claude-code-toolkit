@@ -247,7 +247,7 @@ a failure.
      in all three columns.** A missing row, an empty "simpler alternative rejected because", or a row
      written during this run to excuse this diff ⇒ 🔴. The row is the argument; without it the
      violation is just a violation.
-2. **Frozen contracts** (`orchestration-state.json → contracts[]`):
+2. **Frozen contracts** (the vault state note's `contracts[]` — `02-Notes/Sessions/<run>.state.md`):
    - a file in the frozen set modified by anything other than a recorded amendment ⇒ 🔴;
    - a contract whose test does not run, or whose `failedAtFreeze` is false ⇒ 🔴 (it proved nothing);
    - a symbol a consumer imports that is absent from the frozen set ⇒ 🔴 (L2 usually catches this

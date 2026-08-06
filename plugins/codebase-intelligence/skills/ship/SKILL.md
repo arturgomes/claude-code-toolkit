@@ -129,15 +129,16 @@ Surface the synthesis to the user before Step 4 drafts the PR body.
 ## Step 4: Pull Request
 
 - Check if PR exists for this branch via `gh pr view`. If yes, show URL and stop.
-- Analyze ALL commits on this branch vs the base branch (not just the latest commit)
-- Draft a PR title (under 72 chars) and body with:
-  - Summary: 2-4 bullet points
-  - Test plan: how to verify
-  - **Pre-PR gate** section (mandatory — paste the receipt block from Step 3a verbatim, one per repo).
-    This is what lets reviewers and the PR bots skip re-deriving these checks: every layer's verbatim
-    command, its exit code, and the repo's own rule IDs already answered. A PR body without a receipt
-    block whose SHA matches the pushed HEAD is incomplete.
-  - **Review fan-out** section (mandatory):
+- **Draft the title and body with `Skill(codebase-intelligence:pr-description)` — always, for every
+  PR, without asking whether to use it.** It analyses ALL commits on this branch against the real
+  merge-base (not just the latest commit), derives the mandatory `[TICKET] task description` title
+  (repo root folder name when there is no ticket), fills every template section from the actual diff,
+  and **writes the description to the vault before the PR is opened**. Hand it:
+  - the **Pre-PR gate** receipt block from Step 3a verbatim, one per repo (mandatory). This is what
+    lets reviewers and the PR bots skip re-deriving these checks: every layer's verbatim command, its
+    exit code, and the repo's own rule IDs already answered. A PR body without a receipt block whose
+    SHA matches the pushed HEAD is incomplete.
+  - the **Review fan-out** result from Step 3b (mandatory):
     ```
     ## Review fan-out
     - Function: {GO|NO-GO} — {top finding or "—"}
@@ -149,9 +150,13 @@ Surface the synthesis to the user before Step 4 drafts the PR body.
     {Rollback note, or "—"}
     ```
     Or, if skipped: `Skipped: tiny PR (N files, M LOC, no sensitive paths)`.
-- **ASK the user to confirm or edit** the title and body
+- A **failed vault write blocks the PR** — the description is a vault artifact first and a PR body
+  second. Fix the write, do not fall back to a local file.
+- **ASK the user to confirm or edit** the returned title and body. This confirmation stays: creating a
+  PR is outward-facing. What is *not* asked is which tool wrote the description.
 - Only after confirmation: create the PR with `gh pr create`
-- Show the PR URL when done
+- Show the PR URL when done, and pass it back to `pr-description` so it patches `pr:` and `## Links`
+  into the vault note
 
 ## Rules
 
@@ -164,4 +169,7 @@ Surface the synthesis to the user before Step 4 drafts the PR body.
   PR a draft.
 - NEVER weaken a gate, lint severity, or rule glob, and never add `@ts-ignore` / `eslint-disable` /
   `.skip`, to make Step 3a pass — fix the code instead
-- If $ARGUMENTS is provided, use it as the commit message / PR title
+- NEVER ask whether to use `pr-description`, and never hand-roll a PR body instead of calling it —
+  every PR gets the `[TICKET] task description` title and the vault note
+- If $ARGUMENTS is provided, use it as the commit message and as the description half of the PR title
+  (the `[TICKET]` tag is still derived, never dropped)

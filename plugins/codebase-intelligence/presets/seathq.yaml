@@ -126,9 +126,9 @@ roles:
       - "MUST: contract criteria are executable gates, not adjectives."
     gotchas:
       - "planner only — produces contract + disjoint territory map; writes no feature code."
+      - "state is a vault note (02-Notes/Sessions/<run>.state.md) written by the mediator — the PM owns no repo file."
     validation: []
-    territory:
-      - ".claude/orchestration-state.json"
+    territory: []            # plans, does not own writable files
 
   pr-reviewer:
     repo: seathq-core        # reviews merged diff across repos
