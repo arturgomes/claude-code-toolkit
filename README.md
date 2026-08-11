@@ -429,6 +429,7 @@ The `/prp-orchestrate` team. Each agent has a **recipient-adaptive language mode
 | `ask-kb` | Query personal KB for patterns and principles |
 | `consult-kb` | Review architecture decisions against KB |
 | `kb-indexer` | Ingest books/PDFs into the KB |
+| `vault-link` | Writer-side contract for the vault knowledge graph — relation vocabulary, path-qualification for colliding basenames, managed Context footer. Consulted by `session-memory` / `kb-indexer` / `index-kb-domains` so new notes arrive linked instead of needing a retrofit |
 | `skillify` | Extract a reusable SKILL.md draft from a completed plan + report pair (writes to `~/skill-drafts/`, never directly into the plugin) |
 | `doubt-driven` | Mid-flight adversarial review with a fresh-context sub-agent that falsifies load-bearing claims via grep; hooked into `prp-implement` Step 3.7b (one-shot at task ⌈N/2⌉) |
 | `claude-md-init` | Scaffold a 12-rule CLAUDE.md (Karpathy 1–4 + Mnilax 5–12) with anti-rationalization table and tool-routing tail; refuses to overwrite an existing ≥50-line CLAUDE.md without `--append` |

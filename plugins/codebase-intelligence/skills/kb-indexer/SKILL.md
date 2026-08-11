@@ -117,6 +117,38 @@ sources:
 
 ---
 
+## Graph frontmatter — every card, every time
+
+Each card **must** be written with frontmatter, or it enters the vault as a sink. 86% of the existing
+2,176 KB cards were written without any, which is how the vault accumulated 1,909 unlinked notes before
+they had to be retrofitted. Emit on every `kb/<book>/` file:
+
+```yaml
+---
+title: "Core Principles"
+type: kb-card                 # kb-book on the book's README.md
+book_slug: <book-dir-name>
+domain: <domain>
+schema_version: 2
+up: "[[05-Knowledge-Base/domains/<domain>/kb/<book>/README]]"
+tags: [knowledge-base, <domain>]
+---
+```
+
+Two rules that are not optional here:
+
+- **`up` points at the book hub** — the book's `README.md` — and the hub's own `up` points at
+  `05-Knowledge-Base/domains/<domain>/index`.
+- **Links into `05-Knowledge-Base/` are always fully vault-relative.** 262 files in this vault are named
+  `01_core_principles.md`; a bare `[[01_core_principles]]` resolves to the wrong book or to nothing.
+
+Also add the book directory to `kb-registry.yaml`. It does not gate the graph edges, but 11 book
+directories are currently missing from it and drop out of registry-driven tooling.
+
+Contract: the `vault-link` skill. Gate: `bash 02-Notes/.scripts/check-graph-acs.sh`.
+
+---
+
 ## Quality Checklist Before Writing
 
 Before writing the KB file, verify:
@@ -126,6 +158,8 @@ Before writing the KB file, verify:
 - [ ] Topics list covers what was actually extracted (drives KB selection)
 - [ ] File is under 400 lines (split if needed)
 - [ ] No copyrighted text reproduced verbatim beyond short quotes
+- [ ] **Graph frontmatter present on every card** (`type`, `book_slug`, `domain`, `up`, `schema_version`)
+- [ ] **Book `README.md` hub exists** and links to every card, path-qualified
 
 ---
 

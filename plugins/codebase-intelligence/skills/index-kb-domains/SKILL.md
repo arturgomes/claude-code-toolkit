@@ -41,6 +41,15 @@ Extract for each entry in `knowledge_bases[]`:
 
 Count total books: `N = sum of len(sources) across all domains`.
 
+**The registry is not the whole truth — cross-check it against disk.** Measured 2026-08-11, it holds 256
+of the 267 book directories that exist under `domains/*/kb/`; all six `gamification-education` books are
+absent, which is why that domain showed 48 cards behind 6 index links. Enumerate the directories as well
+as the registry, index the union, and report registry gaps so they get fixed at the source. Indexing the
+registry alone silently drops 11 books.
+
+Links into `05-Knowledge-Base/` must be **fully vault-relative** — 262 files here are named
+`01_core_principles.md`, so a bare basename resolves to the wrong book. See the `vault-link` skill.
+
 ### Step 2 — Derive cross-domain topic map
 
 For each source across all domains, collect its `topics[]`.

@@ -84,7 +84,13 @@ Do **not** `git add` or `git commit`. User reviews and commits.
 
 ## Template
 
-The scaffold body (write to `$TARGET`):
+The scaffold body (write to `$TARGET`).
+
+**The "Prior work on this repo" section is conditional**: include it only when
+`03-Systems/services/svc-<repo>.md` exists in the Obsidian vault, substituting `<repo>` with the
+repository directory name lower-cased. It is the mechanism by which accumulated vault context reaches a
+coding session — without it the knowledge graph is well-formed and unread. Drop the section entirely
+when there is no such node rather than emitting a link to a note that does not exist.
 
 ```markdown
 # CLAUDE.md — Behavioral Contract
@@ -106,6 +112,20 @@ Source: <https://example/12-rules-for-claude-code> (Karpathy 1–4, Mnilax 5–1
 10. **Long-running operations need checkpoints** — Save state every N steps. Resume from disk, not from rerun. *(Mnilax)*
 11. **Convention beats novelty** — Match the codebase's existing pattern even if a "better" one exists. Novelty only with explicit user approval. *(Mnilax)*
 12. **Fail visibly, not silently** — Exit nonzero on partial success. Print the failing input. Never swallow errors to keep going. *(Mnilax)*
+
+## Prior work on this repo
+
+Before planning any non-trivial change, check what the vault already knows:
+
+- **Repo hub**: `03-Systems/services/svc-<repo>.md` in the Obsidian vault — every plan, report, session
+  and PR description recorded for this codebase, newest first. Read the most recent plan and report for
+  prior decisions and known failure modes.
+- **Then search, don't browse**: use the `ask-kb` skill (BM25 over the whole vault) once you know what
+  you are looking for.
+- **Write back**: `session-memory` records findings and decisions, linked to this repo via
+  `affects: "[[svc-<repo>]]"`. A session that is not linked to the repo hub is invisible to the next one.
+
+Omit this section when the repo has no service node in the vault.
 
 ## Anti-rationalization
 

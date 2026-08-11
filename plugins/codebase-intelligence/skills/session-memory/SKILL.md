@@ -146,6 +146,15 @@ pre-existing notes keep it and stay valid, since every relation key is optional 
 never does. With no ticket (a `GENERAL-*` or project-root-slug session), omit `up` rather than inventing
 a node.
 
+**Also emit `affects` when the repo has a service node.** If `03-Systems/services/svc-{project}.md`
+exists, add `affects: "[[svc-{project}]]"`, where `{project}` is the repo directory name lower-cased.
+That single edge is what puts this session on the repo's hub, so the next session in that codebase finds
+it — a session linked only to its ticket is invisible to anyone who starts from the repo. Omit the key
+if the node does not exist; do not create one.
+
+Full writer-side contract — vocabulary, path-qualification, the managed footer:
+`vault-link` skill (`plugins/codebase-intelligence/skills/vault-link/SKILL.md`).
+
 Month-bucketing of `02-Notes/Sessions/` is handled separately by `bucket-by-month.sh`; keep writing to
 the canonical path below so SESSION START can still find the file.
 
