@@ -32,7 +32,8 @@ the disjoint-territory assertion, **the never-on-`main` branch assertion per spe
 the per-round rules + constitution verdict, 🔴-blocks-merge, serial merge, **the Phase 5.5 integration
 gate before any PR exists**, **Phase 5.75 convergence**, **the Step 4.5 vault-persistence contract
 (every durable artifact is a vault note, written when produced — including the orchestration state and
-every PR description, and including on diagnosis-only runs)**, clean shutdown, and the
+every PR description, and including on diagnosis-only runs)**, **the Step 4.7 external-comment budget
+(≤ 200 words, verdict first, evidence stays in the vault)**, clean shutdown, and the
 requirement-fork / red-blast-radius human gate.
 
 ## Your Mission
@@ -475,7 +476,7 @@ writes no vault note has failed its persistence contract, even if the code shipp
    | **Orchestration state (all phases)** | `02-Notes/Sessions/<TICKET>-<slug>.state.md` |
    | **PR description (every PR, before it is opened)** | `02-Notes/pr-descriptions/<YYYY-MM-DD>-<TICKET>-<slug>[-<repo>].md` |
    | Completion / outcome report | `02-Notes/Reports/<YYYY-MM>/<slug>-report.md` |
-   | Drafted external comms (Jira comment bodies, review replies) | the session note, or `02-Notes/Plans/` beside the plan |
+   | Drafted external comms (Jira comment bodies, review replies) — full version; the **posted** one is short per Step 4.7 | the session note, or `02-Notes/Plans/` beside the plan |
 
    Match the existing folder convention **by listing the target directory first** — do not invent a
    layout. Follow `02-Notes/Sessions/_session-template.md` for session notes.
@@ -528,6 +529,39 @@ pr-description?" question, because the answer is always yes:
 - The only confirmation left is `gh pr create` itself, which is outward-facing. Which tool wrote the
   description is not asked.
 
+## Step 4.7 — External comments are SHORT (Jira, PR replies, Slack)
+
+The vault note is where the evidence lives (Step 4.5). The comment is where the **answer** lives.
+Every phase of this flow accumulates verified facts, shas, commands and file:line citations — pasting
+that accumulation into a ticket is the default failure mode, and it costs the reader more than it
+costs you. A stakeholder who has to scroll a comment to find the verdict did not get an answer.
+
+**Hard budget for any status, diagnosis, or QA reply: ≤ 200 words and ≤ 12 lines.** Count before
+posting. Over budget ⇒ cut **evidence**, never conclusions.
+
+Rules, all mandatory at every `CI_MODEL_TIER`:
+
+1. **Verdict in the first sentence.** "Not a bug", "Fixed, live on QA", "Blocked on X" — before any
+   reasoning. If the first line is context, rewrite it.
+2. **No headings in a short reply.** `###` sections are the tell that a comment became a report. At
+   most one bulleted list, at most 5 bullets.
+3. **Never paste run artifacts into a comment**: no gate receipts, no command output, no sha tables,
+   no `file:line`, no per-layer breakdowns, no coverage matrices. Those are why the vault note exists.
+   Name a sha only when the reader must act on it.
+4. **One decision per ask, at the end, one line each, addressed by name.** A question buried mid-body
+   does not get answered.
+5. **Say it once.** Do not restate what earlier comments on the same ticket already established;
+   reference the comment id instead.
+6. **Long form is opt-in only** — a re-test procedure QA will execute step by step, or an analysis the
+   PM explicitly asked for. Then say what it is in the first line, and still keep the verdict on top.
+7. **Write the full version to the vault, post the short one.** The two are not the same document,
+   and the vault copy is what a future session reads. Both are written; only one is sent.
+
+The same budget governs PR review replies and Slack messages this flow sends. It does **not** shrink
+the **PR body** — `pr-description` (Step 4.6) is this flow's one long-form external artifact by
+design, and the Phase 5.5 receipt belongs in it. Verbosity in a comment is not thoroughness — the
+thoroughness already happened, and it is recorded somewhere the reader is not obliged to walk through.
+
 ## Step 5 — Pre-approval note (avoid permission stalls — KB: Agent Teams P05/X01)
 
 Teammates inherit the main session's permissions; unapproved tools stall them. Before spawning,
@@ -547,6 +581,9 @@ user at their `settings.json` allow-list if a specialist would otherwise block.
 - Never opens a PR on a 🔴 integration gate, and never weakens a gate, glob, or lint severity to clear
   one.
 - Never deletes `unrequested` code found at convergence — it reports it with evidence.
+- Never posts a run's accumulated evidence — receipts, shas, `file:line`, coverage matrices — into a
+  Jira comment, PR reply, or Slack message. Those go to the vault; the comment carries the verdict and
+  the decision, inside Step 4.7's budget.
 - Never treats a repo-local scratch directory (`planning/`, `.planning/`, `artur-documents/`, the
   session scratchpad, `/tmp`) as a substitute for the vault, and never ends a run whose findings exist
   only there — see Step 4.5.
