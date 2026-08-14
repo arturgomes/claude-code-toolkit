@@ -32,12 +32,7 @@ MEMORY → JIRA → ANCHOR → DETECT → PARSE → EXPLORE → KB → CONTEXT7 
 
 ## Model capability (read first)
 
-This skill is model-agnostic. Read `CI_MODEL_TIER` (values: `frontier` | `standard` | `light`; default `standard` when unset or unknown).
-- `frontier`: treat numbered sub-steps as intent; skip redundant per-step narration.
-- `standard` / `light`: follow every numbered step verbatim.
-Invariants are mandatory at EVERY tier and never skipped: executable gates, the AC anchor, drift checks, write-before-stop, the independent blind verifier, and blast-radius routing.
-
-Evidence-first: wherever a step asks you to justify or explain a choice, do not narrate open-ended reasoning — state which AC this serves + file:line proof. Keep all structured verdicts (drift verdicts, 🔴/🟡/🟢/💡, ✅ ON TRACK) intact.
+Tier semantics, the PRP invariant set, the evidence-first rule, and Model Routing: `../shared/model-tier.md`.
 
 <context>
 CLAUDE.md rules: @CLAUDE.md
@@ -448,21 +443,11 @@ Verdict MUST be ✅ ON TRACK before proceeding.
 
 **GATE (blocking unknown)**: GENERATE refuses to produce the plan while any blocking (requirement-type) unknown from Phase 1.5 remains open. Resolve it with the user, or log it verbatim as an explicit assumption, before generating.
 
-**HIERARCHY CHECK** — Before saving, list the target folder to confirm placement:
-```
-mcp__ultimate-obsidian__list_vault({ path: "02-Notes/Plans" })
-```
-Review existing plan names to ensure consistent kebab-case naming with no duplicates.
+**Write protocol** — scrub, HIERARCHY CHECK, MCP-only write, month bucket, typed frontmatter, and the
+omit-dangling-key rule are all `../shared/vault-persistence.md`. On the hierarchy check, also review the
+existing plan names so this one stays consistent kebab-case with no duplicate.
 
-**OUTPUT_PATH**: Save via Obsidian MCP — do NOT use Write tool or bash:
-```
-mcp__ultimate-obsidian__create_or_update_note({
-  filepath: "02-Notes/Plans/{kebab-case-feature-name}.plan.md",
-  content: "..."
-})
-```
-
-**PROJECT_ROOT_NAME**: derive via `basename $(git rev-parse --show-toplevel 2>/dev/null || pwd)` and use as `{project-root-name}` below.
+**OUTPUT_PATH**: `02-Notes/Plans/{YYYY-MM}/{kebab-case-feature-name}.plan.md`, mode `overwrite`.
 
 **FRONTMATTER_TEMPLATE**: Include at the start of every plan file:
 ```yaml
@@ -483,21 +468,13 @@ tags:
 ---
 ```
 
-**Typed relations (knowledge-graph ontology).** `schema_version: 1` opts the note into
-`02-Notes/.scripts/check-graph-acs.sh` enforcement; `up` and `implements` are the graph edges. Spec:
-`02-Notes/Wiki/knowledge-graph-ontology.md`.
+**This plan's typed relations** (semantics + the omit-dangling-key rule:
+`../shared/vault-persistence.md`):
 
 - `up` → the ticket node `03-Systems/tickets/{TICKET}.md`, else the project's subject MOC.
 - `implements` → the refinement contract this plan was planned from (Step R), when there is one.
 - `affects` → `03-Systems/` service / table nodes the plan will change, **only** those you can name from
   the Files-to-Change list. Do not guess at systems.
-
-**If no target resolves to an existing note, OMIT THE KEY.** Never emit `up: "[[undefined]]"`,
-`up: "[[]]"`, or a link to a note you did not verify exists — a dangling edge is worse than a missing
-one, and the gate fails on it. An absent key is always valid (every relation key is optional by design).
-
-**File placement**: write into `02-Notes/Plans/{YYYY-MM}/` — the month bucket. A note at the `Plans/`
-root fails `check-acs.sh` AC1.
 
 ---
 
@@ -624,17 +601,19 @@ something that works.
 
 ### Model Routing
 
-**This is the CANONICAL definition of Model Routing.** Other codebase-intelligence files reference this block by name; do not redefine it there.
+Definition, tier meanings, and the single-tier fallback: `../shared/model-tier.md`. It used to be
+defined here and referenced from elsewhere, which made a command file the owner of a rule that fifteen
+files depend on.
 
-Routing maps each task's blast radius to an executor tier via `CI_MODEL_TIER` (`frontier` | `standard` | `light`, default `standard`). Tag every task with its blast radius:
+What this phase owns: **tag every generated task with its blast radius**, so the downstream executor can
+route it without re-deriving the risk.
 
+```
 Blast radius: green|yellow|red
+```
 
-- **green** (isolated, low-risk, well-mirrored) → `light` or `standard`; keep explicit steps.
-- **yellow** (cross-module, moderate risk) → `standard`; keep explicit steps.
-- **red** (auth/payments/api/deploy, high blast radius / danger zone) → `frontier` if available; a confirmed top-tier long-horizon model MAY take goal+constraints tasks (still gated on Model Routing).
-
-**Fallback (single-tier mode)**: routing is advisory, never a required dependency. When `CI_MODEL_TIER` is unset/unknown, or only one model is available, run in **single-tier mode** — treat every task at `standard`, keep explicit steps, and run serial. No specific model id and no specific effort value is ever required for this plan to execute.
+A `red` task additionally carries the human gate into the plan — `prp-implement` stops on it rather
+than routing around it with a stronger model.
 
 ---
 
@@ -688,12 +667,12 @@ is **both**. Never write into a repo you were not asked to change.
 </post_generation>
 
 <o>
-**OUTPUT_FILE**: `~/Documents/Obsidian-Vault/02-Notes/Plans/{kebab-case-feature-name}.plan.md` (saved via Obsidian MCP)
+**OUTPUT_FILE**: `~/Documents/Obsidian-Vault/02-Notes/Plans/{YYYY-MM}/{kebab-case-feature-name}.plan.md` (saved via Obsidian MCP — the month bucket, per `../shared/vault-persistence.md`)
 
 If PRD input: update phase status to `in-progress`, link plan.
 
 **REPORT_TO_USER**: Report plan file path, ticket, complexity/confidence score, AC count, drift gates passed, source counts (Memory/Serena/KB/Context7/Web), and next command:
-`/codebase-intelligence:prp-implement ~/Documents/Obsidian-Vault/02-Notes/Plans/{feature-name}.plan.md`
+`/codebase-intelligence:prp-implement ~/Documents/Obsidian-Vault/02-Notes/Plans/{YYYY-MM}/{feature-name}.plan.md`
 </o>
 
 <verification>

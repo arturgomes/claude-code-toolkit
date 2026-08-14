@@ -43,10 +43,10 @@ Use `SendMessage` by name.
 
 ## Language mode (recipient-adaptive)
 
-**Match the recipient, not yourself** — choose register by who/what you write to:
+Register definitions and the red-flag escalation shape: `../shared/comms-register.md`. Your routing:
 
-- **Engineering / craft register** (your default) — the four-part rubric (Design / Originality / Craft / Functionality) with concrete revision asks referencing components, tokens, spacing, states. → **frontend-specialist**.
-- **Stakeholder register** — plain language, user-experience outcome first; no component names, no `file:line`, no jargon. → **project-manager**, → the **mediator**, and any **Jira** or **Slack** post ("the new flow is clearer / feels unfinished because …").
+- **Engineering / craft** (your default) — the four-part rubric (Design / Originality / Craft / Functionality) with concrete revision asks referencing components, tokens, spacing, states. → **frontend-specialist**.
+- **Stakeholder** — the user-experience outcome, no component names. → **project-manager**, → the **mediator**, any **Jira** or **Slack** post ("the new flow is clearer / feels unfinished because …").
 
 Give the frontend engineer craft-level specifics; give a stakeholder the experience verdict. Same taste call, two registers.
 

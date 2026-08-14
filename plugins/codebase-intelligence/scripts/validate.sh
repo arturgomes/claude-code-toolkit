@@ -167,6 +167,54 @@ for p in sorted(list(walk("commands", ".md")) + list(walk("skills", ".md")) + li
             fail("C6", f"{rel(p)} references /{ref} — no such command")
 print(f"C6 references ...... {n_refs} resolved")
 
+# ── C8  shared/ contracts: cited, resolvable, and not re-inlined ──────────────
+# The point of shared/ is that a cross-cutting rule has ONE copy. Two things break that:
+# a citation that does not resolve (the reader silently gets nothing), and a block that
+# gets pasted back inline into three or more files (the drift starts again).
+shared_dir = os.path.join(root, "shared")
+n_cites = 0
+if os.path.isdir(shared_dir):
+    shared_files = {f for f in os.listdir(shared_dir) if f.endswith(".md")}
+    CITE = re.compile(r'`((?:\.\./)+shared/[A-Za-z0-9._-]+\.md)`')
+    cited = set()
+    for p in sorted(list(walk("commands", ".md")) + list(walk("skills", ".md"))
+                    + list(walk("agents", ".md")) + list(walk("presets", ".md"))
+                    + list(walk("skills", ".json")) + list(walk("shared", ".md"))):
+        if os.path.dirname(p) == shared_dir and os.path.basename(p) == "README.md":
+            continue  # the index cites everything by name, not by path
+        here = os.path.dirname(p)
+        for m in set(CITE.findall(open(p, encoding="utf-8").read())):
+            n_cites += 1
+            target = os.path.normpath(os.path.join(here, m))
+            if not os.path.exists(target):
+                fail("C8", f"{rel(p)} cites `{m}` — resolves to {os.path.relpath(target, root)}, "
+                           f"which does not exist")
+            else:
+                cited.add(os.path.basename(target))
+    # README.md is the index; it is cited by prose, not by path
+    for f in sorted(shared_files - cited - {"README.md"}):
+        warn("C8", f"shared/{f} is cited by nothing — either wire it up or delete it")
+
+    # a shared line that reappears verbatim in 3+ other files is the duplication coming back
+    shared_lines = {}
+    for f in sorted(shared_files):
+        for line in open(os.path.join(shared_dir, f), encoding="utf-8"):
+            s = re.sub(r'\s+', ' ', line).strip()
+            if len(s) >= 60 and not s.startswith(("|", "#", "-", "`", ">")):
+                shared_lines.setdefault(s, f)
+    seen = {}
+    for p in sorted(list(walk("commands", ".md")) + list(walk("skills", ".md"))
+                    + list(walk("agents", ".md"))):
+        for line in open(p, encoding="utf-8"):
+            s = re.sub(r'\s+', ' ', line).strip()
+            if s in shared_lines:
+                seen.setdefault(s, []).append(rel(p))
+    for s, users in sorted(seen.items()):
+        if len(users) >= 3:
+            fail("C8", f"shared/{shared_lines[s]} line re-inlined in {len(users)} files "
+                       f"({', '.join(users[:3])}…) — cite it instead: \"{s[:60]}…\"")
+print(f"C8 shared/ ......... {n_cites} citations")
+
 print()
 for line in fails + warns:
     print("  " + line)

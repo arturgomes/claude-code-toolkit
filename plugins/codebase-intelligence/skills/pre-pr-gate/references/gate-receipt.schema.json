@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pre-pr-gate/gate-receipt.schema.json",
   "title": "Pre-PR gate receipt",
-  "description": "Written to <repo>/.claude/pre-pr-gate.json by the pre-pr-gate skill. SHA-bound: a receipt whose sha is not the current HEAD is stale and must be treated as absent. No valid receipt with verdict 'pass' => no PR and no merge.",
+  "description": "One entry of the receipts[] array inside the run's vault state note, 02-Notes/Sessions/<TICKET>-<SUFFIX>.state.md. NEVER written to a repo-local file: a receipt in one worktree's .claude/ is invisible to the sibling worktree and the stack layer that must verify it, and dies with the checkout. SHA-bound: a receipt whose sha is not the current HEAD is stale and must be treated as absent. No valid receipt with verdict 'pass' => no PR and no merge.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "repo", "branch", "baseBranch", "sha", "verdict", "layers", "blockers", "receiptBlock"],
@@ -18,6 +18,11 @@
       "type": "string",
       "enum": ["prp-orchestrate", "prp-implement", "ship", "worktree-lifecycle", "manual"],
       "description": "Which caller invoked the gate."
+    },
+    "stackLayer": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Stacked-PR runs only: the layer index this receipt is bound to (0 = the layer on the trunk). One receipt per layer per repo — a receipt bound to the top of a stack proves nothing about the layers below it."
     },
     "packageManager": { "type": "string", "enum": ["npm", "pnpm", "yarn", "none"] },
     "attempt": { "type": "integer", "minimum": 1, "maximum": 3, "description": "Fix/re-run cycle number. >3 => stop and escalate to a human." },
@@ -133,7 +138,7 @@
         "properties": {
           "repo": { "type": "string" },
           "verdict": { "type": "string", "enum": ["pass", "block"] },
-          "receiptPath": { "type": "string" }
+          "stateNote": { "type": "string", "description": "Vault-relative path of the state note holding that repo's receipt, e.g. 02-Notes/Sessions/PROJ-421-pdf-export.state.md." }
         }
       }
     },

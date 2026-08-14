@@ -58,20 +58,12 @@ Neither ships with this plugin, because both are user-environment configuration 
 behavior, and a skill that silently installs hooks into someone's settings is a worse problem than the
 one it solves. Recommend them; do not install them unasked.
 
-**Assert it mechanically before the first write.** Judgment is not the control here; this predicate is:
+**Assert it mechanically before the first write.** Judgment is not the control here; the predicate is —
+`$BASE` from `../../shared/git-base-detection.md`, the assertion from
+`../../shared/branch-rule.md`. Failing it here means: branch into a worktree before writing anything.
 
-```bash
-BASE=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
-[ -z "$BASE" ] && BASE=$(git remote show origin 2>/dev/null | sed -n 's/.*HEAD branch: //p')
-[ -z "$BASE" ] && BASE=main
-CUR=$(git branch --show-current)
-case "$CUR" in
-  main|master|"$BASE"|"") echo "🔴 STOP: on '$CUR' — branch into a worktree before writing anything"; exit 1 ;;
-  *) echo "ok: on '$CUR' (base=$BASE)" ;;
-esac
-```
-
-Three ways this rule gets broken in practice, all of them covered above:
+Three ways this rule gets broken in practice (summarised in `../../shared/branch-rule.md`; the
+lifecycle detail is here):
 
 1. **The serial fallback.** `git switch -c` fails (branch exists, dirty tree) and the run continues on
    whatever HEAD was — usually `main`. The fallback loses *isolation*, never the branch. Re-run the
@@ -87,10 +79,7 @@ and report** — do not "just make the change and sort the branch out after". Th
 
 ## Model capability (read first)
 
-This skill is model-agnostic. Read `CI_MODEL_TIER` (values: `frontier` | `standard` | `light`; default `standard` when unset or unknown).
-- `frontier`: treat numbered sub-steps as intent; skip redundant per-step narration.
-- `standard` / `light`: follow every numbered step verbatim.
-Invariants are mandatory at EVERY tier and never skipped: executable gates, the AC anchor, drift checks, write-before-stop, the independent blind verifier, and blast-radius routing.
+Tier semantics and the PRP invariant set: `../../shared/model-tier.md`.
 
 ## Capability gate (read before ENTER or EXIT)
 
@@ -135,14 +124,8 @@ inside the repo tree (where it could be accidentally committed or scanned):
 
 ### Steps
 
-1. **Detect the base branch** (never hardcode `main`) — reuse the same chain as `prp-implement`
-   Phase 0.2, `main` being only the last-resort fallback:
-   ```bash
-   BASE=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
-   [ -z "$BASE" ] && BASE=$(git remote show origin 2>/dev/null | sed -n 's/.*HEAD branch: //p')
-   [ -z "$BASE" ] && BASE=main   # last-resort fallback only
-   echo "base=$BASE"
-   ```
+1. **Detect the base branch** with the canonical chain — `../../shared/git-base-detection.md`. Never
+   hardcode `main`; it is the last-resort fallback only.
 2. **Fetch the base up to date**:
    ```bash
    git fetch origin "$BASE"

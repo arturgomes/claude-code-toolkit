@@ -14,10 +14,7 @@ version: 1.0.0
 
 ## Model capability (read first)
 
-This skill is model-agnostic. Read `CI_MODEL_TIER` (values: `frontier` | `standard` | `light`; default `standard` when unset or unknown).
-- `frontier`: treat numbered sub-steps as intent; skip redundant per-step narration.
-- `standard` / `light`: follow every numbered step verbatim.
-Invariants are mandatory at EVERY tier and never skipped: executable gates, the AC anchor, drift checks, write-before-stop, the independent blind verifier, and blast-radius routing.
+Tier semantics and the PRP invariant set: `../../shared/model-tier.md`.
 
 Why this exists: loops fail through vague stop conditions ("done when it looks good"), self-graded completion, and unbounded iteration. The contract makes termination objective before the first attempt, the same way `drift-guard`'s anchor makes scope fixed before the first task.
 

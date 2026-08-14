@@ -62,3 +62,11 @@ Run the complete 16-item Test Quality Checklist on each test file added or signi
 - `## Summary` — N suites, total tests, average /16, N passing (≥14), N needing work (<14)
 - One section per `describe(…)` suite — score, brief issue list (full schema only if score < 14)
 - `## File-Level Recommendations` — recurring issues across suites (include only if any)
+## Persistence
+
+Append the findings to the active session note; a recurring gap (a whole suite with no failure-path
+coverage) also goes into `## General Rules`, since it is a rule the next run should start from rather
+than rediscover. A standalone sweep writes
+`02-Notes/Reports/{YYYY-MM}/{slug}-test-quality.md` instead.
+
+Protocol: `../../shared/vault-persistence.md` — write before reporting.

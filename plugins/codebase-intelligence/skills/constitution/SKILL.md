@@ -23,8 +23,7 @@ violation visible and argued instead of silent.
 
 ## Model capability (read first)
 
-Read `CI_MODEL_TIER` (`frontier | standard | light`, default `standard`). `frontier`: the gate
-questions are intent. `standard`/`light`: run them verbatim. Mandatory at every tier: **a MUST
+Tier semantics: `../../shared/model-tier.md`. Mandatory at every tier **here**: **a MUST
 violation is CRITICAL**, the **Complexity Tracking row is required for every violation carried
 forward**, and the **no-in-flight-amendment rule**.
 
@@ -179,3 +178,17 @@ to outrank every plan does not get created without the user seeing it.
 - Rule classification shared with `../mediator/references/rules-rubric.md` (MUST / SHOULD vocabulary).
 - Consumed by: `refinement`, `prp-plan`, `spec-analyze`, `spec-converge`, `mediator`, `pre-pr-gate`,
   `pr-reviewer`.
+## Persistence — the repo owns it, the vault indexes it
+
+`.claude/constitution.md` stays in the repo: it is a rule source the bots, the gate, and every reviewer
+read from the checkout, and it must ship in the PR. That copy is authoritative.
+
+It also gets a **vault mirror**, because a constitution that cannot be found from another project is a
+constitution nobody reuses:
+
+- **Target:** `02-Notes/Specs/{project-root-name}-constitution.md`, mode `overwrite`.
+- **Contents:** the principles with their ids and MUST/SHOULD classification, the `ratified` /
+  `draft` status, the version, and a link to the repo path. Re-mirror on every amendment.
+- **Also:** every Complexity Tracking row that survives a run is recorded in that run's report — a
+  justification that exists only in a PR comment is lost the moment the PR is merged.
+- Protocol and frontmatter: `../../shared/vault-persistence.md`.

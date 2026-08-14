@@ -25,8 +25,7 @@ panel; a harness plans first and gets the plan approved before executing).
 
 ## Model capability (read first)
 
-Read `CI_MODEL_TIER` (`frontier | standard | light`, default `standard`). `frontier`: sub-steps are
-intent. `standard`/`light`: verbatim. Invariants mandatory at EVERY tier: the empty-assumption-ledger
+Tier semantics: `../../shared/model-tier.md`. Invariants mandatory at EVERY tier **here**: the empty-assumption-ledger
 rule, the story→FR→SC→scenario→DoD coverage rule, **every story independently testable**, the QA
 sign-off, the **5-question ceiling**, and **STOP-before-plan on NOT READY**.
 
@@ -211,7 +210,8 @@ session**; a fresh session after real answers gets a fresh budget.
   ledger + Clarifications log → consumed by Phase 0 as the authoritative requirement set.
 - NOT READY: the same files with `## Open Questions` and a hard STOP — no planning artifact, no code.
 - **Vault note frontmatter** — carry the typed relations so the contract is a graph node, not an island
-  (spec: `02-Notes/Wiki/knowledge-graph-ontology.md`):
+  (write protocol, frontmatter semantics, month bucket, omit-dangling-key:
+  `../../shared/vault-persistence.md`):
 
   ```yaml
   ---
@@ -226,10 +226,8 @@ session**; a fresh session after real answers gets a fresh budget.
   ---
   ```
 
-  `schema_version: 1` opts the note into `check-graph-acs.sh`. `up` → the ticket node
-  `03-Systems/tickets/{TICKET}.md`, else the project's subject MOC. **If no target resolves to an existing
-  note, OMIT THE KEY** — never emit `[[undefined]]` or `[[]]`; a dangling edge fails the gate while an
-  absent key is always valid. Write into the `{YYYY-MM}` month bucket or `check-acs.sh` AC1 fails.
+  This note's one edge: `up` → the ticket node `03-Systems/tickets/{TICKET}.md`, else the project's
+  subject MOC.
 - **session-memory (read + write):** read prior session at the start (a recurring ambiguity may
   already be answered in `## General Rules`); on the verdict, write the DoR outcome and record any
   **recurring ambiguity as a reusable pitfall** in `## General Rules` (e.g. "this domain's 'export'

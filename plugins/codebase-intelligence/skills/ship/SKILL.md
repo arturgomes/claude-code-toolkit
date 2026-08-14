@@ -41,13 +41,8 @@ Ship the current changes through commit, push, and PR creation. Confirm with the
   - Build output: `dist/`, `build/`, `.next/`, `__pycache__/`
   - Dependencies: `node_modules/`, `vendor/`, `.venv/`
   - OS/editor: `.DS_Store`, `Thumbs.db`, `*.swp`, `.idea/`, `.vscode/settings.json`
-- **Refuse to commit onto the base branch.** Before staging anything, assert HEAD is not
-  `main` / `master` / the detected base:
-  ```bash
-  BASE=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@'); : "${BASE:=main}"
-  CUR=$(git branch --show-current)
-  case "$CUR" in main|master|"$BASE"|"") echo "🔴 STOP: on '$CUR' — branch before committing"; exit 1 ;; esac
-  ```
+- **Refuse to commit onto the base branch.** Before staging anything, run the assertion in
+  `../../shared/branch-rule.md` with `$BASE` from `../../shared/git-base-detection.md`.
   On a 🔴: offer to create `feature/<slug>` off the current work and commit there — never commit to the
   base "just this once", and never resolve it by pushing to the base and opening a PR afterwards.
 - Draft a commit message based on the changes, matching the repo's existing commit style
@@ -83,11 +78,10 @@ Run after push, before PR draft. Three parallel adversarial reviewers in one mes
 
 ### Scope + skip rule
 
+`$BASE` / `$MERGE_BASE` / the size counts come from `../../shared/git-base-detection.md`; this skill
+adds only the sensitivity probe:
+
 ```bash
-BASE=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
-MERGE_BASE=$(git merge-base HEAD "origin/$BASE")
-FILES=$(git diff --name-only "$MERGE_BASE"..HEAD | wc -l)
-LOC=$(git diff --shortstat "$MERGE_BASE"..HEAD | awk '{print $4+$6}')
 SENSITIVE=$(git diff --name-only "$MERGE_BASE"..HEAD | grep -E 'auth|payment|migration|secret|token|crypto' | head -1)
 ```
 

@@ -55,15 +55,9 @@ any particular parent — the caller's checkout is wherever `git rev-parse` says
 
 ## Step 2 — Verify the branch (the base-branch rule applies here too)
 
-```bash
-BASE=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
-[ -z "$BASE" ] && BASE=$(git remote show origin 2>/dev/null | sed -n 's/.*HEAD branch: //p')
-[ -z "$BASE" ] && BASE=main
-CUR=$(git branch --show-current)
-case "$CUR" in main|master|"$BASE"|"") echo "🔴 STOP: on '$CUR' — nothing to describe"; exit 1 ;; esac
-```
-
-A detached HEAD or the base branch itself is a hard stop, not a warning: there is no PR to describe.
+`$BASE` from `../../shared/git-base-detection.md`, then the assertion from
+`../../shared/branch-rule.md`. A detached HEAD or the base branch itself is a hard stop, not a
+warning: there is no PR to describe.
 
 ## Step 3 — Establish the real base
 
@@ -241,7 +235,7 @@ mcp__ultimate-obsidian__create_or_update_note({ filepath: ..., mode: "overwrite"
 mcp__ultimate-obsidian__index_note({ vault_path: "~/Documents/Obsidian-Vault/02-Notes/pr-descriptions/{file}.md" })
 ```
 
-Run the `session-memory` pre-write secret scrub over the body first — PR descriptions quote logs, and
+Run the pre-write secret scrub (`../../shared/secret-scrub.md`) over the body first — PR descriptions quote logs, and
 logs carry tokens. Replace every match with `[REDACTED]`.
 
 **A failed vault write is a blocker, not a warning.** Report it and stop before `gh pr create`; do not

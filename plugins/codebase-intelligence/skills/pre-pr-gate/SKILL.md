@@ -24,13 +24,14 @@ unchecked merge broke 4 PRs; this gate is the fix.
 
 ## Model capability (read first)
 
-Read `CI_MODEL_TIER` (`frontier | standard | light`, default `standard`). `frontier`: layers are
-intent, run them in the cheapest correct order. `standard`/`light`: run every layer verbatim.
+Tier semantics: `../../shared/model-tier.md`. Here, `frontier` may run the layers in the cheapest
+correct order rather than L0→L9.
 
 **Mandatory at every tier, never skipped, never sampled, no "small diff" exemption:**
 L0 command resolution · L2 typecheck · L4 build · L5 tests · L6 import sweep · L7 bot-parity replay ·
-L9 whenever a constitution or a frozen contract set exists · the receipt · and **no PR on a 🔴**. A gate that is skipped because the diff "looked small" is the
-exact incident this skill exists to stop.
+L9 whenever a constitution or a frozen contract set exists · **the receipt written to the vault** ·
+and **no PR on a 🔴**. A gate that is skipped because the diff "looked small" is the exact incident
+this skill exists to stop.
 
 ---
 
@@ -66,26 +67,9 @@ layer is the fix and it is mandatory.
 1. **Determine scope.** The gate runs **once per repo that has diffs**. In a multi-repo org
    (e.g. `seathq-fe` + `seathq-be` + `seathq-core`) a change touching 3 repos runs 3 gates; a
    cross-repo contract change is only green when **all** of them are green.
-2. **Resolve the package manager** from the lockfile (`package-lock.json` → npm, `pnpm-lock.yaml` →
-   pnpm, `yarn.lock` → yarn). Never assume npm.
-3. **Prefer the preset.** If the active preset defines a `pre_pr_gate` block for this repo, those
-   commands are authoritative — they were verified against the repo.
-4. **Otherwise derive, then VERIFY each script exists** before running it:
-   ```bash
-   # every script the gate intends to run must exist, or the gate is misconfigured — not passing
-   for s in build test typecheck type-check lint; do
-     node -e "const s=require('./package.json').scripts||{};process.exit(s['$s']?0:1)" \
-       && echo "have: $s" || echo "MISSING: $s"
-   done
-   ```
-   A `MISSING:` script is **not** a skip. Substitute the real underlying tool (`npx tsc --noEmit`,
-   `npx eslint`, `npx vitest run`) and **record the substitution in the receipt**.
-5. **Mirror CI, do not invent.** Read `.github/workflows/*.y*ml` and use the same commands CI uses
-   (install flags included). If CI runs `npm run build` as its typecheck, the gate runs it too — plus
-   its own typecheck, because CI's coverage is the floor, not the ceiling.
-6. **Never run a mutating command as a gate.** `eslint --fix`, `prettier --write`, `--update-snapshots`
-   change the tree and manufacture a pass. Gate commands are read-only:
-   `npx eslint <files>` not `npm run lint` when that script is `eslint --fix`.
+2. **Resolve every gate command** through `../../shared/gate-command-resolution.md`: package manager
+   from the lockfile, preset first, verify each script exists, mirror CI, never a mutating or
+   watch-mode command, and never loosen a gate to pass it.
 
 Record in the receipt: package manager, per-layer command, and every substitution with its reason.
 
@@ -115,9 +99,10 @@ Non-zero ⇒ 🔴. Do not proceed to L4/L5 until it is 0 (their failures will be
 
 ## L3 — Lint the changed files, zero warnings
 
+Derive `$BASE` and `$MB` with the canonical chain in `../../shared/git-base-detection.md` — do not
+shortcut to `main`, or a `develop`-default repo lints the wrong range.
+
 ```bash
-BASE=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@'); : "${BASE:=main}"
-MB=$(git merge-base HEAD "origin/$BASE")
 CHANGED=$(git diff --name-only --diff-filter=ACMR "$MB"..HEAD | grep -E '\.(ts|tsx|js|jsx|mjs)$' || true)
 [ -n "$CHANGED" ] && npx eslint $CHANGED --max-warnings=0 ; echo "exit=$?"
 ```
@@ -153,11 +138,10 @@ and whose ESLint preset reports `no-unused-vars` as a **warning**, an unused or 
 the PR unblocked — and the review bots flag every one of them. This gate blocks them locally instead.
 
 `$MB` / `$CHANGED` come from L3's block — **re-derive them here if L3 was skipped** (a repo with
-`lint: null` has no L3, and this layer still runs):
+`lint: null` has no L3, and this layer still runs), again via
+`../../shared/git-base-detection.md`:
 
 ```bash
-BASE=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@'); : "${BASE:=main}"
-MB=$(git merge-base HEAD "origin/$BASE")
 CHANGED=$(git diff --name-only --diff-filter=ACMR "$MB"..HEAD | grep -E '\.(ts|tsx)$' || true)
 ```
 
@@ -262,8 +246,20 @@ justification and the code that cost it on the same screen.
 
 ## The gate receipt (no receipt ⇒ no PR)
 
-Write `<repo>/.claude/pre-pr-gate.json` (schema: `references/gate-receipt.schema.json`) **and** emit
-this block for the PR body and the caller:
+The receipt is **a vault artifact, not a repo file.** Write it as one entry of the `receipts[]` array
+inside the run's state note — `02-Notes/Sessions/<TICKET>-<SUFFIX>.state.md`, whole-note overwrite,
+schema `references/gate-receipt.schema.json` — per the contract in
+`../../shared/vault-persistence.md`.
+
+**Never write `<repo>/.claude/pre-pr-gate.json`, or any other local copy.** The receipt's whole job is
+to be read by someone who is not you: the sibling worktree merging beside you, the stack layer above
+you, `pr-reviewer` in a fresh context, the next session picking the run back up. A file in one
+worktree's `.claude/` is invisible to every one of them and is destroyed when the worktree is removed.
+**A failed vault write is a 🔴 that stops the phase** — there is no local fallback, because writing one
+"just to keep going" is what made the receipt unreadable in the first place.
+
+One receipt per repo, per stack layer, `sha`-bound to that layer's own tip (`stackLayer` in the
+schema). Then emit this block for the PR body and the caller:
 
 ```
 ### Pre-PR gate — {repo} @ {short-sha} — {✅ PASS | 🔴 BLOCK}
@@ -311,7 +307,8 @@ blockers, and hand back to the human. Do not open the PR to "let CI decide".
       complete 3-column Complexity Tracking row that predates this run.
 - [ ] No frozen contract modified outside a recorded amendment; every contract test ran and had failed
       at freeze time.
-- [ ] Receipt written, SHA-bound, and pasted into the PR body.
+- [ ] Receipt written **to the vault state note**, SHA-bound, and pasted into the PR body. No
+      repo-local copy exists.
 - [ ] No PR / no merge while the verdict is 🔴. No exemption for diff size.
 
 ## What this skill does NOT do
@@ -326,5 +323,9 @@ blockers, and hand back to the human. Do not open the PR to "let CI decide".
 
 `git`, the repo's package manager, the repo's own toolchain (`tsc` / `eslint` / test runner) — all via
 `npx`, nothing new installed. Reads the active `presets/*.yaml` (`pre_pr_gate`, `rule_sources`).
+MCP `ultimate-obsidian` — `create_or_update_note`, for the receipt. Without it there is no receipt,
+and without a receipt there is no PR.
 Shares the rule-classification rubric with `../mediator/references/rules-rubric.md`.
-References: `references/bot-parity.md`, `references/gate-receipt.schema.json`.
+References: `references/bot-parity.md`, `references/gate-receipt.schema.json`,
+`../../shared/model-tier.md`, `../../shared/vault-persistence.md`,
+`../../shared/git-base-detection.md`, `../../shared/branch-rule.md`, `../../shared/secret-scrub.md`.

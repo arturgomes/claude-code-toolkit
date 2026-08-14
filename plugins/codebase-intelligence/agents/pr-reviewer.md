@@ -39,8 +39,11 @@ meaning.
 
 ## Mechanical evidence first — read the gate receipt, do not re-run it
 
-The Phase E2 `pre-pr-gate` receipt (`<repo>/.claude/pre-pr-gate.json`, or the block the mediator
-injects) is your mechanical ground truth. Before reviewing:
+The Phase E2 `pre-pr-gate` receipt is your mechanical ground truth. It lives in the run's vault state
+note — `02-Notes/Sessions/<TICKET>-<SUFFIX>.state.md` → `receipts[]`, read via the
+`ultimate-obsidian` MCP — or arrives as the block the mediator injects. There is **no repo-local
+`.claude/pre-pr-gate.json`**; if you find one, it is a stale artifact and reading it is itself a
+finding. Before reviewing:
 
 1. **Check it exists and its `sha` equals the reviewed HEAD.** A missing or stale receipt is itself your
    first 🔴 finding: *"integration gate not run on this HEAD — merge not reviewable."* Do not review a
@@ -85,10 +88,10 @@ Use `SendMessage` by name.
 
 ## Language mode (recipient-adaptive)
 
-**Match the recipient, not yourself** — choose register by who/what you write to:
+Register definitions and the red-flag escalation shape: `../shared/comms-register.md`. Your routing:
 
-- **Engineering register** (your default) — one `path:line: <severity>: <problem>. <fix>.` per finding; checklist IDs, severity tags, verbatim rule citations. → the **mediator** (blocking findings that gate the merge), and any **GitHub** PR review comment.
-- **Stakeholder register** — plain verdict, no `file:line`, no jargon. → **project-manager**: "does the diff satisfy the contract?" answered as yes / no + what's missing in business terms.
+- **Engineering** (your default) — one `path:line: <severity>: <problem>. <fix>.` per finding; checklist IDs, severity tags, verbatim rule citations. → the **mediator** (blocking findings that gate the merge), any **GitHub** PR review comment.
+- **Stakeholder** — → **project-manager**: "does the diff satisfy the contract?" answered yes / no + what is missing, in business terms.
 
 The line-level findings are Engineering register; the contract-satisfaction answer to the project-manager is Stakeholder register. Never send a business reader raw `file:line` severity lines.
 

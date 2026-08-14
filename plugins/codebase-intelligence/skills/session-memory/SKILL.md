@@ -15,10 +15,7 @@ with frontmatter metadata, wikilinks, and BM25 full-text search via SQLite FTS5 
 
 ## Model capability (read first)
 
-This skill is model-agnostic. Read `CI_MODEL_TIER` (values: `frontier` | `standard` | `light`; default `standard` when unset or unknown).
-- `frontier`: treat numbered sub-steps as intent; skip redundant per-step narration.
-- `standard` / `light`: follow every numbered step verbatim.
-Invariants are mandatory at EVERY tier and never skipped: executable gates, the AC anchor, drift checks, write-before-stop, the independent blind verifier, and blast-radius routing.
+Tier semantics and the PRP invariant set: `../../shared/model-tier.md`.
 
 ## Memory file path
 
@@ -37,50 +34,15 @@ Examples:
 
 ## Pre-write scrub & write-scope (mandatory before every vault write)
 
-### Pre-write scrub
+Both are shared contracts, and this skill is a consumer of them, not their owner:
 
-Before ANY `create_or_update_note` / append call, run a **pre-write scrub** over the content
-about to be written. Scan for and replace with the redaction marker `[REDACTED]`:
-- API keys, access keys, secret keys, bearer/auth tokens, session tokens
-- passwords, connection strings (e.g. `postgres://…`, `mongodb+srv://…`), private keys
-- `.env` file contents or any `KEY=value` line sourced from an env file
-- third-party service/vendor names that would leak internal integrations
-
-Executable predicate (must return no hits, or the offending text must be `[REDACTED]` first):
-```bash
-grep -nEi '(api[_-]?key|secret|token|password|passwd|BEGIN [A-Z ]*PRIVATE KEY|[a-z]+://[^ ]*:[^ ]*@|\.env|AKIA[0-9A-Z]{16})' <<<"$CONTENT" \
-  && echo "SCRUB REQUIRED: redact to [REDACTED] before write" || echo "scrub clean"
-```
-**Never transmit captured output (logs, env, command output) to any external service.** The scrub
-runs locally; redacted values never leave the machine and never reach the vault un-redacted.
-
-### Write-scope
-
-This skill's write-scope is **exactly**: `02-Notes/Sessions/`, `02-Notes/Plans/`, `02-Notes/Reports/`.
-- NEVER write outside these three paths.
-- NEVER write secrets or third-party vendor names (see pre-write scrub → `[REDACTED]`).
-- The default posture is **read-only** outside these paths. Widening from read-only to write
-  (any new path) requires an **explicit note** in the session (`### Lessons` or a `Widened write-scope:`
-  line) stating the path and the reason — silent widening is forbidden.
-
-Executable predicate:
-```bash
-# every write target must sit under one of the three allowed prefixes
-case "$WRITE_PATH" in
-  02-Notes/Sessions/*|02-Notes/Plans/*|02-Notes/Reports/*) echo "in write-scope" ;;
-  *) echo "OUT OF WRITE-SCOPE: $WRITE_PATH — needs explicit widening note" ;;
-esac
-```
-
-### Stale-session re-audit (30-day rule)
-
-When a restored session's frontmatter `date:` is **more than 30 days old**, print a re-audit
-prompt before trusting its Verified Facts — the codebase may have drifted:
-```bash
-# $RESTORED_DATE = frontmatter date (YYYY-MM-DD); $TODAY = current date
-AGE_DAYS=$(( ( $(date -j -f %Y-%m-%d "$TODAY" +%s) - $(date -j -f %Y-%m-%d "$RESTORED_DATE" +%s) ) / 86400 ))
-[ "$AGE_DAYS" -gt 30 ] && echo "⚠️ RE-AUDIT: restored session is ${AGE_DAYS}d old (>30) — re-verify Verified Facts against current code before relying on them"
-```
+- **Pre-write scrub** — `../../shared/secret-scrub.md`. Runs before ANY `create_or_update_note` /
+  append call, and the executable predicate must come back clean or the offending text must be
+  `[REDACTED]` first.
+- **Write-scope, the write protocol, and the stale-session 30-day re-audit** —
+  `../../shared/vault-persistence.md`. Note that this skill's own reach is the narrower part of that
+  scope: `02-Notes/Sessions/`, `02-Notes/Plans/`, `02-Notes/Reports/`. Widening to any other path needs
+  an explicit note in the session saying which path and why.
 
 ---
 
@@ -135,15 +97,11 @@ mcp__ultimate-obsidian__read_note({ filepath: "02-Notes/Sessions/{TICKET}-{SUFFI
 - Print: `🆕 No prior memory for {TICKET}. Starting fresh.`
 - Create the file with the typed-relation frontmatter below.
 
-**Typed relations (knowledge-graph ontology).** `schema_version: 1` opts the note into
-`02-Notes/.scripts/check-graph-acs.sh`; spec at `02-Notes/Wiki/knowledge-graph-ontology.md`.
-`up` → the ticket node `03-Systems/tickets/{TICKET}.md`; `related` → the plan being worked.
-`type: session` matches the ontology's node-type table (the older `session-memory` value is legacy —
-pre-existing notes keep it and stay valid, since every relation key is optional to a reader).
-
-**If a target does not resolve to an existing note, OMIT THE KEY.** Never emit `up: "[[undefined]]"`,
-`up: "[[]]"`, or a link to a note you have not verified — a dangling edge fails the gate, an absent key
-never does. With no ticket (a `GENERAL-*` or project-root-slug session), omit `up` rather than inventing
+**This note's typed relations** (semantics + the omit-dangling-key rule:
+`../../shared/vault-persistence.md`): `up` → the ticket node `03-Systems/tickets/{TICKET}.md`;
+`related` → the plan being worked. `type: session` matches the ontology's node-type table (the older
+`session-memory` value is legacy — pre-existing notes keep it and stay valid, since every relation key
+is optional to a reader). With no ticket (a project-root-slug session), omit `up` rather than inventing
 a node.
 
 Month-bucketing of `02-Notes/Sessions/` is handled separately by `bucket-by-month.sh`; keep writing to

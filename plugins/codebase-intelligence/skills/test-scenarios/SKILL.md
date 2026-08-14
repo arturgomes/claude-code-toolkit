@@ -69,3 +69,11 @@ Produce a prioritized test scenario table:
 ---
 
 **Priority enum**: P0 = critical (must pass before release) · P1 = high (should pass) · P2 = nice-to-have (defer if time-constrained).
+## Persistence
+
+Scenarios are reusable: the same feature gets re-tested after every change, and rewriting the matrix
+each time is pure waste.
+
+- **Target:** `02-Notes/Reports/{YYYY-MM}/{slug}-test-scenarios.md`, mode `overwrite`.
+- **Contents:** the scenario table verbatim, plus which scenarios are automated and which are manual.
+- Protocol and frontmatter: `../../shared/vault-persistence.md`. Edge: `documents` → the ticket node.

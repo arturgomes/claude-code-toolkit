@@ -141,3 +141,14 @@ To investigate: check if DB was rebuilt or fixtures changed.
 | `poor-man-mcp-search-engine: not found` | Ignore — outdated `run-benchmark.md` reference. This skill uses `bookrag benchmark` directly |
 | Fixture chunk IDs stale (after DB rebuild) | Re-run `bookrag create-benchmark --mode auto` to refresh fixture chunk IDs |
 | bookrag exits non-zero (not drift) | Print stderr; check `bookrag benchmark --help` for required flags |
+## Persistence
+
+`/tmp/bookrag-bench-{domain}.json` is scratch — it is gone next boot, and retrieval quality is exactly
+the kind of number that only means something as a series.
+
+- **Target:** `02-Notes/Reports/{YYYY-MM}/kb-benchmark-{domain}-{YYYY-MM-DD}.md`, mode `overwrite`.
+- **Contents:** the per-mode metric table, the Δ against the baseline, `skipped_modes[]` with why, and
+  the exact command that produced the numbers — so the next run re-verifies in one step
+  (`../../shared/vault-persistence.md` §6).
+- **When:** after every benchmark run, including one that regressed. A regression is the most useful
+  row in the series.

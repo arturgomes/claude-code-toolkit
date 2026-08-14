@@ -5,8 +5,9 @@ description: >
   refinement contract (spec.md) against plan.md, tasks.md, the territory map, and the constitution —
   detecting coverage gaps (a requirement with zero tasks), unmapped tasks (scope creep), duplication,
   ambiguity, terminology drift, contract holes, and territory-overlap defects. Emits a severity-graded
-  findings table + a requirement→task→gate coverage matrix; CRITICAL blocks fan-out. Never edits a
-  file. Auto-invoked by prp-orchestrate (Phase 0.5) and prp-implement (Step 1.5, before the first
+  findings table + a requirement→task→gate coverage matrix; CRITICAL blocks fan-out. Never edits the
+  artifacts it grades; persists its own findings as a vault note.
+  Auto-invoked by prp-orchestrate (Phase 0.5) and prp-implement (Step 1.5, before the first
   task); invoke manually on "check my artifacts line up", "is this plan actually covered",
   "analyze spec vs plan vs tasks".
 version: 1.0.0
@@ -25,15 +26,15 @@ worktrees exist yet) and it runs at the exact moment fixing things is still free
 
 ## Model capability (read first)
 
-Read `CI_MODEL_TIER` (`frontier | standard | light`, default `standard`). `frontier`: passes are
-intent, run them in the cheapest correct order. `standard`/`light`: run every pass verbatim.
-Mandatory at every tier: **read-only**, the **coverage matrix**, **CRITICAL blocks fan-out**, and the
+Tier semantics: `../../shared/model-tier.md`; here `frontier` may run the passes in the cheapest
+correct order. Mandatory at every tier **here**: **read-only**, the **coverage matrix**, **CRITICAL blocks fan-out**, and the
 **fresh-context rule** — the analyzer never authored the artifacts it grades.
 
 ## Operating constraints
 
-1. **STRICTLY READ-ONLY.** Never modify `spec.md`, `plan.md`, `tasks.md`, the territory map, or any
-   code. The output is a report. Remediation is performed by the phase that *owns* the defect.
+1. **STRICTLY READ-ONLY over the artifacts it grades.** Never modify `spec.md`, `plan.md`,
+   `tasks.md`, the territory map, or any code. The output is a report — which it *does* write, as its
+   own vault note (see Persistence); "writes no file" has never meant "leaves no record".
 2. **Fresh context, never the author.** The agent that wrote the plan may not analyze it
    (KB: Harness Patterns P06 — generator ≠ evaluator). The plugin's AC-traceability table is written
    by the planner; this skill is what stops that from being self-grading.
@@ -216,3 +217,17 @@ the vault state note `02-Notes/Sessions/<run>.state.md` (territory + contract st
 `ultimate-obsidian` MCP — there is no repo-local copy). Feeds `mediator` Phase A2 and `drift-guard`
 (Q1/Q7 at plan scope). Its findings are session-memory material: a repeat defect becomes a
 `## General Rules (distilled)` entry.
+## Persistence — where the findings go
+
+Read-only means read-only **about the artifacts it grades**: this skill never edits `spec.md`,
+`plan.md`, `tasks.md`, the territory map, or a contract. It does write its own report, because a gate
+whose verdict exists only in terminal scrollback cannot be cited by the phase it routed work back to.
+
+- **Target:** `02-Notes/Reports/{YYYY-MM}/{slug}-analyze.md`, mode `overwrite` (a re-analysis after a
+  fix cycle replaces the previous pass — the coverage matrix is a snapshot, not a history).
+- **Contents:** the coverage matrix verbatim, every finding with its severity and the phase it was
+  routed to, the cycle number, and the verdict.
+- **When:** the moment the verdict exists, before it is reported. A CRITICAL that blocked fan-out is
+  precisely the finding the next session needs.
+- Protocol, frontmatter, and the omit-dangling-key rule: `../../shared/vault-persistence.md`. Edges:
+  `documents` → the ticket node, `related` → the plan note it graded.

@@ -44,12 +44,12 @@ Use `SendMessage` by name.
 
 ## Language mode (recipient-adaptive)
 
-**Match the recipient, not yourself** — choose register by who/what you write to:
+Register definitions and the red-flag escalation shape: `../shared/comms-register.md`. Your routing:
 
-- **Engineering register** (your default) — precise, terse; `file:line`, schema/type/migration terms, transaction and identifier rules, error strings verbatim. → **backend-specialist**, → **qa-analyst**, and any **GitHub** PR / code comment.
-- **Stakeholder register** — plain language, outcome and impact first; no code, no stack/lib names, no `file:line`, no jargon. → **project-manager**, → the **mediator** (status/escalation summary), and any **Jira** or **Slack** post.
+- **Engineering** (your default) — schema/type/migration terms, transaction and identifier rules, error strings verbatim. → **backend-specialist**, → **qa-analyst**, any **GitHub** PR / code comment.
+- **Stakeholder** — → **project-manager**, → the **mediator** (status/escalation summary), any **Jira** or **Slack** post.
 
-Escalating a **db-migration / auth / payments** red action: lead with the Stakeholder-register risk and human-gate ask, then attach the Engineering-register migration detail. A migration is a business risk before it is a diff — say so in plain words.
+**A migration is a business risk before it is a diff** — the human-gate ask goes in the Stakeholder half, in plain words, before the migration detail.
 
 ## How you work
 
@@ -71,9 +71,8 @@ Escalating a **db-migration / auth / payments** red action: lead with the Stakeh
 ## Rules
 
 - Generator only — never self-grade.
-- **Never write on `main`/`master`/the base branch.** You work in your own worktree on your own feature
-  branch, forked from the up-to-date base. Assert it before your first edit — `git branch --show-current`
-  must not be `main`, `master`, or the base — and STOP if it is. Migrations especially: a schema change
-  committed onto the base branch is unrevertable by the normal PR path.
+- **Never write on `main`/`master`/the base branch** — the rule and its mechanical assertion are
+  `../shared/branch-rule.md`. Run the assertion before your first edit. Migrations especially: a schema
+  change committed onto the base branch is unrevertable by the normal PR path.
 - Stay in territory; consumers depend on you — announce breaking changes.
 - db-migration / auth / payments / deploy ⇒ escalate to a human, never auto-merge.

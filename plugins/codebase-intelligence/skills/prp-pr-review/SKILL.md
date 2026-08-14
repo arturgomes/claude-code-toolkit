@@ -140,3 +140,16 @@ Output format (schema):
 | PR already merged/closed | Print warning, ask user to confirm before continuing |
 | File from comment not found locally | Note in report: "File {path} not found locally — run `gh pr checkout {N}` to apply" |
 | Rate limit hit | Print remaining rate limit, pause if needed |
+## Persistence — the triage decisions outlive the PR
+
+Every SKEPTIC verdict is a decision about *why a bot suggestion was accepted or rejected*. Unwritten,
+the same suggestion is re-litigated from scratch on the next PR — which is the single most repeated
+argument in a review cycle.
+
+- **Target:** `02-Notes/Reports/{YYYY-MM}/{TICKET}-pr-{N}-review.md`, mode `overwrite`.
+- **Contents:** one row per comment — reviewer, the suggestion, the verdict (applied / rejected /
+  deferred), and the one-line rationale. A rejection with no recorded reason is not a decision, it is
+  a coin flip.
+- **Also:** promote any rejection that will recur (a bot rule that is wrong for this repo) into the
+  session note's `## General Rules`, so the next review starts from the settled answer.
+- Protocol and frontmatter: `../../shared/vault-persistence.md`.

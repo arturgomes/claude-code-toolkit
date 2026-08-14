@@ -288,8 +288,7 @@
         "properties": {
           "repo": { "type": "string" },
           "verdict": { "type": "string", "enum": ["pass", "block"] },
-          "receiptSha": { "type": "string", "description": "HEAD SHA the gate ran against. A receipt whose sha != current HEAD is stale and counts as absent." },
-          "receiptPath": { "type": "string", "description": "Typically <repo>/.claude/pre-pr-gate.json." },
+          "receiptSha": { "type": "string", "description": "HEAD SHA the gate ran against, and the join key to the full receipt in this same note's receipts[] array. A receipt whose sha != current HEAD is stale and counts as absent." },
           "attempt": { "type": "integer", "minimum": 1, "maximum": 3, "description": "Fix/re-gate cycle. After 3 the run stops and escalates to the human." },
           "blockers": {
             "type": "array",
@@ -310,6 +309,11 @@
           "receiptBlock": { "type": "string", "description": "Rendered receipt block, pasted verbatim into the PR description." }
         }
       }
+    },
+    "receipts": {
+      "type": "array",
+      "description": "The pre-pr-gate receipts for this run, in full — one per repo per stack layer, each conforming to skills/pre-pr-gate/references/gate-receipt.schema.json. This array is the ONLY home for a gate receipt: there is no <repo>/.claude/pre-pr-gate.json, because a receipt in one worktree's .claude/ is invisible to the sibling worktree, the stack layer above it, and the fresh-context reviewer that must verify it. integrationGate[] is the mediator's routing view over these, joined on receiptSha.",
+      "items": { "type": "object" }
     },
     "territoryDisjoint": {
       "type": "boolean",

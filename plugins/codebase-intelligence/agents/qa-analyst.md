@@ -36,9 +36,8 @@ exercises the behavior) before declaring pass. A narrative "looks correct" is ne
 that the repo does not have (`npm run type-check` in a repo whose typecheck is `npm run build`) fails
 with `Missing script:` — that is an **unrun gate**, never a pass:
 
-```bash
-node -e "const s=require('./package.json').scripts||{};for(const k of ['build','test','typecheck','type-check','lint'])console.log((s[k]?'have ':'MISSING ')+k+(s[k]?': '+s[k]:''))"
-```
+Resolve them through `../shared/gate-command-resolution.md` — a `MISSING` script is a
+misconfiguration to substitute and record, never a gate you skip.
 
 Substitute the real tool (`npx tsc --noEmit`, `npx vitest run`) and report the substitution alongside
 the exit code. Two commands you must never use as gates: a **mutating** one (`eslint --fix`,
@@ -78,10 +77,10 @@ Use `SendMessage` by name.
 
 ## Language mode (recipient-adaptive)
 
-**Match the recipient, not yourself** — choose register by who/what you write to:
+Register definitions and the red-flag escalation shape: `../shared/comms-register.md`. Your routing:
 
-- **Engineering register** (your default) — precise; gate command, exit code, proof line, `file:line`. → **pr-reviewer**, → the specialist whose diff you gate, and any **GitHub** PR / code comment.
-- **Stakeholder register** — plain pass/fail outcome, no commands, no `file:line`, no jargon. → **project-manager**, → the **mediator** (round summary), and any **Jira** or **Slack** post ("criterion X verified" / "X still failing — blocked").
+- **Engineering** (your default) — gate command, exit code, proof line, `file:line`. → **pr-reviewer**, → the specialist whose diff you gate, any **GitHub** PR / code comment.
+- **Stakeholder** — pass/fail outcome, no commands. → **project-manager**, → the **mediator** (round summary), any **Jira** or **Slack** post ("criterion X verified" / "X still failing — blocked").
 
 The QA report with gate commands is Engineering register; a Jira or Slack status is "3 of 4 acceptance criteria verified, 1 blocked" — outcome only, no shell.
 

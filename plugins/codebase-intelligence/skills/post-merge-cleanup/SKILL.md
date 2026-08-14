@@ -30,9 +30,8 @@ records what was cleaned up, so it is written last.
 
 ## Model capability (read first)
 
-Read `CI_MODEL_TIER` (`frontier | standard | light`, default `standard`). `frontier`: the predicates
-are intent, run them in the cheapest correct order. `standard`/`light`: run every predicate verbatim.
-Mandatory at every tier: **the merge authority check**, **the local-only-work check**, **the stack
+Tier semantics: `../../shared/model-tier.md`; here `frontier` may run the predicates in the cheapest
+correct order. Mandatory at every tier **here**: **the merge authority check**, **the local-only-work check**, **the stack
 guard**, **the clean-tree check**, and **confirmation before any remote deletion**. None of these has
 a "it was obviously fine" exemption — they are the only thing standing between routine tidying and
 deleting work that was never shipped.
@@ -102,8 +101,9 @@ is for the window before it does, and for non-stack PRs someone manually based o
 
 ### P4 — Not the current HEAD, not the base, not protected
 
+`$BASE` from `../../shared/git-base-detection.md`:
+
 ```bash
-BASE=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@'); : "${BASE:=main}"
 case "$BRANCH" in
   main|master|develop|"$BASE") echo "P4 STOP: refusing to delete a base branch" ;;
   *) echo "P4 ok" ;;
