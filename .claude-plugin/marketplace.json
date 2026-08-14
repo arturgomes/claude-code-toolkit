@@ -5,7 +5,7 @@
     "email": "arturgomes@users.noreply.github.com"
   },
   "metadata": {
-    "description": "Standalone PRP engineering toolkit: a self-contained prp-plan / prp-implement / prp-loop workflow with Serena LSP codebase search, cross-session memory keyed by Jira ticket + branch, Jira context injection, and a personal knowledge base.",
+    "description": "Standalone PRP engineering toolkit: a self-contained prp-plan / prp-implement / prp-loop workflow with Serena LSP codebase search, cross-session memory keyed by Jira ticket + branch, Jira context injection, a personal knowledge base, and spec-driven agent-team orchestration. The Obsidian vault is the system of record — run state, gate receipts, plans, reports and PR descriptions are notes, not repo-local files.",
     "homepage": "https://github.com/arturgomes/claude-code-toolkit",
     "version": "3.20.0"
   },
@@ -14,7 +14,7 @@
       "name": "codebase-intelligence",
       "source": "./plugins/codebase-intelligence",
       "version": "3.20.0",
-      "description": "Standalone PRP workflow — prp-plan / prp-implement / prp-loop — with Serena LSP structural codebase search, cross-session memory, Jira context injection, a personal KB (local FTS5 vault index), a bounded closed-loop runner with contract-mandated stop rules and an independent verifier, and prp-orchestrate: spec-driven agent teams that groom a Definition-of-Ready spec, audit the whole artifact chain before any code exists, freeze cross-lane contracts, ship one demoable checkpoint per user story, and gate the integrated branch (CI-parity + Copilot/bugbot parity + constitution) before any PR opens. Run state lives in the Obsidian vault rather than the repo, and every PR gets its title and body from pr-description automatically — `[TICKET] task description`, written to the vault before the PR is opened. No prp-core required."
+      "description": "Standalone PRP workflow — prp-plan / prp-implement / prp-loop — with Serena LSP structural codebase search, cross-session memory, Jira context injection, a personal KB (local FTS5 vault index), a bounded closed-loop runner with contract-mandated stop rules and an independent verifier, and prp-orchestrate: spec-driven agent teams that groom a Definition-of-Ready spec, audit the whole artifact chain before any code exists, freeze cross-lane contracts, ship one demoable checkpoint per user story, and gate the integrated branch (CI-parity + Copilot/bugbot parity + constitution) before any PR opens. The Obsidian vault is the system of record: run state, pre-pr-gate receipts, the cleanup ledger, plans, reports, session memory and every PR description are vault notes rather than repo-local files, and a failed vault write stops the phase instead of falling back to a copy no sibling worktree or later session can read. Every PR gets its title and body from pr-description automatically — `[TICKET] task description`, written to the vault before the PR is opened. Cross-cutting rules have one copy in shared/ and are cited, not restated, with a validator check that fails on an unresolved citation or a block re-inlined into three or more files. No prp-core required."
     }
   ]
 }
