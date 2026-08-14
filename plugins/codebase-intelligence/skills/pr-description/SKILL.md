@@ -34,12 +34,24 @@ or the branch is parked for a week.
 
 ```bash
 ROOT=$(git rev-parse --show-toplevel) || { echo "🔴 not a git repo"; exit 1; }
-REPO=$(basename "$ROOT")
+# The repo name is the MAIN checkout's folder. `--git-common-dir` resolves a
+# worktree back to the repo it belongs to; plain `basename "$ROOT"` does not, and
+# in a worktree yields the worktree folder (`.wt/fe-804-uat`) instead of the repo
+# (`seathq-fe`) — poisoning the `[repo]` title tag on a ticketless branch,
+# `project:` in the frontmatter, and the `-{repo}` filename suffix.
+REPO=$(basename "$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")")
+[ -z "$REPO" ] && REPO=$(basename -s .git "$(git remote get-url origin 2>/dev/null)")
+[ -z "$REPO" ] && REPO=$(basename "$ROOT")
 ```
 
+Do **not** prefer the remote URL over the local folder: a remote is often named differently from the
+checkout (`seathq-demo`'s origin is `NicoAndru/seathq.git`), so remote-first silently renames the repo.
+Remote is a fallback only, for the case where `--git-common-dir` is unavailable.
+
 If the caller named a worktree or a sibling checkout, resolve it the same way with `git -C <dir>`.
-State which directory was chosen. **Never** assume a repo lives under any particular parent — the
-caller's checkout is wherever `git rev-parse` says it is.
+State which directory was chosen, **and which repo name you derived, and from where** — a worktree run
+that reports the worktree folder as the repo has already gone wrong. **Never** assume a repo lives under
+any particular parent — the caller's checkout is wherever `git rev-parse` says it is.
 
 ## Step 2 — Verify the branch (the base-branch rule applies here too)
 
@@ -102,8 +114,11 @@ Ticket resolution, first hit wins:
 1. An explicit ticket passed by the caller (plan slug, `--ticket`, refinement contract).
 2. The branch name — `\b[A-Z][A-Z0-9]+-[0-9]+\b`, upper-cased (`feature/seathq-804-x` → `SEATHQ-804`).
 3. The branch's commit subjects, same regex.
-4. **No ticket anywhere → the repo root folder name** (`$REPO`), verbatim, not `GENERAL` and not a
-   guessed project code. A run in `claude-code-toolkit` is tagged `[claude-code-toolkit]`.
+4. **No ticket anywhere → the repo name** (`$REPO` exactly as derived in Step 1 — the *main checkout's*
+   folder, never the worktree you happen to be standing in), verbatim, not `GENERAL` and not a guessed
+   project code. A run in `claude-code-toolkit` is tagged `[claude-code-toolkit]`. A run inside a
+   worktree such as `.wt/fe-804-uat` is still tagged `[seathq-fe]`; if your tag looks like a branch
+   slug or a scratch directory, Step 1 fell through to the wrong fallback.
 
 The description half is the *change*, not the file list, in the imperative, ≤72 chars for the whole
 title including the bracket. Truncate the description, never the ticket tag.

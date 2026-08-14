@@ -152,7 +152,10 @@ inside the repo tree (where it could be accidentally committed or scanned):
    - **harness tier** → call `EnterWorktree` for `feature/<branch-slug>` based on `origin/$BASE`.
    - **git tier**:
      ```bash
-     REPO=$(basename "$(git rev-parse --show-toplevel)")
+     # main checkout's folder — `--show-toplevel` returns the worktree you are
+     # standing in, which nests `../fe-804-uat-worktrees/…` when ENTER runs from
+     # inside an existing worktree
+     REPO=$(basename "$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")")
      git worktree add "../${REPO}-worktrees/<branch-slug>" -b "feature/<branch-slug>" "origin/$BASE"
      ```
    - **serial fallback** → no separate checkout; branch in place:
