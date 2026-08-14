@@ -25,8 +25,7 @@ P01/P02). The three existing commands stay unchanged and remain callable buildin
 
 ## Model capability (read first)
 
-Read `CI_MODEL_TIER` (`frontier | standard | light`, default `standard`). `frontier`: sub-steps are
-intent. `standard`/`light`: follow verbatim. Invariants mandatory at every tier: **the Phase 0.5
+Tier semantics: `../shared/model-tier.md`. Invariants mandatory at every tier **here**: **the Phase 0.5
 analyze gate before any worktree exists**, **the Phase 1.5 contract freeze before any lane forks**,
 the disjoint-territory assertion, **the never-on-`main` branch assertion per specialist per repo**,
 the per-round rules + constitution verdict, 🔴-blocks-merge, serial merge, **the Phase 5.5 integration
@@ -105,26 +104,14 @@ any checkpoint leaves a working feature rather than three-fifths of one. Territo
 
 ## The branch rule — never implement on `main`/`master`
 
-**Every specialist writes on its own dedicated feature branch, inside its own worktree, forked from
-the up-to-date base of the repo it is bound to. Never `main`, never `master`, never the detected base
-branch under any other name, never another task's branch.** This holds for every repo a run touches —
-including this toolkit itself — and has **no diff-size exemption**.
+The rule, its mechanical assertion, and the three ways it gets broken in practice:
+`../shared/branch-rule.md`. It holds for every repo a run touches — including this toolkit itself —
+and has **no diff-size exemption**.
 
-Asserted mechanically, per specialist, per repo, **after** the worktree is created (not only before):
-
-```bash
-CUR=$(git branch --show-current)
-case "$CUR" in main|master|"$BASE"|"") echo "🔴 STOP: on '$CUR' — no writes until branched"; exit 1 ;; esac
-```
-
-A specialist writing while its HEAD is the base branch is a **🔴 on its first round** and its work
-does not merge. The three ways this actually happens: the **serial fallback** silently leaving HEAD
-where it was when `git switch -c` fails; a repo **already parked on an unrelated branch** (which is
-not permission to build there — fork from the detected base); and **multi-repo runs**, where one clean
-repo says nothing about the other two. The fallback costs isolation, never the branch.
-
-`pre-pr-gate` L8 backs this up at the other end: a commit on the base branch itself is a 🔴 that
-blocks the PR.
+What this flow adds: the assertion runs **per specialist, per repo, after the worktree is created**
+(not only before), and a specialist writing while its HEAD is the base branch is a **🔴 on its first
+round** whose work does not merge. `pre-pr-gate` L8 backs it up at the other end: a commit on the base
+branch itself is a 🔴 that blocks the PR.
 
 ## Step V — Related vault-task discovery (by Jira project code)
 
@@ -465,52 +452,26 @@ Reading the vault (Step V) without writing back to it is the single most common 
 value: the next session re-derives what this one already proved. **A run that produces findings and
 writes no vault note has failed its persistence contract, even if the code shipped.**
 
-1. **Every durable artifact is a vault note**, written the moment it exists — not at shutdown:
+The contract — the artifact→path registry, the no-local-mirror rule, write-before-report, scratch-is-
+scratch, the diagnosis-run rule, and the record-the-command rule — is `../shared/vault-persistence.md`.
+It applies to this flow in full. What this step adds:
 
-   | Artifact | Vault path |
-   |---|---|
-   | Refinement contract (Step R) | `02-Notes/Plans/<slug>.refinement.md` |
-   | Plan (Step 0) | `02-Notes/Plans/<YYYY-MM>/<slug>.plan.md` |
-   | Session memory (all phases) | `02-Notes/Sessions/<TICKET>-<slug>.md` |
-   | **Orchestration state (all phases)** | `02-Notes/Sessions/<TICKET>-<slug>.state.md` |
-   | **PR description (every PR, before it is opened)** | `02-Notes/pr-descriptions/<YYYY-MM-DD>-<TICKET>-<slug>[-<repo>].md` |
-   | Completion / outcome report | `02-Notes/Reports/<YYYY-MM>/<slug>-report.md` |
-   | Drafted external comms (Jira comment bodies, review replies) | the session note, or `02-Notes/Plans/` beside the plan |
+1. **The two notes this flow always writes**, on top of whatever the phase produces: the run's session
+   note `02-Notes/Sessions/<TICKET>-<slug>.md` and its machine-state sidecar
+   `02-Notes/Sessions/<TICKET>-<slug>.state.md`. The mediator is the sole writer of both. Every
+   `pre-pr-gate` receipt this run produces lives in the state note's `receipts[]` — there is no
+   `<repo>/.claude/pre-pr-gate.json`.
 
-   Match the existing folder convention **by listing the target directory first** — do not invent a
-   layout. Follow `02-Notes/Sessions/_session-template.md` for session notes.
+2. **Every PR description is a vault note before it is a PR body** —
+   `02-Notes/pr-descriptions/<YYYY-MM-DD>-<TICKET>-<slug>[-<repo>].md`, one per PR, written by
+   `pr-description` (Step 4.6) *before* `gh pr create` runs. A failed vault write blocks the PR.
 
-2. **Machine state is a vault note too, not a repo file.** The `orchestration-state.json` contract now
-   lives inside `<...>.state.md` as a single fenced `json` block, written through the
-   `ultimate-obsidian` MCP by the mediator alone. **Never** write `<repo>/.claude/orchestration-state.json` —
-   not as a cache, not as a fallback when the MCP is unreachable. A repo-local state file is invisible
-   to the sibling worktrees that must read it, invisible to the next session, and dies with the
-   checkout. If the vault write fails, the phase stops (rule 3); it does not degrade to local.
-
-3. **Scratch is scratch.** The session scratchpad, `/tmp`, and repo-local staging dirs (`planning/`,
-   `.planning/`, `artur-documents/`, …) are ephemeral working space. Anything written there that a
-   future session would want **must also be written to the vault before the phase closes**. The only
-   artifacts that legitimately live outside the vault are ones a repo owns by contract
-   (`specs/<slug>/spec.md`, so intent ships in the PR) — and those still get a vault note linking to
-   them.
-
-4. **Write-before-report.** A phase is not complete until its vault write returned OK. Never defer
-   with "I'll save this at the end" — context can end at any point, and an unwritten finding is a lost
-   finding. If a vault write fails, surface it as a blocker; do not silently continue.
-
-5. **A diagnosis-only run writes the most, not the least.** When the outcome is "no code change
-   needed" — a deploy-state problem, a stale environment, an already-correct implementation — that
-   conclusion plus its evidence is precisely what stops the next person repeating the investigation.
-   Record it as `## Verified Facts` + `## General Rules` + `## Lessons`. "Nothing to build" is never a
-   reason to skip the note.
-
-6. **Externally-verified facts get recorded with their command.** A deployed sha, an API payload
-   diff, a CI job conclusion, a cloud console error string — write the exact command or query that
-   produced it, so the next session can re-verify in one step instead of rediscovering the method.
-
-7. **Phase 6 emits a vault write ledger.** Shutdown lists every note created or updated, by path —
-   session note, state note, plan, report, and one line per PR description. An empty ledger is a 🔴 —
+3. **Phase 6 emits a vault write ledger.** Shutdown lists every note created or updated, by path —
+   session note, state note, plan, report, and one line per PR description. **An empty ledger is a 🔴**:
    it means the run learned nothing worth keeping, which is almost never true.
+
+4. **A diagnosis-only orchestrate run still writes all of it.** "No code change needed" is the outcome
+   that most needs a note, and the write ledger is not waived because no PR was opened.
 
 ## Step 4.6 — Every PR gets `pr-description`, automatically
 
@@ -550,9 +511,9 @@ user at their `settings.json` allow-list if a specialist would otherwise block.
 - Never treats a repo-local scratch directory (`planning/`, `.planning/`, `artur-documents/`, the
   session scratchpad, `/tmp`) as a substitute for the vault, and never ends a run whose findings exist
   only there — see Step 4.5.
-- Never writes `<repo>/.claude/orchestration-state.json`, or any other local mirror of run state — the
-  vault state note is the only copy, and an unreachable vault stops the phase instead of degrading to
-  a local file.
+- Never writes `<repo>/.claude/orchestration-state.json`, `<repo>/.claude/pre-pr-gate.json`, or any
+  other local mirror of run state — the vault state note is the only copy of both the state and the
+  gate receipts, and an unreachable vault stops the phase instead of degrading to a local file.
 - Never opens a PR whose body it hand-rolled instead of calling `pr-description`, and never opens one
   whose title lacks the `[TICKET]` / `[repo]` tag.
 - Never deletes a branch, a remote branch, or a worktree before its PR is **merged on GitHub**, and

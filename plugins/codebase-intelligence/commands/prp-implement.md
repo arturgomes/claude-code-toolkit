@@ -36,10 +36,7 @@ Fix issues immediately. Working implementation, not just existing code.
 
 ## Model capability (read first)
 
-This skill is model-agnostic. Read `CI_MODEL_TIER` (values: `frontier` | `standard` | `light`; default `standard` when unset or unknown).
-- `frontier`: treat numbered sub-steps as intent; skip redundant per-step narration.
-- `standard` / `light`: follow every numbered step verbatim.
-Invariants are mandatory at EVERY tier and never skipped: executable gates, the AC anchor, drift checks, write-before-stop, the independent blind verifier, and blast-radius routing.
+Tier semantics and the PRP invariant set: `../shared/model-tier.md`.
 
 ---
 
@@ -120,12 +117,8 @@ If the plan has no Intelligence Context section (e.g., an externally-authored pl
 
 ### 0.2 Detect Base Branch
 
-1. Check `$ARGUMENTS` for `--base <branch>`
-2. Auto-detect: `git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@'`
-3. Fallback: `git remote show origin | grep 'HEAD branch' | awk '{print $NF}'`
-4. Last resort: `main`
-
-Store as `{base-branch}`. Never hardcode `main`.
+`--base <branch>` in `$ARGUMENTS` wins; otherwise run the canonical chain in
+`../shared/git-base-detection.md`. Store as `{base-branch}`. Never hardcode `main`.
 
 ### 0.3 Identify Validation Scripts
 
@@ -395,11 +388,9 @@ there might be hapenning a Out of Memory, and you should no longer wait.
 
 **Verify each command exists before trusting it.** A plan can name a script the repo does not have
 (`npm run type-check` in a repo whose only typecheck is `npm run build` or bare `npx tsc --noEmit`);
-that fails with `Missing script:` and is easy to read as noise rather than as an unrun gate:
-```bash
-node -e "const s=require('./package.json').scripts||{};for(const k of ['build','test','typecheck','type-check','lint'])console.log((s[k]?'have ':'MISSING ')+k+(s[k]?': '+s[k]:''))"
-```
-Substitute the real underlying tool and note the substitution in the report. Also never gate on a
+that fails with `Missing script:` and is easy to read as noise rather than as an unrun gate. Resolve
+them through `../shared/gate-command-resolution.md`, substitute the real underlying tool, and note the
+substitution in the report. Also never gate on a
 mutating command (`eslint --fix`, `prettier --write`) or a watch-mode test script — the first
 manufactures a pass, the second hangs.
 
@@ -541,21 +532,11 @@ Replace every match with the marker `[REDACTED]` before the write. This runs on 
 
 ## Phase 5: REPORT - Create Implementation Report
 
-**HIERARCHY CHECK** — Before saving, list the target folder:
-```
-mcp__ultimate-obsidian__list_vault({ path: "02-Notes/Reports" })
-```
-Confirm the report name matches the plan name (`{plan-name}-report.md`).
+**Write protocol** — scrub, HIERARCHY CHECK, MCP-only write, month bucket, typed frontmatter, and the
+omit-dangling-key rule are all `../shared/vault-persistence.md`. On the hierarchy check, confirm the
+report name matches the plan name.
 
-**Path**: Save via Obsidian MCP — do NOT use Write tool or bash:
-```
-mcp__ultimate-obsidian__create_or_update_note({
-  filepath: "02-Notes/Reports/{plan-name}-report.md",
-  content: "..."
-})
-```
-
-**PROJECT_ROOT_NAME**: derive via `basename $(git rev-parse --show-toplevel 2>/dev/null || pwd)` and use as `{project-root-name}` below.
+**Path**: `02-Notes/Reports/{YYYY-MM}/{plan-name}-report.md`, mode `overwrite`.
 
 **FRONTMATTER_TEMPLATE**: Include at the start of every report file:
 ```yaml
@@ -580,20 +561,14 @@ plan: "[[{plan-name}]]"
 ---
 ```
 
-**Typed relations (knowledge-graph ontology).** `schema_version: 1` opts the note into
-`02-Notes/.scripts/check-graph-acs.sh`. Spec: `02-Notes/Wiki/knowledge-graph-ontology.md`.
+**This report's typed relations** (semantics + the omit-dangling-key rule:
+`../shared/vault-persistence.md`):
 
-- `implements` → the plan just implemented (this is the strongest edge a report has; the legacy `plan:`
-  key stays for backwards compatibility).
+- `implements` → the plan just implemented (the strongest edge a report has; the legacy `plan:` key
+  stays for backwards compatibility).
 - `up` / `documents` → the ticket node `03-Systems/tickets/{TICKET}.md`.
 - `affects` → the `03-Systems/` service / table nodes you **actually changed**, read off the real diff —
-  not the plan's intentions. If a service node does not exist yet, create it from `_templates/system.md`
-  with a canonical `id`, or omit the key.
-
-**If no target resolves to an existing note, OMIT THE KEY.** Never emit `[[undefined]]`, `[[]]`, or a
-link to a note you did not verify exists. Every relation key is optional; a dangling edge fails the gate.
-
-**File placement**: `02-Notes/Reports/{YYYY-MM}/` — the month bucket, or `check-acs.sh` AC1 fails.
+  not the plan's intentions.
 
 Include all standard report sections plus:
 

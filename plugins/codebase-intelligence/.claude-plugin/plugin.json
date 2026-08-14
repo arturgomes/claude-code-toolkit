@@ -1,6 +1,6 @@
 {
   "name": "codebase-intelligence",
-  "version": "3.19.0",
+  "version": "3.20.0",
   "description": "Standalone PRP workflow (prp-plan / prp-implement / prp-loop) with Serena LSP structural codebase search, cross-session task memory keyed by Jira ticket + branch, live Jira ticket context injection, a personal KB (local FTS5 vault index), prp-loop (a bounded closed-loop runner with contract-mandated stop rules and an independent verifier), and prp-orchestrate: spec-driven, mediator-judged parallel agent teams — a Definition-of-Ready spec (prioritized independently-testable stories, FR/SC, bounded 5-question clarify loop), a fresh-context spec-analyze gate over the whole artifact chain before any worktree exists, cross-lane contracts frozen with failing contract tests before the lanes fork, one demoable checkpoint per user story, per-round constitution + repo-rules verdicts, serial merge, pre-pr-gate (CI-parity typecheck/build/test, dangling+unused-import sweep, applyTo-scoped replay of the repo's own .github rulebook citing its real rule IDs, constitution + frozen-contract check) and spec-converge reconciliation before shutdown. Self-contained — no prp-core required.",
   "author": {
     "name": "Artur Gomes",

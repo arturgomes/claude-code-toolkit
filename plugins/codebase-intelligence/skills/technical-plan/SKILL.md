@@ -91,3 +91,13 @@ Does the plan use guard clauses to keep nesting flat?
 
 **Next Step**: {what to do}
 ```
+## Persistence
+
+This skill grades a plan, so its verdict belongs with the plan rather than in a report of its own:
+
+- **Append the validation verdict to the plan note** (`02-Notes/Plans/{YYYY-MM}/{slug}.plan.md`) under
+  a `## Pattern Validation` heading — which patterns it mirrors, which reuse opportunities it missed,
+  and every 🔴.
+- **Also** record any repo-wide pattern the review established in the session note's
+  `## General Rules`, so the next plan starts from it.
+- Protocol: `../../shared/vault-persistence.md` — write before reporting.

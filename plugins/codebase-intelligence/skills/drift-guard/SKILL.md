@@ -14,10 +14,7 @@ Drift causes: nearby "quick improvements", architectural rabbit holes, over-gene
 
 ## Model capability (read first)
 
-This skill is model-agnostic. Read `CI_MODEL_TIER` (values: `frontier` | `standard` | `light`; default `standard` when unset or unknown).
-- `frontier`: treat numbered sub-steps as intent; skip redundant per-step narration.
-- `standard` / `light`: follow every numbered step verbatim.
-Invariants are mandatory at EVERY tier and never skipped: executable gates, the AC anchor, drift checks, write-before-stop, the independent blind verifier, and blast-radius routing.
+Tier semantics and the PRP invariant set: `../../shared/model-tier.md`.
 
 ---
 

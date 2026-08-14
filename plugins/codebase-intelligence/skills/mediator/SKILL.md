@@ -24,10 +24,7 @@ procedure into skills).
 
 ## Model capability (read first)
 
-Read `CI_MODEL_TIER` (`frontier | standard | light`, default `standard`).
-- `frontier`: numbered sub-steps are intent; skip redundant narration.
-- `standard`/`light`: follow every step verbatim.
-Invariants mandatory at EVERY tier: the **Phase 0.5 analyze gate before any worktree exists**, the
+Tier semantics: `../../shared/model-tier.md`. Invariants mandatory at EVERY tier **here**: the **Phase 0.5 analyze gate before any worktree exists**, the
 **Phase A2 contract freeze before any lane forks**, the disjoint-territory assertion, the per-round
 rules + constitution verdict, the 🔴-blocks-merge gate, serial merge, **the Phase E2 integration gate
 before any PR exists**, **Phase E3 convergence**, clean shutdown, write-before-stop of the **vault**
@@ -87,12 +84,12 @@ linear.
 
 Persist all coordination state as JSON, **not markdown prose** — models overwrite prose but respect
 structured JSON (KB: Harness Patterns F03). Schema: `references/orchestration-state.schema.json`.
-Only the mediator writes it; specialists read it.
+**Only the mediator writes it; specialists read it** — that single-writer rule is what makes the
+read-modify-write below safe without a lock.
 
-**It lives in the Obsidian vault, via the `ultimate-obsidian` MCP — never in the repo.** The old
-`<repo>/.claude/orchestration-state.json` is gone: a repo-local file is invisible from the sibling
-worktrees that need to read it, invisible to the next session, and lost with the checkout. The vault is
-the system of record for state exactly as it already is for the narrative.
+Persistence rules — vault-only, whole-note overwrite, scrub before write, failed write is a 🔴 that
+stops the phase with no local fallback — are `../../shared/vault-persistence.md`. This section adds
+only what is specific to the state note.
 
 **Path** — a sidecar beside the run's session note, on the canonical (unbucketed) path that
 `session-memory` writes to; `bucket-by-month.sh` files both into `YYYY-MM/` afterwards:
@@ -121,13 +118,13 @@ tags: [orchestration-state]
 
 ```json
 { "capability": {...}, "analyze": {...}, "contracts": [...], "slices": [...],
-  "gateReceipts": [...], "convergence": {...}, "stack": {...}, "humanGates": [...] }
+  "receipts": [...], "integrationGate": [...], "convergence": {...},
+  "stack": {...}, "humanGates": [...] }
 ```
 ````
 
 `type: session` because the knowledge-graph ontology's node-type set is closed and this note lives
-under `02-Notes/Sessions/` — do not invent a type. Omit any relation key whose target does not resolve
-to an existing note: a dangling edge fails `check-graph-acs.sh`, an absent key never does.
+under `02-Notes/Sessions/` — do not invent a type.
 
 **Read / write protocol** (mediator only):
 
@@ -137,21 +134,15 @@ mcp__ultimate-obsidian__read_note({ filepath: ... })          # parse the fenced
 mcp__ultimate-obsidian__create_or_update_note({ filepath: ..., mode: "overwrite", content: ... })
 ```
 
-- **Always `overwrite` the whole note** with the full state instance. Never `append`, and never patch a
-  field in place — a partially-appended JSON document is an unparseable state file, which is the one
-  failure this contract exists to prevent.
-- **Read-modify-write in one step.** The mediator is the single writer precisely so this needs no lock.
-- Run the `session-memory` pre-write secret scrub before every write; gate receipts quote command
-  output, and command output carries tokens.
-
-**A failed vault write is a 🔴 blocker, not a warning.** Report it and stop the phase — do **not** fall
-back to a repo-local file. Writing `.claude/orchestration-state.json` "just to keep going" recreates
-exactly the invisible-to-everyone state this replaced. The trade is deliberate: state now requires the
-Obsidian MCP to be reachable, and a run that cannot reach it stops loudly instead of drifting silently.
+**Read-modify-write in one step**, always overwriting the whole note with one full state instance —
+never `append`, never a patched field. A partially-appended JSON document is an unparseable state file,
+which is the one failure this contract exists to prevent.
 
 Top-level: `capability` · `analyze` (verdict + findings + cycles) · `contracts[]` (the freeze) ·
 `slices[]` (id, story, priority, status, `specialists[]`, `rounds[]`, `mergeLog[]`, `checkpoint`,
-`stackLayer`) · `gateReceipts[]` · `convergence` · `stack` · `humanGates[]`.
+`stackLayer`) · **`receipts[]`** (the full `pre-pr-gate` receipts — their only home) ·
+`integrationGate[]` (the routing view over them, joined on `receiptSha`) · `convergence` · `stack` ·
+`humanGates[]`.
 
 ## Progress log: session-memory (read + write, throughout — the mediator is the single writer)
 
@@ -174,7 +165,7 @@ orchestration layer **reads and writes throughout**, not just at the end:
 
 **Single writer:** only the mediator writes session-memory (mirrors the plugin's single-writer rule).
 Specialists **return** findings/pitfalls to the mediator (via `SendMessage`); the mediator records them.
-Every vault write passes the `session-memory` pre-write secret scrub → `[REDACTED]`.
+Every vault write passes the pre-write secret scrub (`../../shared/secret-scrub.md`) → `[REDACTED]`.
 
 ---
 
@@ -468,7 +459,9 @@ run `Skill(codebase-intelligence:pre-pr-gate)` on the integration branch:
    layer is judged on its own, so one receipt for the top of the stack proves nothing about the
    layers below it. A layer without a passing receipt bound to its own tip is not submittable.
 4. **Verdict routing:**
-   - ✅ → write the receipt path + block into `gateReceipts[]`, continue.
+   - ✅ → write the **full receipt** into the state note's `receipts[]` and its routing view into
+     `integrationGate[]`, joined on `receiptSha`. The receipt is a vault artifact only — never
+     `<repo>/.claude/pre-pr-gate.json` (`../../shared/vault-persistence.md`). Continue.
    - 🔴 → **no PR.** Map every blocker back to the owning territory, hand it to that specialist as
      next-round *actionable criteria* (Phase C format), and re-enter the round loop. Bounded: at most
      **3** fix→re-gate cycles, then STOP and surface the surviving blockers to the human.

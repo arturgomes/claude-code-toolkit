@@ -35,9 +35,18 @@ meaningful). A multi-repo preset run is swept one repo at a time — run the com
 
 ## Step 2 — Read the ledger: what "since the last execution" means
 
+The ledger is a **vault note**, one per repo, per the contract in `../shared/vault-persistence.md`:
+
 ```
-<repo>/.claude/prp-checkup.json
+02-Notes/Sessions/prp-checkup-<repo>.md
 ```
+
+It holds frontmatter plus a single fenced `json` block, written whole-note `overwrite` through the
+`ultimate-obsidian` MCP. It is **not** `<repo>/.claude/prp-checkup.json`: this ledger is the
+idempotency key for *destructive* actions, and a repo-local copy means your laptop and your desktop
+disagree about which branches are already deleted. A vault note is machine-independent by
+construction, so the window and the `processed[]` set mean the same thing everywhere.
+
 ```json
 {
   "lastRunAt": "2026-07-28T09:14:02Z",
@@ -58,9 +67,10 @@ meaningful). A multi-repo preset run is swept one repo at a time — run the com
 - The ledger is written **after** the actions, recording what actually happened — including skips and
   their reasons. Never write it in advance.
 
-Commit the ledger or gitignore it; either is fine, but do not let two machines silently disagree about
-what has been cleaned — the safety predicates re-check everything anyway, so the worst case of a lost
-ledger is a re-proposed no-op, not a wrong deletion.
+**A failed vault write is a blocker, not a warning** — stop and report rather than falling back to a
+local file, because a local ledger is precisely the disagreement this replaced. If the vault is
+unreachable, the safety predicates still re-check everything from GitHub, so the cost of *not* running
+is a deferred sweep, never a wrong deletion.
 
 ## Step 3 — List the merged PRs in the window
 
@@ -120,11 +130,19 @@ its own decision because its work exists nowhere else.
 
 ## Step 6 — Write the ledger and report
 
-Append every PR handled this run to `processed[]` with the actions that actually ran (including
-`skipped:<predicate>`), set `lastRunAt`, and print the one-row-per-PR result table from
-`post-merge-cleanup`. A run that cleaned nothing still updates `lastRunAt` **only** if it examined the
-window successfully — a run that failed to reach GitHub must not advance the window, or the PRs it
-never saw are skipped forever.
+Read the ledger note, add every PR handled this run to `processed[]` with the actions that actually ran
+(including `skipped:<predicate>`), set `lastRunAt`, and write the whole note back — read-modify-write
+in one `overwrite`, never an append, since an appended JSON document is unparseable. Then print the
+one-row-per-PR result table from `post-merge-cleanup`.
+
+A run that cleaned nothing still updates `lastRunAt` **only** if it examined the window successfully — a
+run that failed to reach GitHub must not advance the window, or the PRs it never saw are skipped
+forever.
+
+Also write the run's outcome to `02-Notes/Reports/<YYYY-MM>/prp-checkup-<YYYY-MM-DD>-<repo>-report.md`
+when anything was actually cleaned: what merged, what was deleted, and any `Carried forward` Open
+Failure that outlived its ticket. A sweep that deleted branches and left no narrative record is the
+persistence failure `vault-persistence.md` §5 describes.
 
 ## Suggested cadence
 
@@ -139,3 +157,5 @@ until you have watched a few runs and agree with what it proposes.
 - Never force-removes a dirty worktree and never `-D` a branch carrying commits the PR did not include.
 - Never advances `lastRunAt` on a failed run.
 - Does not delete session notes — it closes them (`SESSION CLOSE`), which is append-only.
+- Never writes `<repo>/.claude/prp-checkup.json`, or any other local mirror of the ledger. An
+  unreachable vault stops the sweep; it does not fall back to a file one machine can see.

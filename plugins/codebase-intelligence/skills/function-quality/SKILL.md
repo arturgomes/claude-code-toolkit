@@ -67,3 +67,11 @@ Run the complete 20-item Function Quality Checklist on each function added or si
 - `## Summary` — N reviewed, average /20, N passing (≥17), N needing work (<17)
 - One section per function — score, brief issue list (full schema only if score < 17)
 - `## File-Level Recommendations` — recurring issues across functions (include only if any)
+## Persistence
+
+These findings belong to the run that produced them, not to a report of their own: append them to the
+active session note (`## Verified Facts` for what passed, `### Lessons` for a recurring smell worth a
+rule). A standalone sweep across many functions writes
+`02-Notes/Reports/{YYYY-MM}/{slug}-function-quality.md` instead.
+
+Protocol: `../../shared/vault-persistence.md` — write before reporting.

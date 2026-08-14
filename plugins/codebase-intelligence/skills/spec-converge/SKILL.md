@@ -26,8 +26,7 @@ detected at the codebase level rather than one diff at a time.
 
 ## Model capability (read first)
 
-Read `CI_MODEL_TIER` (`frontier | standard | light`, default `standard`). `frontier`: steps are
-intent. `standard`/`light`: verbatim. Mandatory at every tier: **append-only**, the
+Tier semantics: `../../shared/model-tier.md`. Mandatory at every tier **here**: **append-only**, the
 **gap-type classification**, the **converged ⇒ byte-for-byte-unchanged** rule, and the **bounded pass
 count**.
 
@@ -178,3 +177,16 @@ not fix it. After 3 passes, remaining findings go to the human with their eviden
 Reads `spec.md` / `plan.md` / `tasks.md` (repo `specs/<slug>/`, mirrored in the vault),
 `contracts/`, `constitution`, and the `pre-pr-gate` receipt. Writes only the Convergence section.
 Feeds `mediator` Phase F and `session-memory`.
+## Persistence — where the findings go
+
+The appended tasks live in `tasks.md` or the plan note, but the **`unrequested` findings do not** —
+those are a human decision with `file:line` evidence, and this skill deletes nothing. They need a home
+that outlives the run.
+
+- **Target:** `02-Notes/Reports/{YYYY-MM}/{slug}-converge.md`, mode `overwrite`.
+- **Contents:** every gap by type (`missing | partial | contradicts | unrequested`) with its
+  `file:line` evidence, the pass number, the append target that was resolved, and the converged /
+  not-converged verdict.
+- **When:** at the end of each pass, before the next one starts.
+- Protocol and frontmatter: `../../shared/vault-persistence.md`. Edges: `implements` → the plan,
+  `documents` → the ticket node.

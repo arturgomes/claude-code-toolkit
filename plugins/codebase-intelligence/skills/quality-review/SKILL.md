@@ -109,3 +109,12 @@ Use these categories for structured feedback:
 
 **Next Step**: [What to do next]
 ```
+## Persistence — where the findings go
+
+- **A standalone review** (a directory, a branch, a whole feature): write
+  `02-Notes/Reports/{YYYY-MM}/{slug}-quality-review.md`, mode `overwrite` — every 🔴 and 🟡 with its
+  `file:line`, the checklist IDs answered, and the score.
+- **A review inside a larger run** (mid-task, one file): append the findings to the active session
+  note instead of creating a report; a report per file buries the run's narrative.
+- Either way the write happens **before** the findings are reported, per
+  `../../shared/vault-persistence.md`. A 🔴 that exists only in scrollback gets fixed twice.

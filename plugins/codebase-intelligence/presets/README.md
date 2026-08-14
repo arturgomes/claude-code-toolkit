@@ -94,10 +94,7 @@ rule_sources:                  # OPTIONAL — where this org's MUST/SHOULD rules
 - **Every command in `validation` / `pre_pr_gate` must be verified to exist** in that repo's
   `package.json` before it is written here. A preset naming a script the repo lacks (`npm run type-check`
   in a repo with no such script) produces a gate that errors or silently no-ops — worse than no gate.
-  Check with:
-  ```bash
-  node -e "const s=require('./package.json').scripts||{};for(const k of ['build','test','typecheck','type-check','lint'])console.log((s[k]?'have ':'MISSING ')+k+(s[k]?': '+s[k]:''))"
-  ```
+  Check with the snippet in `../shared/gate-command-resolution.md`.
 - **Gate commands must be read-only and non-watch.** `eslint --fix` / `prettier --write` mutate the tree
   and manufacture a pass; a bare `vitest` / `jest --watch` hangs the run. Record the real command instead.
 - **`ci_workflow` is the floor, not the ceiling.** Read it so the gate matches CI's install flags and
