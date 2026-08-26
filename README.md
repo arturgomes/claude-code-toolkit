@@ -401,6 +401,7 @@ Inside a Claude Code session:
 | `prp-plan` | Generate a battle-tested implementation plan — with vault storage, session memory, Jira injection, drift-guard anchor, KB consultation, Context7 verification, and AC traceability table |
 | `prp-implement` | Execute a plan end-to-end — with memory restore, per-task drift checks, Context7 before library calls, vault-based reports, and session memory saves |
 | `prp-loop` | Bounded closed-loop runner — re-attempts a goal until an executable gate passes AND an independent fresh-context verifier agrees, or a hard stop fires |
+| `sync-vault` | Bidirectional Obsidian vault sync — commits local changes as a host-stamped snapshot, pulls with rebase from `origin/main`, then pushes; vault path from the argument, `$OBSIDIAN_VAULT`, or `~/Documents/Obsidian-Vault` |
 | `doctor` | Read-only preflight — checks system tools, MCP servers, the KB engine, and vendored tools; prints the exact fix for anything missing |
 
 ### Agents
