@@ -9,6 +9,57 @@
           }
         ]
       }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Agent|Task|Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/run-node-hook.sh\" \"${CLAUDE_PLUGIN_ROOT}/hooks/adversarial/mark-adversarial.js\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/run-node-hook.sh\" \"${CLAUDE_PLUGIN_ROOT}/hooks/adversarial/track-edit.js\""
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/run-node-hook.sh\" \"${CLAUDE_PLUGIN_ROOT}/hooks/adversarial/track-bash-edit.js\""
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/run-node-hook.sh\" \"${CLAUDE_PLUGIN_ROOT}/hooks/adversarial/subagent-adversarial.js\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/run-node-hook.sh\" \"${CLAUDE_PLUGIN_ROOT}/hooks/adversarial/require-adversarial.js\""
+          }
+        ]
+      }
     ]
   }
 }

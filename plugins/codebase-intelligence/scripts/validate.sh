@@ -252,6 +252,31 @@ else
   warns=$((warns+1))
 fi
 
+# ── C9  node hook tests ───────────────────────────────────────────────────────
+# The adversarial gate can BLOCK the end of a user's turn, so its state machine
+# and its Bash-write detection are executable checks, not prose. node is optional
+# here for the same reason the claude CLI is: absent ⇒ skipped, never a fail.
+echo
+echo "C9 adversarial hook tests"
+if command -v node >/dev/null 2>&1; then
+  ran=0
+  for t in "$ROOT"/hooks/adversarial/lib/bash-write.test.js "$ROOT"/hooks/adversarial/lifecycle.test.js; do
+    [ -f "$t" ] || continue
+    ran=$((ran+1))
+    if out="$(node "$t" 2>&1)"; then
+      printf '  [OK]   %s — %s cases\n' "${t#"$ROOT"/}" "$(grep -c '^ok ' <<<"$out" || true)"
+    else
+      printf '  [FAIL] %s\n' "${t#"$ROOT"/}"
+      grep -E '^(FAIL|[0-9]+ (FAILING|EXTRA))' <<<"$out" | sed 's/^/         /'
+      fails=$((fails+1))
+    fi
+  done
+  [ "$ran" -gt 0 ] || printf '  [ -- ] no hook tests found\n'
+else
+  printf '  [ -- ] node not on PATH — adversarial hook tests skipped (optional)\n'
+  warns=$((warns+1))
+fi
+
 echo
 echo "--------------------------------"
 printf 'validate: %d fail · %d warn\n' "$fails" "$warns"
