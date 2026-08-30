@@ -1,5 +1,6 @@
 ---
 name: prp-implement
+model: sonnet
 description: >
   Implements a .plan.md end-to-end: restores session memory, audits the plan's own requirement→task→gate coverage before the first task, verifies library APIs via Context7 before each task, consults KB for pattern decisions, runs drift-guard before every task, gates the branch with pre-pr-gate, and reconciles the finished code against the plan before reporting.
   Pass path/to/plan.md.
@@ -232,7 +233,8 @@ the post-ENTER assertion above exists to catch.
 ## Phase 3: EXECUTE - Implement Tasks
 
 <!-- ─────────────────────────────────────────────────────────────────
-     Intelligence hooks added at steps 3.0, 3.1, 3.2, 3.4, 3.5
+     Intelligence hooks: 3.0/3.0b (main-thread pre-load), 3.1 (prior-incident scan),
+     3.1a (per-task subagent dispatch + brief), 3.2 (main-thread record), 3.3 (integration pass)
      ───────────────────────────────────────────────────────────────── -->
 
 ### Step 3.0 — Memory cache pre-load
@@ -248,137 +250,170 @@ If the plan has a `Context7 Library Facts` section:
 - Load confirmed signatures into working memory now
 - These replace any API calls made from training-data memory during implementation
 
-**Load strategy (context-budget aware):** when the context budget comfortably fits, load the full plan + all Context7 facts + all relevant memory before Task 1 (single up-front load, fewer round-trips). Otherwise fall back to per-task load (Step 3.2) — read only the MIRROR/IMPORTS and facts each task needs, when it needs them. Neither strategy skips any invariant; this only controls *when* context is pulled, not *whether* gates run.
+**Load strategy (context-budget aware):** when the context budget comfortably fits, load the full plan + all Context7 facts + all relevant memory before Task 1 (single up-front load, fewer round-trips). Otherwise fall back to per-task load (Step 3.1a's "Read context" item, inside the dispatched subagent's brief) — read only the MIRROR/IMPORTS and facts each task needs, when it needs them. Neither strategy skips any invariant; this only controls *when* context is pulled, not *whether* gates run.
 
 ---
 
-**For each task in the plan's Step-by-Step Tasks:**
+**For each task in the plan's Step-by-Step Tasks, dispatch it to its own isolated subagent — the
+main thread never accumulates one task's reasoning or tool output into the next task's context.**
+Same file territory rule as before: single-writer-per-file. This is isolation per task, not
+parallelism — one subagent dispatched, awaited, recorded, then the next.
 
-### Step 3.1 — Drift check before every task
+### Step 3.1 — Prior-incident scan (S6, main thread, before dispatch)
 
-Follow skill: `codebase-intelligence:drift-guard` → drift questions #1 and #4.
-
-Before starting task {N}:
-```
-AC this task serves: {state it from AC Traceability table}
-Am I about to add anything the AC doesn't require? {yes → remove it / no → proceed}
-```
-
-If the task has NO corresponding AC entry → pause, verify it's legitimately in scope,
-document the justification, then proceed (or skip if not justified).
-
-**Prior-incident scan (S6):** query `mcp__ultimate-obsidian__search_sessions` (scoped to the "## Open Failures", "## Lessons", and "## Loop Constraints" sections) for the file(s) this task changes. If a prior failure matches one of those files, print:
+Query `mcp__ultimate-obsidian__search_sessions` (scoped to the "## Open Failures", "## Lessons", and "## Loop Constraints" sections) for the file(s) this task changes — before building the brief in Step 3.1a, so a match rides into the subagent's brief instead of being discovered mid-task. If a prior failure matches, note it for the brief:
 ```
 ⚠️ prior incident: <session:date> — <one-line summary>
 ```
-and require this attempt to explicitly address the prior incident (state how, or why it no longer applies) before implementing. If `search_sessions` is unavailable, note it and proceed (no-op).
+The dispatched subagent must explicitly address it (state how, or why it no longer applies) before
+implementing. If `search_sessions` is unavailable, note it and proceed (no-op).
 
-**Effort matching (S9):** if the runtime exposes a reasoning-effort or extended-thinking control, match it to the plan's complexity for this task (higher effort for architectural/high-risk tasks, lower for mechanical edits); if no such control exists, this is a no-op.
+**Effort matching (S9):** if the runtime exposes a reasoning-effort or extended-thinking control, match it to this task's complexity when dispatching (higher effort for architectural/high-risk tasks, lower for mechanical edits); if no such control exists, this is a no-op.
 
-### Step 3.2 — Read context with memory
+### Step 3.1a — Dispatch: build the per-task brief and delegate
 
-1. Read the **MIRROR** file from the task
-2. Check memory for prior findings on this file — use cached rather than re-reading if available
-3. Understand the pattern to follow
-4. Read **IMPORTS** specified
+Construct a **per-task brief** containing EXACTLY:
+- this task's own `why` / `mirror` / `imports` / `ac_mapping` / `steps` / `gotchas` fields
+  (verbatim from the plan) — not any other task's
+- the TASK ANCHOR (ticket + AC list + hard boundaries, from Pre-Phase II)
+- any `Context7 Library Facts` entries relevant to this task's files
+- any KB pattern note already surfaced for this task
+- the Step 3.1 prior-incident result for this task's files
 
-### Step 3.3 — Context7 verification before implementation
+Dispatch it via **`Agent(general-purpose, model: sonnet)`** — mirroring `prp-loop.md`'s own
+per-attempt delegation ("a single delegate for context isolation, never a fan-out"): **one**
+subagent per task, never parallel, never sharing another in-flight task's context. The subagent
+receives ONLY the brief above — not the accumulated history of prior tasks — and must itself run
+every one of the following before returning:
 
-Follow skill: `codebase-intelligence:context7-research`.
+1. **Drift check (#1, #4)** — follow `codebase-intelligence:drift-guard`: state the AC this task
+   serves; confirm nothing extra is being added.
+   ```
+   AC this task serves: {state it from the brief's ac_mapping}
+   Am I about to add anything the AC doesn't require? {yes → remove it / no → proceed}
+   ```
+   If the task has NO corresponding AC entry → pause, verify it's legitimately in scope, document
+   the justification, then proceed (or skip if not justified).
+2. **Read context** — read the **MIRROR** file, the **IMPORTS**, and the brief's memory/GOTCHA
+   notes; understand the pattern to follow.
+3. **Context7 verification** — follow `codebase-intelligence:context7-research`: use the brief's
+   Context7 facts if the library is already documented there; else resolve now; if Context7 MCP is
+   unavailable, note it and proceed with extra care. **Never write an external library call from
+   training memory alone.**
+4. **KB pattern check** — for a non-trivial pattern decision (error handling, data transform,
+   retry, etc.), follow `codebase-intelligence:ask-kb`: "What's the KB-recommended pattern for
+   {specific pattern}?" Use the recommendation if one exists (cite it), else the MIRROR pattern.
+   **Advisor-tier consult (S3, consume):** at a genuine decision point only (a pattern/architecture
+   choice, or a drift escalation), MAY consult the advisor tier once, using the Model Routing block
+   defined in `prp-plan`. Bulk edits/renames/mechanical changes stay on the executor tier.
+   **Single-tier no-op** if no routing is configured — never blocking.
+5. **Implement** — make the change exactly as specified, following MIRROR, handling every GOTCHA,
+   using only confirmed API signatures, applying KB patterns where documented.
+6. **Validate immediately** — run the type-check command from the plan's Validation Commands after
+   the change; do not report done until it passes.
+7. **Behavioral gate (PI2)** — type-check alone is not enough: the task's AC-mapped test (from the
+   AC Traceability table) must pass, or a minimal repro exercising the task's behavior, exit `0`.
+   Do NOT defer this to Phase 4 — a task whose behavioral proof has not passed stays open, not
+   done. Gate predicate: `type-check exit 0 AND AC-mapped-test-or-repro exit 0`.
+8. **Mid-task drift check** — if the task takes significantly more effort than expected, or a new
+   idea surfaces, follow `codebase-intelligence:drift-guard` → "While I'm here" trigger. Any
+   thought starting "While I'm here, I should also...", "This would be cleaner if...", "I noticed
+   this other thing..." → STOP, run drift questions #4 (gold-plate) and #2 (scope boundary); if not
+   in AC, note it as a future improvement, do NOT implement now.
 
-If the task calls an external library API:
-1. Check if the plan's `Context7 Library Facts` section already has this library → use those facts
-2. If not documented yet → run Context7 now, document findings, then implement
-3. If Context7 MCP unavailable → note this and proceed with extra care
+The subagent returns a **structured result** — files changed, gate pass/fail (exact command + exit
+code), a one-line summary, and any GOTCHA/lesson discovered — and nothing more. That result is the
+entire amount of this task's reasoning that crosses back into the main thread's context.
 
-**Never write an external library call from training memory alone.**
+**Capability gate:** if the runtime exposes no Task-tool/Agent support, this is a no-op — execute
+the task in-context instead (dropping isolation, never dropping the gates above), and state the
+fallback is active, the same way `prp-loop.md`'s advisor-tier consult states its own single-tier
+no-op.
 
-### Step 3.4 — KB implementation check
+### Step 3.2 — Main thread: receive, record, advance
 
-For tasks that involve a non-trivial pattern decision (error handling, data transform, retry, etc.):
+On each subagent's result:
 
-Follow skill: `codebase-intelligence:ask-kb`.
-> "What's the KB-recommended pattern for {specific pattern being implemented}?"
+- **Memory save per milestone (3.8):** every 3 tasks (or after any significant discovery),
+  `Skill(codebase-intelligence:session-memory)` → SESSION END protocol. Include: tasks completed
+  (with AC mapping), plan deviations, new Context7 findings, drift decisions, next task to resume
+  from.
+- **Failure logging (PI4):** when the subagent reports a validation/test/behavioral-gate failure,
+  write it to "## Open Failures" with a **required `Verify:` field** — a repro command or a
+  root-cause `file:line`. A failure with an empty `Verify:` field stays in "## Open Failures"
+  only; it is copied to "## General Rules" **only once its `Verify:` field is filled**. No Rule is
+  promoted without a filled `Verify:` entry.
+- **Lessons capture (3.8b):** on any non-obvious fix, GOTCHA hit, or drift correction the subagent
+  reports, append exactly one line to session-memory in `symptom → rule` form (e.g. `type error on
+  retry() call → verify library signature via Context7 before writing external calls`). **Tier
+  gating (PI3):** first-class extraction into reusable artifacts (skillify, Step 5.6) is
+  `frontier`-only; `standard`/`light` still record and consume these lines, never blocked.
+- **Track progress (3.9):**
+  ```
+  Task 1: CREATE src/features/x/models.ts ✅ (AC: {which AC})
+  Task 2: CREATE src/features/x/service.ts ✅ (AC: {which AC})
+  ```
+- **Context-consumption guard (3.10):** check if the MAIN THREAD's own context window has reached
+  more than 40%. If so, use `Skill(session-memory)` to save the task development and stop,
+  notifying the user to clear the session and restart in another one. Because each task now runs
+  in an isolated subagent, this should trip far less often on task volume alone — the main thread
+  only accumulates each task's condensed result, not its full working context.
 
-If KB has a recommendation → follow it and cite it in the implementation comment.
-If KB is silent → use the codebase's existing pattern (from MIRROR) and continue.
+Advance to the next task only after this record step completes.
 
-**Advisor-tier consult (S3, consume):** at genuine decision points only (a pattern/architecture choice, or a drift escalation), the implementer MAY consult the advisor tier **once per task** using the Model Routing block defined in `prp-plan`. Bulk edits, renames, and mechanical changes stay on the executor tier — do not route them to the advisor. **Single-tier no-op:** if only one model tier is available (no routing configured), skip the advisor hop and proceed on the single tier; this is never blocking.
+---
 
-### Step 3.5 — Implement
+### Step 3.3 — Cross-item integration pass (runs ONCE, after the LAST task)
 
-1. Make the change exactly as specified in the task
-2. Follow the MIRROR pattern
-3. Handle GOTCHA warnings (including any from prior memory sessions)
-4. Use only confirmed API signatures (Context7) for external libraries
-5. Apply KB patterns where documented
-
-### Step 3.6 — Validate immediately
-
-Run the type-check command from the plan's Validation Commands after EVERY file change.
-Do not proceed to the next task until type-check passes.
-
-**Behavioral gate (PI2):** type-check alone is not enough. Before Step 3.9 may mark this task done, the task's AC-mapped test (from the AC Traceability table) must pass — or, if no test exists yet, a minimal repro that exercises the task's behavior must pass. Run it now and confirm exit code `0`. Do NOT defer this behavioral proof to Phase 4: a task whose behavioral test/repro has not passed stays open (not done). Gate predicate: `type-check exit 0 AND AC-mapped-test-or-repro exit 0`.
-
-### Step 3.7 — Mid-task drift check
-
-If a task is taking significantly more effort than expected, or if a new idea surfaces:
-
-Follow skill: `codebase-intelligence:drift-guard` → "While I'm here" trigger.
-
-Any thought starting with:
-- "While I'm here, I should also..."
-- "This would be cleaner if..."
-- "I noticed this other thing..."
-
-→ STOP. Run drift questions #4 (gold-plate) and #2 (scope boundary).
-→ If not in AC: note it as a future improvement, do NOT implement now.
-
-### Step 3.7b — Mid-flight adversarial review (one-shot)
-
-At task `⌈total_tasks/2⌉` (skip if `total_tasks < 4`), invoke once: `Skill(codebase-intelligence:doubt-driven)`. Halts implementation only on HIGH-severity mismatches; otherwise logs findings and continues.
-
-### Step 3.8 — Memory save per milestone
-
-Every 3 tasks (or after any significant discovery): `Skill(codebase-intelligence:session-memory)` → SESSION END protocol. Include: tasks completed (with AC mapping), plan deviations, new Context7 findings, drift decisions, next task to resume from.
-
-**Failure logging (PI4):** when a validation, test, or behavioral gate fails, write it to the session's "## Open Failures" section with a **required `Verify:` field** — either a repro command (exact string) or a root-cause `file:line`. A failure with an empty `Verify:` field stays in "## Open Failures" only; it is copied to "## General Rules" **only once its `Verify:` field is filled** (repro reproduces, or root cause pinned). No Rule is promoted to "## General Rules" without a filled `Verify:` entry.
-
-### Step 3.8b — Lessons capture (symptom → rule)
-
-On any **non-obvious fix, GOTCHA hit, or drift correction** during this task, append exactly one line to session-memory in the form:
-```
-symptom → rule
-```
-(e.g. `type error on retry() call → verify library signature via Context7 before writing external calls`). One line per incident; keep it terse and reusable.
-
-**Tier gating (PI3):** first-class extraction of these lessons into reusable artifacts (the skillify pass, Step 5.6) is gated to the `frontier` tier. `standard` / `light` tiers still record the raw `symptom → rule` lines and **consume** any existing lessons/artifacts — they are never blocked from proceeding when extraction is unavailable.
-
-### Step 3.9 — Track progress
-
-```
-Task 1: CREATE src/features/x/models.ts ✅ (AC: {which AC})
-Task 2: CREATE src/features/x/service.ts ✅ (AC: {which AC})
-```
-
-### Step 3.10 - Context consumption and avoid context rot
-Check if the session context window has reached more than 40%. If so, use Skill(session-memory) to update the task development, and stop, notifying the user
-to clear the session and restart in another one.
+Step 3.7b used to invoke `doubt-driven` as a one-shot sample at task `⌈total_tasks/2⌉`. It is now a
+single cross-item integration pass run once, after every task in the plan has been dispatched and
+recorded — **not** at a sample point mid-run — invoking `Skill(codebase-intelligence:doubt-driven)`
+**once**, against the FULL set of completed tasks. This catches exactly what per-task isolation cannot see on its own: two tasks each
+individually correct but mutually inconsistent (a shared assumption two briefs made differently, a
+naming choice that diverged between tasks, a type one task introduced that another task's isolated
+context never saw). Halts implementation only on HIGH-severity mismatches; otherwise logs findings
+and continues to Phase 4.
 
 **PHASE_3_CHECKPOINT:**
-- [ ] All tasks executed in order
-- [ ] Each task passed type-check immediately
-- [ ] Each task passed its behavioral gate (AC-mapped test or minimal repro, exit 0) before being marked done
-- [ ] Prior-incident scan run per task; matched incidents addressed
-- [ ] Drift check run before every task
+- [ ] Every task dispatched to its own isolated subagent (model: sonnet) — none shared another
+      task's in-flight context; single-writer-per-file held throughout
+- [ ] Each task's subagent passed type-check immediately and its behavioral gate (AC-mapped test
+      or minimal repro, exit 0) before being marked done
+- [ ] Prior-incident scan (S6) run per task before dispatch; matched incidents rode into the brief
+      and were addressed
+- [ ] Drift check run inside every task's subagent
 - [ ] Context7 verified for all library calls
 - [ ] KB consulted for pattern decisions
 - [ ] Session saved at milestones via session-memory skill (every ~3 tasks)
 - [ ] Deviations documented
+- [ ] The cross-item integration pass (doubt-driven) completed once, over ALL tasks, after the
+      last one — not a single mid-run sample point
 
 ---
 
 ## Phase 4: VALIDATE - Full Verification
+
+### 4.0.5 Task-completeness gate (runs FIRST, before 4.1)
+
+Before any other Phase 4 check, mechanically verify every task the plan declared is actually
+checked off — do not trust the narrative "all tasks executed in order" claim from Phase 3 alone.
+This is the gate that catches a task silently dropped or forgotten mid-run, the failure mode
+narrative-only tracking cannot see.
+
+Resolve the task-list target the same way `spec-converge` does, and state which one was used:
+- the repo's `specs/<slug>/tasks.md`, when the plan's dual-write ran (default), else
+- the plan note's own "Step-by-Step Tasks" checkboxes in the vault (when `--no-repo-specs` was used).
+
+Run:
+```bash
+grep -n '^\s*- \[ \]' {resolved-task-list-path}
+```
+
+**GATE:** any match (an unchecked box) is a hard fail — do not proceed to 4.1 until every task is
+checked off, or each remaining one is explicitly justified as descoped (a drift-guard-logged
+reason, never a silent skip). This is a different question from 4.5's AC verification: a task can
+be checked off with its AC-mapped test still failing (4.5 catches that), and this gate catches the
+reverse — a task never checked off, whether or not its AC was ever separately verified.
 
 ### 4.1 Static Analysis
 
@@ -511,6 +546,8 @@ Before writing ANY validation output, AC transcript, or command transcript into 
 Replace every match with the marker `[REDACTED]` before the write. This runs on both Phase 4 (session-memory) and Phase 5 (report) writes. Redaction never removes the *proof* — replace only the sensitive substring, keeping the surrounding proving output line intact.
 
 **PHASE_4_CHECKPOINT:**
+- [ ] Task-completeness gate run first (4.0.5) — zero unchecked boxes in the resolved task list,
+      or each one explicitly justified as descoped
 - [ ] Type-check passes
 - [ ] Lint passes
 - [ ] Tests pass

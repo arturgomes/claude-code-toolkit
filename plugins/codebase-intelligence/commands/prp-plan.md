@@ -1,5 +1,6 @@
 ---
 name: prp-plan
+model: opus
 description: >
   Transforms a feature description, Jira ticket, or PRD into an implementation plan with session memory, Jira injection, KB consultation, Context7 verification, and drift-guard at every phase gate.
   Pass a feature description, JIRA-TICKET, or path/to/prd.md.
