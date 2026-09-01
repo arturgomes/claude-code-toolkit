@@ -48,8 +48,8 @@ correct order. Mandatory at every tier **here**: **read-only**, the **coverage m
 
 | Artifact | Source | Required |
 |---|---|---|
-| `spec.md` | refinement contract — `specs/<slug>/spec.md` (repo) or `02-Notes/Plans/<slug>.refinement.md` (vault) | yes |
-| `plan.md` | `/prp-plan` output — repo `specs/<slug>/plan.md` or `02-Notes/Plans/<slug>.plan.md` | yes |
+| `spec.md` | refinement contract — `02-Notes/Plans/<slug>.refinement.md` (vault, default) or `specs/<slug>/spec.md` (repo, only with `--repo-specs`) | yes |
+| `plan.md` | `/prp-plan` output — `02-Notes/Plans/<slug>.plan.md` (vault, default) or repo `specs/<slug>/plan.md` (only with `--repo-specs`) | yes |
 | `tasks.md` / `contract[]` | plan tasks, or the project-manager's contract in the vault state note (`02-Notes/Sessions/<run>.state.md`) | yes |
 | territory map | vault state note → `specialists[].territory` | when orchestrating |
 | `contracts/` | the frozen cross-lane interface set | when orchestrating |

@@ -65,13 +65,16 @@ The refinement contract is a real spec, not a note. Its mandatory sections:
 6. **Definition of Done**, derived from the FRs — every FR → ≥1 DoD item, no orphan DoD.
 7. **Clarifications** — the dated session log of every question asked and answered (Step 4).
 
-**Dual-write (both, always — unless the preset disables the repo copy):**
+**Vault by default — the repo copy is opt-in, not the default:**
 
-- repo: `specs/<TICKET-or-slug>/spec.md` on the working branch — so intent ships in the PR next to
-  the code and a teammate can review it in the diff;
-- vault: `02-Notes/Plans/<slug>.refinement.md` — so it stays BM25-searchable across tickets.
+- vault (always): `02-Notes/Plans/<slug>.refinement.md` — the vault is the system of record, so this
+  is the canonical copy and what stays BM25-searchable across tickets.
+- repo (opt-in only, via `--repo-specs` or preset `spec_artifacts: repo | both`):
+  `specs/<TICKET-or-slug>/spec.md` on the working branch — so intent ships in the PR next to the code.
+  Do NOT write this by default; a repo-local `specs/` copy the next session can't see is exactly the
+  local-mirror failure this skill exists to avoid (`../../shared/vault-persistence.md`).
 
-Preset key `spec_artifacts: repo | vault | both` (default `both`); `repo_path` overrides `specs/`.
+Preset key `spec_artifacts: repo | vault | both` (**default `vault`**); `repo_path` overrides `specs/`.
 
 ---
 
@@ -161,9 +164,10 @@ Full format rules: `references/clarify-protocol.md`.
 
 ### 5. Generate + score the requirements checklist ("unit tests for English")
 
-Full generation rules: `references/checklist-generation.md`. Write
-`specs/<slug>/checklists/requirements.md` with `CHK001…` items that test **the requirements**, not the
-implementation:
+Full generation rules: `references/checklist-generation.md`. Write the checklist to the vault by
+default (`02-Notes/Plans/<YYYY-MM>/<slug>.checklist.md`), or `specs/<slug>/checklists/requirements.md`
+in the repo only under the same `--repo-specs`/`spec_artifacts` opt-in as `spec.md`, with `CHK001…`
+items that test **the requirements**, not the implementation:
 
 - ✅ "Is 'prominent' quantified with a size or position?" `[Clarity]`
 - ✅ "Is the behavior specified when the assigned user is deleted?" `[Edge Cases]`
@@ -205,9 +209,10 @@ session**; a fresh session after real answers gets a fresh budget.
 
 ## Output
 
-- READY: `specs/<slug>/spec.md` + `checklists/requirements.md` (repo) and
-  `02-Notes/Plans/<YYYY-MM>/<slug>.refinement.md` (vault) — stories + FR + SC + scenarios + DoD + closed
-  ledger + Clarifications log → consumed by Phase 0 as the authoritative requirement set.
+- READY: `02-Notes/Plans/<YYYY-MM>/<slug>.refinement.md` (vault, always) — and, only with `--repo-specs`
+  / `spec_artifacts: repo|both`, `specs/<slug>/spec.md` + `checklists/requirements.md` (repo) —
+  stories + FR + SC + scenarios + DoD + closed ledger + Clarifications log → consumed by Phase 0 as the
+  authoritative requirement set.
 - NOT READY: the same files with `## Open Questions` and a hard STOP — no planning artifact, no code.
 - **Vault note frontmatter** — carry the typed relations so the contract is a graph node, not an island
   (write protocol, frontmatter semantics, month bucket, omit-dangling-key:

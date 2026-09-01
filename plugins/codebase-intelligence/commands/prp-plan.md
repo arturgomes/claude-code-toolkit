@@ -639,10 +639,11 @@ Mandatory Reading · Patterns to Mirror · **Constitution Check** · **Complexit
 Testing Strategy · Validation Commands (6 levels) · Acceptance Criteria checklist ·
 Completion Checklist · Risks and Mitigations
 
-### Repo copy of the planning artifacts (dual-write)
+### Repo copy of the planning artifacts (opt-in, not the default)
 
-The vault copy stays the searchable index. **Also** write the plan into the working repo so intent
-ships in the PR next to the code and a teammate can review both in one diff:
+The vault copy is the system of record and the only artifact written by default. A repo-local copy is
+opt-in only — pass `--repo-specs`, or preset `spec_artifacts: repo | both` — for when intent needs to
+ship in the PR next to the code and a teammate reviews both in one diff:
 
 ```
 specs/<TICKET-or-slug>/
@@ -653,9 +654,10 @@ specs/<TICKET-or-slug>/
 └── checklists/requirements.md
 ```
 
-Skip the repo copy when the caller passed `--no-repo-specs`, when the preset sets
-`spec_artifacts: vault`, or when the repo is not the artifact's subject (a planning-only run). Default
-is **both**. Never write into a repo you were not asked to change.
+Write it only when the caller passed `--repo-specs`, or the preset sets `spec_artifacts: repo | both`.
+Default is **vault-only** — a repo-local `specs/` copy the next session can't see is exactly the
+local-mirror failure the vault-persistence contract exists to avoid. Never write into a repo you were
+not asked to change, even when `--repo-specs` is on.
 
 </process>
 

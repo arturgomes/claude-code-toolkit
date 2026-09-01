@@ -214,7 +214,8 @@ decomposition for it.
    Context7 BEFORE web** → **consult-kb** → **constitution Phase -1 gates + Complexity Tracking** →
    emits `plan.md`, `contracts/`, and tasks tagged `[P]` / `[US#]` / `files:`.
 3. The resulting `plan.md` is the **decomposition input** for Phase A and the durable planning
-   artifact — written to `specs/<slug>/plan.md` (repo) and `02-Notes/Plans/` (vault).
+   artifact — written to `02-Notes/Plans/` (vault, default), plus `specs/<slug>/plan.md` (repo) only
+   when `--repo-specs` / preset `spec_artifacts: repo|both` is on.
 4. A genuine **requirement fork** or a `/prp-plan` refusal on a blocking unknown is the sanctioned
    AC-1 human stop — surface it and wait; never fan out on an unresolved plan.
 
