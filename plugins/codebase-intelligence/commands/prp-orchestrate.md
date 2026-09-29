@@ -13,7 +13,7 @@ description: >
   spec. Can ship the result as a GitHub stacked-PR chain — one PR per slice — with --stack, or by
   accepting the one-time offer made after decomposition. No mandatory Y/N gates — stops for a human ONLY on a requirement fork or a red blast-radius
   action (auth/payments/deploy/db-migration).
-argument-hint: <goal | JIRA-TICKET | path/to/prd.md> [--jira-project <CODE>] [--preset <name>] [--plan <path>] [--spec <path>] [--base <branch>] [--stack | --no-stack] [--groom-autonomous] [--no-repo-specs]
+argument-hint: <goal | JIRA-TICKET | path/to/prd.md> [--jira-project <CODE>] [--preset <name>] [--plan <path>] [--spec <path>] [--base <branch>] [--stack | --no-stack] [--groom-autonomous] [--repo-specs]
 ---
 
 # /prp-orchestrate — spec-driven, mediator-judged agent teams
@@ -177,7 +177,8 @@ Nothing plans or builds until the assignment is a contract. Run `Skill(refinemen
 4. It generates and scores `checklists/requirements.md` — *unit tests for the requirements* — and
    re-scores it after each clarification, reporting before/after counts and any regressions.
 5. It grades against the DoR rubric and returns a **binary verdict**:
-   - **READY** → persist `specs/<slug>/spec.md` (repo) + `02-Notes/Plans/<slug>.refinement.md` (vault)
+   - **READY** → persist `02-Notes/Plans/<slug>.refinement.md` (vault, always) — plus
+     `specs/<slug>/spec.md` (repo) only under `--repo-specs` / preset `spec_artifacts: repo|both` —
      and continue to Step 0.
    - **NOT READY** → **STOP the entire flow.** Do NOT invoke `/prp-plan`, do NOT create worktrees, do
      NOT write code. Return the clarifying questions and wait.
@@ -201,9 +202,9 @@ is inherited wholesale, nothing is discarded:
 3. It emits `plan.md` (Intelligence Context, traceability, Files-to-Change owner-lanes, per-task
    `expected_gate`s), the `contracts/` set, and tasks tagged `[P]` (parallel-safe), `[US#]` (owning
    story), and `files:` (exact paths) — the fields Phase 1 derives territory from.
-4. Artifacts are dual-written: `specs/<slug>/` in the repo (so intent ships in the PR) **and** the
-   vault (so it stays searchable). `--no-repo-specs`, or preset `spec_artifacts: vault`, keeps the
-   vault copy only.
+4. Artifacts are vault-first by default (`02-Notes/Plans/` — so they stay searchable across tickets).
+   The repo copy under `specs/<slug>/` is opt-in only, via `--repo-specs` or preset
+   `spec_artifacts: repo|both`, for when intent needs to ship in the PR next to the code.
 5. If `/prp-plan` surfaces a genuine **requirement fork** or refuses on a **blocking unknown**, that is
    exactly the sanctioned AC-1 human stop — surface it and wait; do not fan out on an unresolved plan.
 
@@ -322,8 +323,8 @@ Every gate before this answers a local question. None answers the one the ticket
 and acceptance scenario against the code and classifies each gap as
 `missing | partial | contradicts | unrequested`.
 
-- **Converged** (zero findings, the append target byte-for-byte unchanged — `specs/<slug>/tasks.md`
-  normally, the vault plan note under `--no-repo-specs`) → Phase 6.
+- **Converged** (zero findings, the append target byte-for-byte unchanged — the vault plan note by
+  default, or `specs/<slug>/tasks.md` when `--repo-specs` is on) → Phase 6.
 - **Tasks appended** → route each to its owning lane as next-round criteria, re-gate, converge again.
   Bounded at **3** passes, each strictly smaller than the last.
 - **`unrequested` code is surfaced, never deleted** — with `file:line` evidence, for the human to

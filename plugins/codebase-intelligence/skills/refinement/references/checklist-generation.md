@@ -26,8 +26,9 @@ If an item could be executed against a running system, it is in the wrong file.
 1. **Derive the theme** from the feature's own signals — domain keywords (auth, latency, export,
    a11y), risk words ("critical", "compliance", "must"), and the artifacts already present. Do not
    pull from a fixed catalog: a generic checklist passes trivially and teaches everyone to ignore it.
-2. **Write to** `specs/<slug>/checklists/requirements.md`. Additional focused checklists get their own
-   domain file (`security.md`, `ux.md`, `api.md`).
+2. **Write to** the vault by default (`02-Notes/Plans/<YYYY-MM>/<slug>.checklist.md`), or
+   `specs/<slug>/checklists/requirements.md` in the repo only under the `--repo-specs`/`spec_artifacts`
+   opt-in. Additional focused checklists get their own domain file (`security.md`, `ux.md`, `api.md`).
 3. **Number `CHK001…`, never reuse an id.** Appending to an existing file continues from the last id;
    existing items are never deleted or renumbered — the pass/fail history has to stay comparable
    across clarify rounds.

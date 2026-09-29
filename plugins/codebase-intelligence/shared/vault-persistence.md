@@ -65,10 +65,12 @@ future session would want must also be written to the vault before the phase clo
 
 Exactly two things legitimately live outside the vault:
 
-1. **Artifacts a repo owns by contract** — `specs/<slug>/spec.md`, `plan.md`, `tasks.md`,
-   `contracts/`, `checklists/`, and `.claude/constitution.md`, so intent ships in the PR next to the
-   code. These are **dual-written**: the repo copy ships, the vault copy stays searchable and
-   graph-linked.
+1. **`.claude/constitution.md`** — a repo owns this by contract; it has no vault twin.
+   `specs/<slug>/spec.md`, `plan.md`, `tasks.md`, `contracts/`, `checklists/` are **NOT** written by
+   default — the vault copy is the only artifact written unless the caller explicitly opts in
+   (`--repo-specs`, or preset `spec_artifacts: repo | both`) so intent ships in the PR next to the
+   code. Default behavior across `refinement` / `prp-plan` / `mediator` / `spec-converge` /
+   `spec-analyze` is **vault-only**; do not write a repo `specs/` copy on your own initiative.
 2. **Caches rebuildable from the vault** — `~/.claude/memory/<TICKET>/session_index.db` (the FTS5
    index, rebuilt by `reindex_kb`), `~/.claude/memory/WEB-CACHE-001/` (an index over notes that are
    themselves in the vault), and single-phase extraction scratch such as `/tmp/epub_extracted/`.

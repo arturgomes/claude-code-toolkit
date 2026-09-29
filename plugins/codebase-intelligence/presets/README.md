@@ -13,10 +13,12 @@ orchestrator runs in generic single-repo mode (roles bind to `self` = the curren
 preset: <name>                 # preset identifier
 description: <one-line>
 
-spec_artifacts: both           # both (default) | repo | vault — where spec.md / plan.md / tasks.md /
-spec_repo_path: specs          #   contracts/ / checklists/ are written. The repo copy is what makes
-                               #   intent reviewable in the PR next to the code; the vault copy is
-                               #   what keeps it BM25-searchable across tickets.
+spec_artifacts: vault          # vault (default) | repo | both — where spec.md / plan.md / tasks.md /
+spec_repo_path: specs          #   contracts/ / checklists/ are written. Vault-only unless a repo copy
+                               #   is explicitly requested (repo|both, or --repo-specs): a repo `specs/`
+                               #   copy the next session can't see is exactly the local-mirror failure
+                               #   the vault-persistence contract exists to avoid. `repo`/`both` make
+                               #   intent reviewable in the PR next to the code when you do want that.
 
 constitution: .claude/constitution.md   # OPTIONAL — architectural non-negotiables + the three
                                #   Phase -1 gates. Read by refinement, prp-plan, spec-analyze, the

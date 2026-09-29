@@ -11,10 +11,12 @@ description: >
 
 # --- spec artifacts ----------------------------------------------------------------------
 # Where the planning artifacts (spec.md / plan.md / tasks.md / contracts/ / checklists/) are
-# written.  both = repo copy under  spec_repo_path  AND the searchable vault copy (default).
-#   repo  → only the repo copy (intent ships in the PR, nothing in the vault)
-#   vault → only the vault copy (nothing added to the working repo)
-spec_artifacts: both
+# written.  vault = the searchable vault copy only (default) — no files added to seathq repos.
+#   repo  → only the repo copy under  spec_repo_path  (intent ships in the PR, nothing in the vault)
+#   both  → repo copy AND vault copy
+# seathq policy: vault is the system of record — do not write specs/ into seathq-fe/seathq-be/
+# seathq-core on your own initiative. Use --repo-specs for a one-off run that needs the repo copy.
+spec_artifacts: vault
 spec_repo_path: specs
 
 # --- constitution ------------------------------------------------------------------------

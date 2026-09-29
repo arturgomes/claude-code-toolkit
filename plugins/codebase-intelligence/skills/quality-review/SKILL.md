@@ -12,6 +12,19 @@ version: 2.0.1
 
 Run all quality checklists (Function Quality, Test Quality, Best Practices) to catch violations before code is merged.
 
+## Scope: read-only, always — including after you've reported
+
+This skill produces a report; it never applies its own findings, including its own 💡 suggestions.
+Once the Output Format below is written (and persisted, per the Persistence section), the review is
+**done** — do not continue on to implementing any Critical Issue, Recommendation, or optional
+suggestion on your own initiative, even if the fix looks small or obviously correct. A finding that
+should be fixed is a separate, explicitly-requested task, not an implicit next step of this one.
+
+Mechanical enforcement (not just this instruction): `../../shared/read-only-mandate.md`. If you were
+dispatched as a subagent for review only, you should have no `Edit`/`Write`/`NotebookEdit` in your tool
+list — if you still have them, that capability exists for some other reason in this conversation and
+is not license to use it here.
+
 ---
 
 ## The Six Quality Checks
