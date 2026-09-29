@@ -28,7 +28,9 @@ Examples:
 - `~/Documents/Obsidian-Vault/02-Notes/Sessions/PROJ-388-bugfix-auth-timeout.md`
 - `~/Documents/Obsidian-Vault/02-Notes/Sessions/my-project-add-pdf-export.md` ← fallback: {project-root-name}-{feature-slug}
 
-**Index location**: `~/.claude/memory/<TICKET>/session_index.db`
+**Index**: session search is served from the vault's FTS5 index (`search_kb`'s index, rebuilt by
+`reindex_kb`). Every note written through the `ultimate-obsidian` MCP is indexed on write — the note in
+the vault is the only record; the index is a rebuildable cache (`../../shared/vault-persistence.md` §4).
 
 ---
 
@@ -201,13 +203,15 @@ mcp__ultimate-obsidian__create_or_update_note({
 **General Rules (distilled)** section FIRST — distilled rules are ticket-agnostic and reusable —
 before falling back to Verified Facts or raw session bodies.
 
-**Step 2 — Index + extract keywords:**
+**Step 2 — Refresh keywords:**
 ```
 mcp__ultimate-obsidian__index_note({
-  vault_path: "~/Documents/Obsidian-Vault/02-Notes/Sessions/{TICKET}-{SUFFIX}.md"
+  vault_path: "02-Notes/Sessions/{TICKET}-{SUFFIX}.md"
 })
 ```
-`index_note` updates frontmatter `keywords:` (top 10 by term frequency from Verified Facts/General Rules/Last-Session State) and rebuilds the FTS5 index in `~/.claude/memory/{TICKET}/session_index.db` in one call.
+The write in Step 1 already indexed the note. `index_note` additionally updates frontmatter
+`keywords:` (top 10 by term frequency). It takes the vault-relative path (`~/…` and absolute paths
+inside the vault also work).
 
 **Step 3 — Upsert the sessions index (`_index.md`):**
 
@@ -278,7 +282,7 @@ mcp__ultimate-obsidian__manage_frontmatter({
 
 **Step 3 — Reindex and upsert the sessions index:**
 ```
-mcp__ultimate-obsidian__index_note({ vault_path: "…/02-Notes/Sessions/{TICKET}-{SUFFIX}.md" })
+mcp__ultimate-obsidian__index_note({ vault_path: "02-Notes/Sessions/{TICKET}-{SUFFIX}.md" })
 ```
 Then update this session's line in `02-Notes/Sessions/_index.md` **in place** to status `done`. An
 index still claiming `in-progress` for a merged ticket is worse than no index — SESSION START reads
@@ -340,8 +344,8 @@ Delegates (verifier, implementer, drift-guard sub-agents) return summaries to th
 NEVER write ledger rows themselves. This keeps the idempotency key monotonic and prevents
 interleaved duplicate `n`s.
 
-**Step 3 — On loop exit**: run SESSION END (above) as normal, then `index_note` — ledger
-rows are indexed and searchable like any session content.
+**Step 3 — On loop exit**: run SESSION END (above) as normal. Ledger rows are part of the session note,
+so the write already made them searchable; `index_note` is only needed to refresh `keywords:`.
 
 **Restore rule** (SESSION START in a prp-loop run): if the loaded session contains
 `## LOOP CONTRACT` + `## Loop Ledger`, report the last row's `n` and `next move` —
@@ -446,13 +450,15 @@ When user asks: "Search sessions for {keyword}", "What did we decide about {topi
 
 ```
 mcp__ultimate-obsidian__search_sessions({
-  query: "{keyword}",
+  query: "{keyword or TICKET-ID}",
   ticket: "{TICKET or omit for all}",
+  sections: ["Open Failures", "Lessons", "General Rules"],   // optional
   limit: 5
 })
 ```
 
-Queries `~/.claude/memory/*/session_index.db` (SQLite FTS5), returns BM25-ranked results.
+BM25 over session notes in the vault (`type: session`, or under `02-Notes/Sessions/`), ranked across
+all tickets. Ticket ids and paths are safe query terms. `sections` restricts hits to those headings.
 
 **Output format:**
 ```
