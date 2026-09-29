@@ -347,6 +347,13 @@ When `enabled = false`, every phase below behaves exactly as it did before this 
    `project-manager → {mediator}`.
 4. **Pre-approve tools** — teammates inherit the main session's permissions; unapproved tools stall
    them (KB: Agent Teams P05/X01). Confirm the preapproval checklist before spawning.
+5. **Evaluator/planner roles keep their restricted tool set — never widen it.** `pr-reviewer`,
+   `qa-analyst`, `ux-specialist`, `product-owner`, `lead-engineer`, `project-manager`, and the
+   `codebase-*`/`web-researcher` roles carry a `tools:` allow-list with no `Edit`/`Write`/`NotebookEdit`
+   by design (`../../shared/read-only-mandate.md`) — a review or plan is a `SendMessage` back to you,
+   never a patch that role applies itself. Do not re-dispatch one of these findings through a
+   full-tool/generic agent just because a fix "looks small"; route it to the owning generator
+   specialist as next-round criteria instead.
 
 ---
 

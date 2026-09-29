@@ -15,6 +15,7 @@ what is genuinely its own.
 | `git-base-detection.md` | The canonical base-branch + merge-base + changed-files snippets | anything that diffs against the base or names a base |
 | `comms-register.md` | Engineering vs Stakeholder register, and the red-flag escalation shape | every agent in `agents/` |
 | `secret-scrub.md` | The pre-write secret scrub + redaction marker | anything that writes a note, a PR body, or a ledger row |
+| `read-only-mandate.md` | Enforcing "review only"/"advises only"/"writes no code" mechanically via `tools:` frontmatter, not prose | `mediator`, `quality-review`, `drift-guard`, the review/planning agents in `agents/` |
 
 ## How to cite
 
