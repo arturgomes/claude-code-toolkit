@@ -31,8 +31,9 @@ export CI_ADVERSARIAL_STATE=/path  # override the state file (used by the tests)
 Only **code**: a path whose extension is in `CODE_EXTENSIONS`, or whose name
 matches `CODE_BASENAMES` (both in `lib/state.js`). That covers source code, shell
 scripts, SQL/Prisma, stylesheets, HTML, and executable infra: `*.yml`/`*.yaml`
-(CI workflows, serverless), `*.tf`, `Dockerfile`, `Makefile`. Plans, vault notes,
-memory files, `*.md`, `*.json`, `*.toml`, lockfiles and `.lock` files never arm it,
+(CI workflows, serverless), `*.tf`, `Dockerfile` / `*.Dockerfile` / `Dockerfile.<env>`,
+`Makefile` / `makefile` / `Makefile.am`. Plans, vault notes, memory files, `*.md`,
+`*.json`, `*.toml`, lockfiles (including `pnpm-lock.yaml`) and `.lock` files never arm it,
 from `Edit`/`Write` or from the shell. An unresolvable shell write
 (`bash:<command>` marker, below) still arms, because its target is unknown.
 
@@ -41,8 +42,9 @@ from `Edit`/`Write` or from the shell. An unresolvable shell write
 The gate tracks **which files** a review covered:
 
 - Launching a review snapshots every file edited so far onto `reviewQueue`.
-- A completion moves the **oldest** queued snapshot into `reviewedFiles` (FIFO),
-  so finishing the first of two reviews never credits files only the second saw.
+- A completion moves the oldest queued snapshot into `reviewedFiles`. Stop
+  counts queued snapshots as covered too, so the drain order never changes
+  what is owed.
 - Stop blocks while an edited file is in neither `reviewedFiles` nor a queued
   snapshot. A running review therefore satisfies Stop for the files it was
   launched on, and a background review does not re-block each turn until it

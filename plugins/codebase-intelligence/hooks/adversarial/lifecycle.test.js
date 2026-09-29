@@ -121,6 +121,9 @@ for (const nonCode of [
   '/repo/.claude/scheduled_tasks.lock',
   '/home/u/.claude/projects/p/memory/MEMORY.md',
   '/repo/package-lock.json',
+  '/repo/pnpm-lock.yaml',
+  '/repo/docs/Dockerfile.md',
+  '/repo/Makefile.txt',
 ]) {
   test(`non-code edit does not arm: ${path.basename(nonCode)}`, () => {
     toolEdit(nonCode);
@@ -188,10 +191,28 @@ test('shell writes to non-code files do not arm, mixed with code only the code a
   assert.deepStrictEqual(entry().editedFiles, ['/repo/src/x.ts']);
 });
 
-test('infra code arms: workflow yaml and Dockerfile', () => {
-  toolEdit('/repo/.github/workflows/ci.yml');
-  toolEdit('/repo/Dockerfile');
-  assert.deepStrictEqual(entry().editedFiles, ['/repo/.github/workflows/ci.yml', '/repo/Dockerfile']);
+test('infra code arms: workflow yaml and conventionally named build files', () => {
+  const infra = ['/repo/.github/workflows/ci.yml', '/repo/Dockerfile', '/repo/api.Dockerfile', '/repo/Dockerfile.prod', '/repo/makefile', '/repo/Makefile.am'];
+  for (const file of infra) toolEdit(file);
+  assert.deepStrictEqual(entry().editedFiles, infra);
+});
+
+test('legacy in-flight entry with a recorded snapshot credits that snapshot', () => {
+  fs.writeFileSync(STATE_FILE, JSON.stringify({
+    [SESSION]: {
+      editedFiles: ['/repo/src/a.ts', '/repo/src/b.ts'], reviewedFiles: ['/repo/src/a.ts'], reviewingFiles: ['/repo/src/b.ts'],
+      adversarialLaunched: true, adversarialCompleted: false, needsReReview: true,
+    },
+  }));
+  subagentStop();
+  assert.deepStrictEqual(stop(), {});
+});
+
+test('legacy entry drops paths that no longer arm the gate', () => {
+  fs.writeFileSync(STATE_FILE, JSON.stringify({
+    [SESSION]: { editedFiles: ['/repo/notes/n.md'], adversarialLaunched: false, adversarialCompleted: false, needsReReview: false },
+  }));
+  assert.deepStrictEqual(stop(), {});
 });
 
 test('long unresolved commands sharing a prefix stay distinct', () => {

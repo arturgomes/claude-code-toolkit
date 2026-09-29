@@ -67,21 +67,28 @@ function getEntry(state, key) {
   return migrateEntry(state[key]);
 }
 
-// State written before per-file coverage existed. A completed review covered
-// everything edited up to then; an in-flight one covered it too unless edits
-// landed during it, in which case its snapshot is unknown and credits nothing.
+// State written before the review queue existed. Paths that no longer arm the
+// gate are dropped so they cannot stay owed. A completed review covered
+// everything edited up to then. An in-flight one covered its recorded snapshot
+// (`reviewingFiles`), else everything edited — unless edits landed during it,
+// in which case its snapshot is unknown and credits nothing.
 function migrateEntry(entry) {
+  if (!Array.isArray(entry.reviewQueue)) {
+    entry.editedFiles = entry.editedFiles.filter((file) => file.startsWith('bash:') || shouldTrackEdit(file));
+    const inFlight = entry.adversarialLaunched && !entry.adversarialCompleted;
+    entry.reviewQueue = inFlight ? [legacySnapshot(entry)] : [];
+  }
   if (!Array.isArray(entry.reviewedFiles)) {
     entry.reviewedFiles = entry.adversarialCompleted ? [...entry.editedFiles] : [];
-  }
-  if (!Array.isArray(entry.reviewQueue)) {
-    const inFlight = entry.adversarialLaunched && !entry.adversarialCompleted;
-    const snapshot = entry.needsReReview ? [] : [...entry.editedFiles];
-    entry.reviewQueue = inFlight ? [snapshot] : [];
   }
   delete entry.needsReReview;
   delete entry.reviewingFiles;
   return entry;
+}
+
+function legacySnapshot(entry) {
+  if (Array.isArray(entry.reviewingFiles)) return [...entry.reviewingFiles];
+  return entry.needsReReview ? [] : [...entry.editedFiles];
 }
 
 function isReviewInFlight(entry) {
@@ -95,9 +102,10 @@ function union(target, items) {
   return target;
 }
 
-// Each launch snapshots every file edited so far. Launches queue FIFO because
-// SubagentStop cannot say which review finished — crediting the oldest keeps a
-// completion from covering files only a later launch saw.
+// Each launch snapshots every file edited so far. Stop counts every queued
+// snapshot as covered, so the order a completion drains them in never changes
+// what is owed; FIFO only keeps `adversarialLaunched` true while any review
+// is still out.
 function startReview(entry) {
   entry.reviewQueue.push([...entry.editedFiles]);
   entry.adversarialLaunched = true;
@@ -160,12 +168,21 @@ const CODE_EXTENSIONS = new Set([
   'css', 'scss', 'sass', 'less', 'html', 'yml', 'yaml', 'tf', 'hcl',
 ]);
 
-// Extensionless files that are executable build/infra code.
-const CODE_BASENAMES = /^(Dockerfile|Containerfile|Makefile|GNUmakefile|Jenkinsfile)(\..+)?$/;
+// Build/infra files named by convention rather than extension. Suffixes are an
+// allowlist so a note named `Dockerfile.md` stays prose.
+const CODE_BASENAMES = [
+  /^(?:[\w-]+\.)?(?:Dockerfile|Containerfile)(?:\.(?:dev|prod|production|staging|test|ci|local|build))?$/,
+  /^(?:Makefile|makefile|GNUmakefile)(?:\.(?:am|in))?$/,
+  /^Jenkinsfile$/,
+];
+
+// Generated lockfiles share code extensions (`pnpm-lock.yaml`) but are bookkeeping.
+const LOCKFILE_BASENAME = /(?:^|[.-])lock\.ya?ml$/i;
 
 function isCodePath(filePath) {
   const base = path.basename(filePath);
-  if (CODE_BASENAMES.test(base)) return true;
+  if (CODE_BASENAMES.some((pattern) => pattern.test(base))) return true;
+  if (LOCKFILE_BASENAME.test(base)) return false;
   const match = /\.([A-Za-z0-9]+)$/.exec(base);
   return match !== null && CODE_EXTENSIONS.has(match[1].toLowerCase());
 }
