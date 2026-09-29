@@ -63,18 +63,32 @@ The session scratchpad, `/tmp`, and repo-local staging dirs (`planning/`, `.plan
 `artur-documents/`, …) are ephemeral working space for a single phase. **Anything written there that a
 future session would want must also be written to the vault before the phase closes.**
 
-Exactly two things legitimately live outside the vault:
+**Every record is a vault note.** A record is anything a later session, another machine, or the user
+would want to read: session memory, run state, gate receipts, plans, reports, PR descriptions, loop
+ledgers, the write ledger, extracted findings. **No record may exist only in `~/.claude/`, `/tmp`,
+the session scratchpad, or a repo-local directory** — not as a primary copy, not as a cache of one,
+not "for now". The user must be able to see, edit, and sync every record from the vault.
+
+Exactly three things legitimately live outside the vault, and none of them is a record:
 
 1. **Artifacts a repo owns by contract** — `specs/<slug>/spec.md`, `plan.md`, `tasks.md`,
    `contracts/`, `checklists/`, and `.claude/constitution.md`, so intent ships in the PR next to the
    code. These are **dual-written**: the repo copy ships, the vault copy stays searchable and
    graph-linked.
-2. **Caches rebuildable from the vault** — `~/.claude/memory/<TICKET>/session_index.db` (the FTS5
-   index, rebuilt by `reindex_kb`), `~/.claude/memory/WEB-CACHE-001/` (an index over notes that are
-   themselves in the vault), and single-phase extraction scratch such as `/tmp/epub_extracted/`.
+2. **Indexes rebuildable from the vault** — the FTS5 index behind `search_kb`, `search_sessions`,
+   `find_related_work` and `validate_note_links` (`~/.claude/kb/kb_index.db`, or `$CI_KB_INDEX`;
+   rebuilt by `reindex_kb`, kept current by every MCP write), and the web-cache URL index
+   `~/.claude/memory/WEB-CACHE-001/cache_index.db` (the cached pages themselves are vault notes).
+   Deleting either loses nothing: `reindex_kb` rebuilds the first from the notes.
+3. **Ephemeral working files** — `write_state` lock files (OS temp dir), and single-phase scratch such
+   as `/tmp/epub_extracted/` or a benchmark's raw JSON. They are consumed inside the phase; whatever
+   they produced that matters is written to the vault before the phase closes.
 
-Anything that is neither of those is a leak. The test is one question: **would a second context need
-to read this?** If yes, it cannot live in one worktree's `.claude/`.
+Anything else is a leak. The test is one question: **would a second context, or the user, need to
+read this?** If yes, it is a record and it goes in the vault.
+
+The old per-ticket `~/.claude/memory/<TICKET>/session_index.db` files are retired — the MCP no longer
+reads them; session search is served from the vault index above.
 
 ## 5. A diagnosis-only run writes the most, not the least
 
@@ -94,6 +108,14 @@ rediscovering the method.
 The final phase lists every note created or updated, **by path** — session note, state note, plan,
 report, and one line per PR description. **An empty ledger is a 🔴**: it means the run learned nothing
 worth keeping, which is almost never true.
+
+Build it from the MCP, not from memory: every write the `ultimate-obsidian` MCP performs is recorded in
+the vault itself, one daily note per day at `02-Notes/Sessions/write-ledger/YYYY-MM/YYYY-MM-DD.md`.
+
+```
+mcp__ultimate-obsidian__get_write_ledger({ since: "<run start, ISO>" })
+# → { count, empty, entries: [{ ts, tool, op, path, sha }] }   empty: true ⇒ 🔴
+```
 
 ---
 
@@ -119,7 +141,14 @@ Three steps, in order, every time:
    mcp__ultimate-obsidian__list_vault({ path: "02-Notes/Reports" })
    ```
 3. **Write, then verify the call returned OK.** A silent failure is indistinguishable from a skipped
-   write; treat an unconfirmed write as no write.
+   write; treat an unconfirmed write as no write. Write tools return `structuredContent`
+   `{ ok, path, sha, warnings, redactions }` — `sha` is the note as read back, so a non-empty `sha` is
+   the confirmation. Read `warnings` (out of write-scope, not month-bucketed) and fix the path rather
+   than ignoring them.
+
+The MCP also enforces the scrub and the scope/month rules at its own boundary (secret values are
+redacted to `[REDACTED]`; `OBSIDIAN_WRITE_GUARD=strict` turns scope warnings into rejections). That is a
+backstop, not a replacement for steps 1–2.
 
 ### Month buckets
 

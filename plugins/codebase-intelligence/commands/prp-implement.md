@@ -261,7 +261,11 @@ parallelism — one subagent dispatched, awaited, recorded, then the next.
 
 ### Step 3.1 — Prior-incident scan (S6, main thread, before dispatch)
 
-Query `mcp__ultimate-obsidian__search_sessions` (scoped to the "## Open Failures", "## Lessons", and "## Loop Constraints" sections) for the file(s) this task changes — before building the brief in Step 3.1a, so a match rides into the subagent's brief instead of being discovered mid-task. If a prior failure matches, note it for the brief:
+Query `mcp__ultimate-obsidian__search_sessions` (scoped to the "## Open Failures", "## Lessons", and "## Loop Constraints" sections) for the file(s) this task changes — before building the brief in Step 3.1a, so a match rides into the subagent's brief instead of being discovered mid-task:
+```
+mcp__ultimate-obsidian__search_sessions({ query: "{file basenames}", sections: ["Open Failures", "Lessons", "Loop Constraints"], limit: 5 })
+```
+If a prior failure matches, note it for the brief:
 ```
 ⚠️ prior incident: <session:date> — <one-line summary>
 ```

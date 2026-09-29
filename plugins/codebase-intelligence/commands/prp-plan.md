@@ -68,7 +68,7 @@ Follow the skill's SESSION START protocol:
 The skill handles:
 - Vault-based session persistence at using Obsidian MCP `~/Documents/Obsidian-Vault/02-Notes/Sessions/`
 - Frontmatter metadata (ticket, branch, date, phase, keywords, tags)
-- FTS5 search index at `~/.claude/memory/{TICKET}/session_index.db`
+- Search via `search_sessions` over the vault index (rebuildable cache; the vault note is the record)
 
 **PRE-PHASE-I CHECKPOINT:**
 - [ ] session-memory skill executed

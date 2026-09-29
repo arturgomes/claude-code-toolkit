@@ -232,7 +232,7 @@ implements: "[[{plan-note}]]"   # only if the plan note exists
 ```
 mcp__ultimate-obsidian__check_exists({ filepath: "02-Notes/pr-descriptions/{file}.md" })
 mcp__ultimate-obsidian__create_or_update_note({ filepath: ..., mode: "overwrite", content: ... })
-mcp__ultimate-obsidian__index_note({ vault_path: "~/Documents/Obsidian-Vault/02-Notes/pr-descriptions/{file}.md" })
+# structuredContent.sha non-empty ⇒ written and read back; the write also indexed it (no index_note needed)
 ```
 
 Run the pre-write secret scrub (`../../shared/secret-scrub.md`) over the body first — PR descriptions quote logs, and
