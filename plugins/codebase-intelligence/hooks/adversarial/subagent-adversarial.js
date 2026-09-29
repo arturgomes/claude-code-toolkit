@@ -6,7 +6,8 @@
 // list, so the finished subagent cannot be identified. Heuristic: if an
 // adversarial review is the one in flight, this stop is its completion. The
 // known consequence is that a non-adversarial subagent finishing while an
-// adversarial one is still running can clear the gate early.
+// adversarial one is still running completes it early — and completion credits
+// the oldest queued snapshot as reviewed for the rest of the session.
 const { runHook } = require('./lib/hook');
 const { readState, writeState, conversationKey, getEntry, isReviewInFlight, completeReview } = require('./lib/state');
 
@@ -17,7 +18,6 @@ runHook((payload) => {
 
   if (!isReviewInFlight(entry)) return {};
 
-  // Edits to files the review never saw (needsReReview) leave the gate owed.
   completeReview(entry);
 
   state[key] = entry;

@@ -98,7 +98,7 @@ test('edits during an in-flight review re-arm instead of clearing', () => {
   toolEdit('/repo/src/x.ts');
   launch({ description: 'Adversarial review' });
   bashEdit("sed -i 's/c/d/' /repo/src/y.ts");
-  assert.strictEqual(entry().needsReReview, true);
+  assert.strictEqual(stop().decision, 'block', 'y.ts is outside the in-flight snapshot');
   subagentStop();
   assert.strictEqual(entry().adversarialCompleted, false, 'must re-arm, not clear');
   assert.strictEqual(stop().decision, 'block');
@@ -159,6 +159,56 @@ test('edits to in-flight files are fix-ups, not re-reviews', () => {
   toolEdit('/repo/src/x.ts');
   subagentStop();
   assert.deepStrictEqual(stop(), {});
+});
+
+test('a review that never reports back does not waive later code edits', () => {
+  toolEdit('/repo/src/x.ts');
+  launch({ description: 'Adversarial review' });
+  toolEdit('/repo/src/n1.ts');
+  assert.strictEqual(stop().decision, 'block');
+});
+
+test('a completion credits only the oldest launch, not a later snapshot', () => {
+  toolEdit('/repo/src/a.ts');
+  launch({ description: 'Adversarial review' });
+  toolEdit('/repo/src/b.ts');
+  launch({ description: 'Adversarial review' });
+  subagentStop();
+  assert.deepStrictEqual(entry().reviewedFiles, ['/repo/src/a.ts']);
+  assert.deepStrictEqual(stop(), {}, 'b.ts is still covered by the running second review');
+  subagentStop();
+  assert.deepStrictEqual(entry().reviewedFiles, ['/repo/src/a.ts', '/repo/src/b.ts']);
+});
+
+test('shell writes to non-code files do not arm, mixed with code only the code arms', () => {
+  bashEdit('echo x | tee /repo/docs/a.md');
+  bashEdit('echo x > /repo/.claude/run.lock');
+  assert.strictEqual(entry(), null);
+  bashEdit("sed -i 's/a/b/' /repo/src/x.ts /repo/docs/a.md");
+  assert.deepStrictEqual(entry().editedFiles, ['/repo/src/x.ts']);
+});
+
+test('infra code arms: workflow yaml and Dockerfile', () => {
+  toolEdit('/repo/.github/workflows/ci.yml');
+  toolEdit('/repo/Dockerfile');
+  assert.deepStrictEqual(entry().editedFiles, ['/repo/.github/workflows/ci.yml', '/repo/Dockerfile']);
+});
+
+test('long unresolved commands sharing a prefix stay distinct', () => {
+  const prefix = `python3 -c "import pathlib; pathlib.Path('/repo/src/${'x'.repeat(120)}`;
+  bashEdit(`${prefix}1.ts').write_text('a')"`);
+  launch({ description: 'Adversarial review' });
+  subagentStop();
+  bashEdit(`${prefix}2.ts').write_text('b')"`);
+  assert.strictEqual(stop().decision, 'block');
+});
+
+test('legacy in-flight entry dirtied by mid-review edits credits nothing', () => {
+  fs.writeFileSync(STATE_FILE, JSON.stringify({
+    [SESSION]: { editedFiles: ['/repo/src/x.ts'], adversarialLaunched: true, adversarialCompleted: false, needsReReview: true },
+  }));
+  subagentStop();
+  assert.strictEqual(stop().decision, 'block');
 });
 
 test('state written before reviewedFiles existed keeps a completed review', () => {
