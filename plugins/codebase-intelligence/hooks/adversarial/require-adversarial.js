@@ -1,9 +1,9 @@
 'use strict';
 
-// Stop — refuses to end a turn that edited code without a completed adversarial
-// review. `CI_ADVERSARIAL_GATE=warn` downgrades the block to a reminder.
+// Stop — refuses to end a turn that edited code no adversarial review has
+// covered or is covering. `CI_ADVERSARIAL_GATE=warn` downgrades the block to a reminder.
 const { runHook } = require('./lib/hook');
-const { readState, conversationKey, getEntry, gateMode } = require('./lib/state');
+const { readState, conversationKey, getEntry, gateMode, isReviewOwed } = require('./lib/state');
 
 const REASON = [
   'Adversarial review gate: code was edited this session without a completed adversarial pass.',
@@ -23,8 +23,7 @@ runHook((payload) => {
 
   const state = readState();
   const entry = getEntry(state, conversationKey(payload));
-  const needsReview = entry.editedFiles.length > 0 && !entry.adversarialCompleted;
-  if (!needsReview) return {};
+  if (!isReviewOwed(entry)) return {};
 
   if (gateMode() === 'warn') {
     return { systemMessage: REASON };

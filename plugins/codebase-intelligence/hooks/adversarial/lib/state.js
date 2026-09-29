@@ -58,12 +58,60 @@ function getEntry(state, key) {
   if (!state[key]) {
     state[key] = {
       editedFiles: [],
+      reviewedFiles: [],
+      reviewingFiles: [],
       adversarialLaunched: false,
       adversarialCompleted: false,
       needsReReview: false,
     };
   }
-  return state[key];
+  const entry = state[key];
+  // State written before per-file coverage existed: a completed review covered
+  // everything edited up to then.
+  if (!Array.isArray(entry.reviewedFiles)) {
+    entry.reviewedFiles = entry.adversarialCompleted ? [...entry.editedFiles] : [];
+  }
+  if (!Array.isArray(entry.reviewingFiles)) {
+    entry.reviewingFiles = entry.adversarialLaunched && !entry.adversarialCompleted ? [...entry.editedFiles] : [];
+  }
+  return entry;
+}
+
+function isReviewInFlight(entry) {
+  return entry.adversarialLaunched && !entry.adversarialCompleted;
+}
+
+function union(target, items) {
+  for (const item of items) {
+    if (!target.includes(item)) target.push(item);
+  }
+  return target;
+}
+
+// A review launched now covers every file edited so far.
+function startReview(entry) {
+  entry.adversarialLaunched = true;
+  entry.adversarialCompleted = false;
+  entry.needsReReview = false;
+  entry.reviewingFiles = [...entry.editedFiles];
+  return entry;
+}
+
+function completeReview(entry) {
+  union(entry.reviewedFiles, entry.reviewingFiles);
+  entry.reviewingFiles = [];
+  entry.adversarialLaunched = false;
+  entry.adversarialCompleted = !entry.needsReReview;
+  entry.needsReReview = false;
+  return entry;
+}
+
+// Stop owes a review only for edited files no review has covered, and never
+// while one is still running — a background review would otherwise re-block
+// every turn until it lands.
+function isReviewOwed(entry) {
+  if (isReviewInFlight(entry)) return false;
+  return entry.editedFiles.some((file) => !entry.reviewedFiles.includes(file));
 }
 
 // `doubt-driven` is this plugin's adversarial reviewer, so its name counts too.
@@ -85,40 +133,61 @@ function isAdversarialInvocation(toolInput) {
 }
 
 // Shared by both edit trackers (Edit/Write/MultiEdit and Bash) so the arming
-// semantics cannot drift apart: an in-flight review goes dirty (its completion
-// re-arms instead of clearing), anything else re-arms from scratch.
+// semantics cannot drift apart. Editing a file a review already covers is
+// applying that review, not new work — re-arming on it is what made the gate
+// loop review → fix → review. Only an uncovered file re-arms: during an
+// in-flight review it marks the review dirty, otherwise it re-arms outright.
 function armGate(entry, identifiers) {
-  for (const identifier of identifiers) {
-    if (!entry.editedFiles.includes(identifier)) entry.editedFiles.push(identifier);
-  }
+  union(entry.editedFiles, identifiers);
 
-  if (entry.adversarialLaunched && !entry.adversarialCompleted) {
+  const covered = isReviewInFlight(entry) ? [...entry.reviewedFiles, ...entry.reviewingFiles] : entry.reviewedFiles;
+  const fresh = identifiers.filter((identifier) => !covered.includes(identifier));
+  if (fresh.length === 0) return entry;
+
+  if (isReviewInFlight(entry)) {
     entry.needsReReview = true;
     return entry;
   }
 
-  entry.adversarialLaunched = false;
   entry.adversarialCompleted = false;
-  entry.needsReReview = false;
   return entry;
+}
+
+// Only source code arms the gate. Plans, notes, memory, lockfiles and lock
+// files are prose or bookkeeping, and gating on them turned every doc fix into
+// a demanded review.
+const CODE_EXTENSIONS = new Set([
+  'ts', 'tsx', 'mts', 'cts', 'js', 'jsx', 'mjs', 'cjs', 'vue', 'svelte',
+  'py', 'go', 'rs', 'java', 'kt', 'kts', 'scala', 'swift', 'rb', 'php', 'cs',
+  'c', 'h', 'cc', 'cpp', 'hpp', 'm', 'mm', 'dart', 'ex', 'exs', 'lua',
+  'sh', 'bash', 'zsh', 'sql', 'prisma', 'graphql', 'gql', 'css', 'scss', 'html',
+]);
+
+function isCodePath(filePath) {
+  const match = /\.([A-Za-z0-9]+)$/.exec(path.basename(filePath));
+  return match !== null && CODE_EXTENSIONS.has(match[1].toLowerCase());
 }
 
 function shouldTrackEdit(filePath) {
   if (typeof filePath !== 'string' || filePath.length === 0) return false;
-  // Never let the gate's own bookkeeping re-arm the gate.
-  return !filePath.includes('adversarial-state.json');
+  return isCodePath(filePath);
 }
 
 module.exports = {
   armGate,
+  completeReview,
   conversationKey,
   gateMode,
   getEntry,
   isAdversarialInvocation,
   isAdversarialTask,
+  isCodePath,
   isGateEnabled,
+  isReviewInFlight,
+  isReviewOwed,
   readState,
   shouldTrackEdit,
+  startReview,
   stateFile,
   writeState,
 };

@@ -116,6 +116,59 @@ test('interpreter heredoc write arms via an unresolved marker', () => {
   assert.strictEqual(stop().decision, 'block');
 });
 
+for (const nonCode of [
+  '/home/u/vault/02-Notes/Plans/plan.md',
+  '/repo/.claude/scheduled_tasks.lock',
+  '/home/u/.claude/projects/p/memory/MEMORY.md',
+  '/repo/package-lock.json',
+]) {
+  test(`non-code edit does not arm: ${path.basename(nonCode)}`, () => {
+    toolEdit(nonCode);
+    bashEdit(`rm ${nonCode}`);
+    assert.strictEqual(entry(), null);
+    assert.deepStrictEqual(stop(), {});
+  });
+}
+
+test('applying a completed review to the reviewed files does not re-arm', () => {
+  toolEdit('/repo/src/x.ts');
+  launch({ description: 'Adversarial review' });
+  subagentStop();
+  toolEdit('/repo/src/x.ts');
+  bashEdit("sed -i 's/a/b/' /repo/src/x.ts");
+  assert.deepStrictEqual(stop(), {});
+});
+
+test('a code file the completed review never saw re-arms', () => {
+  toolEdit('/repo/src/x.ts');
+  launch({ description: 'Adversarial review' });
+  subagentStop();
+  toolEdit('/repo/src/new.ts');
+  assert.strictEqual(stop().decision, 'block');
+});
+
+test('an in-flight review satisfies Stop', () => {
+  toolEdit('/repo/src/x.ts');
+  launch({ description: 'Adversarial review' });
+  assert.deepStrictEqual(stop(), {});
+});
+
+test('edits to in-flight files are fix-ups, not re-reviews', () => {
+  toolEdit('/repo/src/x.ts');
+  launch({ description: 'Adversarial review' });
+  toolEdit('/repo/src/x.ts');
+  subagentStop();
+  assert.deepStrictEqual(stop(), {});
+});
+
+test('state written before reviewedFiles existed keeps a completed review', () => {
+  fs.writeFileSync(STATE_FILE, JSON.stringify({
+    [SESSION]: { editedFiles: ['/repo/src/x.ts'], adversarialLaunched: true, adversarialCompleted: true, needsReReview: false },
+  }));
+  toolEdit('/repo/src/x.ts');
+  assert.deepStrictEqual(stop(), {});
+});
+
 test('gate off (default): nothing is tracked and Stop never blocks', () => {
   const off = { CI_ADVERSARIAL_GATE: '' };
   toolEdit('/repo/src/x.ts', off);

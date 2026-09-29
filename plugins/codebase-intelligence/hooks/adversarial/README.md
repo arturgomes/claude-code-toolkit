@@ -26,6 +26,28 @@ unset  CI_ADVERSARIAL_GATE         # off (default): nothing is tracked at all
 export CI_ADVERSARIAL_STATE=/path  # override the state file (used by the tests)
 ```
 
+## What arms the gate
+
+Only **source code**: a path whose extension is in `CODE_EXTENSIONS`
+(`lib/state.js` — `.ts`/`.js`/`.py`/`.go`/`.rs`/`.sql`/`.prisma`/`.sh`/`.css`/…).
+Plans, vault notes, memory files, `*.md`, `*.json`, lockfiles and `.lock` files
+never arm it, from `Edit`/`Write` or from the shell. An unresolvable shell write
+(`bash:<command>` marker, below) still arms, because its target is unknown.
+
+## Coverage, not a boolean
+
+The gate tracks **which files** a review covered:
+
+- Launching a review snapshots every file edited so far (`reviewingFiles`).
+- Its completion moves that snapshot into `reviewedFiles`.
+- Stop blocks only while an edited file is in neither — and **never while a
+  review is in flight**, so a background review does not re-block each turn
+  until it lands.
+
+Editing a file a review already covers is *applying the review*, not new work,
+and does not re-arm. Only a code file no review has seen does. That is what
+breaks the old review → fix → gate → review loop.
+
 ## What satisfies the gate
 
 A subagent whose **name** says what it is — `description`, `subagent_type`,
@@ -58,8 +80,14 @@ three.
 heuristic: whichever subagent stops while an adversarial review is in flight
 clears it. Launch the review on its own to keep that honest.
 
-Edits that land *during* a review re-arm the gate instead of clearing it, so a
-reviewed-then-modified turn is asked again.
+A launched review satisfies Stop until `SubagentStop` fires. A review that dies
+without a `SubagentStop` therefore leaves the gate satisfied for the files it
+snapshotted, and the next uncovered code file re-arms it as usual.
+
+Edits to *new* code files that land during a review mark it dirty. Its
+completion covers only its snapshot, so those files are still owed at the next
+Stop. Re-editing a covered file is never re-reviewed. The trade-off is
+deliberate: fix-ups to a reviewed file are unreviewed.
 
 ## Tests
 

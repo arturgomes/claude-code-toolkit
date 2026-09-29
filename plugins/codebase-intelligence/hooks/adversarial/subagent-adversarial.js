@@ -8,23 +8,17 @@
 // known consequence is that a non-adversarial subagent finishing while an
 // adversarial one is still running can clear the gate early.
 const { runHook } = require('./lib/hook');
-const { readState, writeState, conversationKey, getEntry } = require('./lib/state');
+const { readState, writeState, conversationKey, getEntry, isReviewInFlight, completeReview } = require('./lib/state');
 
 runHook((payload) => {
   const key = conversationKey(payload);
   const state = readState();
   const entry = getEntry(state, key);
 
-  if (!entry.adversarialLaunched || entry.adversarialCompleted) return {};
+  if (!isReviewInFlight(entry)) return {};
 
-  if (entry.needsReReview) {
-    // Edits landed DURING the review — re-arm so the next Stop asks again.
-    entry.adversarialLaunched = false;
-    entry.adversarialCompleted = false;
-    entry.needsReReview = false;
-  } else {
-    entry.adversarialCompleted = true;
-  }
+  // Edits to files the review never saw (needsReReview) leave the gate owed.
+  completeReview(entry);
 
   state[key] = entry;
   writeState(state);
