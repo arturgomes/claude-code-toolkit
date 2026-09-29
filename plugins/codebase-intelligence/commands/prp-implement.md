@@ -405,8 +405,8 @@ This is the gate that catches a task silently dropped or forgotten mid-run, the 
 narrative-only tracking cannot see.
 
 Resolve the task-list target the same way `spec-converge` does, and state which one was used:
-- the repo's `specs/<slug>/tasks.md`, when the plan's dual-write ran (default), else
-- the plan note's own "Step-by-Step Tasks" checkboxes in the vault (when `--no-repo-specs` was used).
+- the plan note's own "Step-by-Step Tasks" checkboxes in the vault (default), else
+- the repo's `specs/<slug>/tasks.md`, when `--repo-specs` (or preset `spec_artifacts: repo|both`) ran.
 
 Run:
 ```bash
@@ -527,9 +527,9 @@ mechanical knows it existed.
 Converge re-reads every requirement (and buildable `SC-###`) against the code and classifies each gap
 `missing | partial | contradicts | unrequested`:
 
-- **Converged** → the append target is left byte-for-byte unchanged. Continue to 4.8. In a plain
-  `prp-implement` run there is usually no repo `specs/<slug>/tasks.md`, so the target resolves to the
-  **plan note's task section in the vault** — the skill names which one it used.
+- **Converged** → the append target is left byte-for-byte unchanged. Continue to 4.8. By default there
+  is no repo `specs/<slug>/tasks.md` (vault-only is the default artifact policy), so the target
+  resolves to the **plan note's task section in the vault** — the skill names which one it used.
 - **Tasks appended** → implement them (back to Phase 3 for those tasks only), re-run 4.1–4.7, converge
   again. Bounded at **3** passes, each strictly smaller than the last; a pass that isn't smaller is not
   converging — stop and surface it.

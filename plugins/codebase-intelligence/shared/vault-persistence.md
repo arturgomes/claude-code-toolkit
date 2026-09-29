@@ -71,10 +71,13 @@ not "for now". The user must be able to see, edit, and sync every record from th
 
 Exactly three things legitimately live outside the vault, and none of them is a record:
 
-1. **Artifacts a repo owns by contract** — `specs/<slug>/spec.md`, `plan.md`, `tasks.md`,
-   `contracts/`, `checklists/`, and `.claude/constitution.md`, so intent ships in the PR next to the
-   code. These are **dual-written**: the repo copy ships, the vault copy stays searchable and
-   graph-linked.
+1. **`.claude/constitution.md`** — a repo owns this by contract; it has no vault twin.
+   `specs/<slug>/spec.md`, `plan.md`, `tasks.md`, `contracts/`, `checklists/` are **NOT** written by
+   default — the vault copy is the only artifact written unless the caller explicitly opts in
+   (`--repo-specs`, or preset `spec_artifacts: repo | both`) so intent ships in the PR next to the
+   code. Default behavior across `refinement` / `prp-plan` / `mediator` / `spec-converge` /
+   `spec-analyze` is **vault-only**; do not write a repo `specs/` copy on your own initiative. An
+   opted-in repo copy is a second copy — the vault note stays the record.
 2. **Indexes rebuildable from the vault** — the FTS5 index behind `search_kb`, `search_sessions`,
    `find_related_work` and `validate_note_links` (`~/.claude/kb/kb_index.db`, or `$CI_KB_INDEX`;
    rebuilt by `reindex_kb`, kept current by every MCP write), and the web-cache URL index

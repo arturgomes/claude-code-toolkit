@@ -34,13 +34,13 @@ count**.
 
 ### Where the Convergence section is appended (resolve this FIRST)
 
-There is not always a `tasks.md` — the repo copy is optional (`spec_artifacts: vault`,
-`--no-repo-specs`, or a plain `prp-implement` run that only ever read the plan from the vault). Resolve
-the append target in this order and **name the one you used** in the report:
+There is not always a `tasks.md` — the repo copy is opt-in, not the default (`spec_artifacts: vault`
+is the default; a repo copy only exists when `--repo-specs` / `spec_artifacts: repo|both` was passed).
+Resolve the append target in this order and **name the one you used** in the report:
 
-1. `specs/<slug>/tasks.md` in the repo — when the dual-write produced it;
-2. otherwise the **plan note's task section** in the vault (`02-Notes/Plans/<slug>.plan.md`), appended
-   under the same `## Phase N: Convergence` heading;
+1. the **plan note's task section** in the vault (`02-Notes/Plans/<slug>.plan.md`), appended under the
+   `## Phase N: Convergence` heading — the default target;
+2. `specs/<slug>/tasks.md` in the repo — only when `--repo-specs` produced it;
 3. neither exists ⇒ there is no task list to converge against. Report the findings and **stop** — do
    not invent a task file. A converge run with nowhere to write is a misconfiguration, not a pass.
 
@@ -174,8 +174,9 @@ not fix it. After 3 passes, remaining findings go to the human with their eviden
 
 ## Dependencies
 
-Reads `spec.md` / `plan.md` / `tasks.md` (repo `specs/<slug>/`, mirrored in the vault),
-`contracts/`, `constitution`, and the `pre-pr-gate` receipt. Writes only the Convergence section.
+Reads `spec.md` / `plan.md` / `tasks.md` (vault by default; repo `specs/<slug>/` only when
+`--repo-specs` was used), `contracts/`, `constitution`, and the `pre-pr-gate` receipt. Writes only the
+Convergence section.
 Feeds `mediator` Phase F and `session-memory`.
 ## Persistence — where the findings go
 

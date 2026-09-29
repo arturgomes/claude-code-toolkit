@@ -214,7 +214,8 @@ decomposition for it.
    Context7 BEFORE web** → **consult-kb** → **constitution Phase -1 gates + Complexity Tracking** →
    emits `plan.md`, `contracts/`, and tasks tagged `[P]` / `[US#]` / `files:`.
 3. The resulting `plan.md` is the **decomposition input** for Phase A and the durable planning
-   artifact — written to `specs/<slug>/plan.md` (repo) and `02-Notes/Plans/` (vault).
+   artifact — written to `02-Notes/Plans/` (vault, default), plus `specs/<slug>/plan.md` (repo) only
+   when `--repo-specs` / preset `spec_artifacts: repo|both` is on.
 4. A genuine **requirement fork** or a `/prp-plan` refusal on a blocking unknown is the sanctioned
    AC-1 human stop — surface it and wait; never fan out on an unresolved plan.
 
@@ -346,6 +347,13 @@ When `enabled = false`, every phase below behaves exactly as it did before this 
    `project-manager → {mediator}`.
 4. **Pre-approve tools** — teammates inherit the main session's permissions; unapproved tools stall
    them (KB: Agent Teams P05/X01). Confirm the preapproval checklist before spawning.
+5. **Evaluator/planner roles keep their restricted tool set — never widen it.** `pr-reviewer`,
+   `qa-analyst`, `ux-specialist`, `product-owner`, `lead-engineer`, `project-manager`, and the
+   `codebase-*`/`web-researcher` roles carry a `tools:` allow-list with no `Edit`/`Write`/`NotebookEdit`
+   by design (`../../shared/read-only-mandate.md`) — a review or plan is a `SendMessage` back to you,
+   never a patch that role applies itself. Do not re-dispatch one of these findings through a
+   full-tool/generic agent just because a fix "looks small"; route it to the owning generator
+   specialist as next-round criteria instead.
 
 ---
 

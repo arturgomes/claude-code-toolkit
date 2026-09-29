@@ -210,5 +210,9 @@ extension), matching the command's own plan-stem fallback:
 - Does not block legitimate discovery — if Phase 2 reveals more scope, update the plan.
 - Does not enforce rigid plan adherence — documented deviations are fine.
 - Does not replace engineering judgment — it's a checklist, not a constraint.
+- Does not replace mechanical tool restriction for review/plan-only roles. SCOPE BOUNDARY (Q2) catches
+  drift in *what files* a change touches; it does not by itself stop a role whose mandate is "review
+  only" from writing code at all — that is enforced by the role's own `tools:` allow-list, per
+  `../../shared/read-only-mandate.md`.
 
 Goal: **intentional deviation**, not zero deviation.

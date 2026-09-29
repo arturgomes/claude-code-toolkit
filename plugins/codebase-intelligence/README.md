@@ -7,6 +7,13 @@ structural search** (single tier). Cross-session memory lives in an Obsidian vau
 the `ultimate-obsidian` MCP. **No prp-core (or any other plugin) required.**
 
 **Version history**
+- **v3.23.0** — **`spec_artifacts` defaults to `vault`, not `both`.** `refinement`, `prp-plan`,
+  `mediator`, `spec-converge`, and `spec-analyze` all wrote `specs/<slug>/{spec,plan,tasks}.md` into
+  the working repo by default, contradicting this toolkit's own stated principle that the vault is the
+  system of record and a repo-local mirror is a leak. A live run wrote a repo `specs/` copy nobody
+  asked for. Fixed: vault-only is now the default everywhere the flag is checked; a repo copy is
+  opt-in via `--repo-specs` (replaces `--no-repo-specs`) or preset `spec_artifacts: repo | both`. The
+  `seathq` preset's `spec_artifacts` flipped from `both` to `vault` to match.
 - **v3.22.1** — **`prp-plan` and `prp-implement` get their own model tier, and `prp-implement`'s
   task loop stops sharing one context across every task.** Neither command carried a `model:`
   frontmatter key, so "plan on Opus, implement on Sonnet" had no mechanism — both ran on whatever
@@ -325,10 +332,12 @@ flowchart TD
   (`skills/mediator/references/orchestration-state.schema.json`), instantiated inside a **vault** note
   (`02-Notes/Sessions/<run>.state.md`) via the `ultimate-obsidian` MCP — never a repo file — and the
   mediator is the sole writer.
-- **Artifacts ship in the PR (dual-write):** `specs/<slug>/{spec,plan,tasks}.md` + `contracts/` +
-  `checklists/` are written into the working repo so a reviewer sees intent and implementation in one
-  diff, while the vault copy stays BM25-searchable across tickets. Preset key
-  `spec_artifacts: both | repo | vault` (default `both`), or `--no-repo-specs`.
+- **Vault-first artifacts, repo copy opt-in:** `02-Notes/Plans/` is the system of record and the only
+  artifact written by default — a repo `specs/` copy the next session can't see is exactly the
+  local-mirror failure this toolkit exists to avoid. Pass `--repo-specs` (or preset
+  `spec_artifacts: repo | both`) when intent should also ship in the PR as
+  `specs/<slug>/{spec,plan,tasks}.md` + `contracts/` + `checklists/` for a reviewer to see alongside the
+  diff. Preset key `spec_artifacts: vault | repo | both` (default `vault`).
 - **Portable roles (AC-3):** the 9 role agents contain no org specifics; a `presets/*.yaml` binds them
   to repos/stacks (ships a `seathq` preset). See `presets/README.md`.
 - **Tracks its own progress (session-memory read/write):** the orchestration layer keeps a durable
