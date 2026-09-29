@@ -483,8 +483,8 @@ claude mcp add serena \
      serena start-mcp-server --transport stdio
 
 # ultimate-obsidian — vault-backed session memory, plans, reports (required)
-#   Provides create_or_update_note, read_note, check_exists, list_vault,
-#   index_note (FTS5), search_sessions. Point it at ~/Documents/Obsidian-Vault/.
+#   Provides create_or_update_note, read_note, check_exists, list_vault, search_sessions,
+#   find_related_work, read_state/write_state, get_write_ledger. Point it at ~/Documents/Obsidian-Vault/.
 
 # Context7 — verified library docs
 claude mcp add context7 \
@@ -586,7 +586,7 @@ non-descriptive branches (`main`/`master`/`develop`/…). Each session file carr
 - **Segmented sections** — `## Verified Facts` · `## General Rules` · `## Open Failures` · `## Lessons` · `## Last-Session State (resume here)`
 - **Loop sections** (prp-loop only) — `## Loop Contract` · `## Loop Ledger` · `## Loop Constraints`
 - **Wikilinks** — `[[TICKET-SUFFIX]]` for cross-referencing
-- **BM25 search** — SQLite FTS5 index at `~/.claude/memory/<TICKET>/session_index.db`
+- **BM25 search** — `search_sessions` over the vault's FTS5 index (a rebuildable cache; every record is a vault note — nothing lives only in `~/.claude` or `/tmp`)
 
 ### Gates
 
