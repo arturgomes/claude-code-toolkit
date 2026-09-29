@@ -26,6 +26,34 @@ unset  CI_ADVERSARIAL_GATE         # off (default): nothing is tracked at all
 export CI_ADVERSARIAL_STATE=/path  # override the state file (used by the tests)
 ```
 
+## What arms the gate
+
+Only **code**: a path whose extension is in `CODE_EXTENSIONS`, or whose name
+matches `CODE_BASENAMES` (both in `lib/state.js`). That covers source code, shell
+scripts, SQL/Prisma, stylesheets, HTML, and executable infra: `*.yml`/`*.yaml`
+(CI workflows, serverless), `*.tf`, `Dockerfile` / `*.Dockerfile` / `Dockerfile.<env>`,
+`Makefile` / `makefile` / `Makefile.am`. Plans, vault notes, memory files, `*.md`,
+`*.json`, `*.toml`, lockfiles (including `pnpm-lock.yaml`) and `.lock` files never arm it,
+from `Edit`/`Write` or from the shell. An unresolvable shell write
+(`bash:<command>` marker, below) still arms, because its target is unknown.
+
+## Coverage, not a boolean
+
+The gate tracks **which files** a review covered:
+
+- Launching a review snapshots every file edited so far onto `reviewQueue`.
+- A completion moves the oldest queued snapshot into `reviewedFiles`. Stop
+  counts queued snapshots as covered too, so the drain order never changes
+  what is owed.
+- Stop blocks while an edited file is in neither `reviewedFiles` nor a queued
+  snapshot. A running review therefore satisfies Stop for the files it was
+  launched on, and a background review does not re-block each turn until it
+  lands. A code file edited *after* the launch is still owed.
+
+Editing a file a review already covers is *applying the review*, not new work,
+and does not re-arm. Only a code file no review has seen does. That is what
+breaks the old review → fix → gate → review loop.
+
 ## What satisfies the gate
 
 A subagent whose **name** says what it is — `description`, `subagent_type`,
@@ -58,8 +86,17 @@ three.
 heuristic: whichever subagent stops while an adversarial review is in flight
 clears it. Launch the review on its own to keep that honest.
 
-Edits that land *during* a review re-arm the gate instead of clearing it, so a
-reviewed-then-modified turn is asked again.
+Because a completion credits its snapshot permanently, a stray non-adversarial
+`SubagentStop` mid-review marks that snapshot reviewed for the rest of the
+session.
+
+A review that dies without a `SubagentStop` stays queued. Its snapshot stays
+covered, but any code file edited later is owed at the next Stop as usual.
+
+Re-editing a covered file is never re-reviewed. The trade-off is deliberate:
+fix-ups to a reviewed file are unreviewed. Renaming code to a non-code name
+(`mv a.ts a.md`) is not tracked either, because `mv` records only its
+destination.
 
 ## Tests
 

@@ -58,12 +58,75 @@ function getEntry(state, key) {
   if (!state[key]) {
     state[key] = {
       editedFiles: [],
+      reviewedFiles: [],
+      reviewQueue: [],
       adversarialLaunched: false,
       adversarialCompleted: false,
-      needsReReview: false,
     };
   }
-  return state[key];
+  return migrateEntry(state[key]);
+}
+
+// State written before the review queue existed. Paths that no longer arm the
+// gate are dropped so they cannot stay owed. A completed review covered
+// everything edited up to then. An in-flight one covered its recorded snapshot
+// (`reviewingFiles`), else everything edited — unless edits landed during it,
+// in which case its snapshot is unknown and credits nothing.
+function migrateEntry(entry) {
+  if (!Array.isArray(entry.reviewQueue)) {
+    entry.editedFiles = entry.editedFiles.filter((file) => file.startsWith('bash:') || shouldTrackEdit(file));
+    const inFlight = entry.adversarialLaunched && !entry.adversarialCompleted;
+    entry.reviewQueue = inFlight ? [legacySnapshot(entry)] : [];
+  }
+  if (!Array.isArray(entry.reviewedFiles)) {
+    entry.reviewedFiles = entry.adversarialCompleted ? [...entry.editedFiles] : [];
+  }
+  delete entry.needsReReview;
+  delete entry.reviewingFiles;
+  return entry;
+}
+
+function legacySnapshot(entry) {
+  if (Array.isArray(entry.reviewingFiles)) return [...entry.reviewingFiles];
+  return entry.needsReReview ? [] : [...entry.editedFiles];
+}
+
+function isReviewInFlight(entry) {
+  return entry.reviewQueue.length > 0;
+}
+
+function union(target, items) {
+  for (const item of items) {
+    if (!target.includes(item)) target.push(item);
+  }
+  return target;
+}
+
+// Each launch snapshots every file edited so far. Stop counts every queued
+// snapshot as covered, so the order a completion drains them in never changes
+// what is owed; FIFO only keeps `adversarialLaunched` true while any review
+// is still out.
+function startReview(entry) {
+  entry.reviewQueue.push([...entry.editedFiles]);
+  entry.adversarialLaunched = true;
+  entry.adversarialCompleted = false;
+  return entry;
+}
+
+function completeReview(entry) {
+  union(entry.reviewedFiles, entry.reviewQueue.shift() ?? []);
+  entry.adversarialLaunched = isReviewInFlight(entry);
+  entry.adversarialCompleted = !entry.adversarialLaunched && !isReviewOwed(entry);
+  return entry;
+}
+
+// A review owes a file until one covers it. A running review covers only its
+// own snapshot: that keeps a background review from re-blocking every turn
+// while it works, without letting a review that never reports back waive every
+// later edit.
+function isReviewOwed(entry) {
+  const covered = new Set([...entry.reviewedFiles, ...entry.reviewQueue.flat()]);
+  return entry.editedFiles.some((file) => !covered.has(file));
 }
 
 // `doubt-driven` is this plugin's adversarial reviewer, so its name counts too.
@@ -85,40 +148,65 @@ function isAdversarialInvocation(toolInput) {
 }
 
 // Shared by both edit trackers (Edit/Write/MultiEdit and Bash) so the arming
-// semantics cannot drift apart: an in-flight review goes dirty (its completion
-// re-arms instead of clearing), anything else re-arms from scratch.
+// semantics cannot drift apart. Coverage decides what is owed (isReviewOwed):
+// re-editing a covered file is applying that review, not new work — re-arming
+// on it is what made the gate loop review → fix → review.
 function armGate(entry, identifiers) {
-  for (const identifier of identifiers) {
-    if (!entry.editedFiles.includes(identifier)) entry.editedFiles.push(identifier);
-  }
-
-  if (entry.adversarialLaunched && !entry.adversarialCompleted) {
-    entry.needsReReview = true;
-    return entry;
-  }
-
-  entry.adversarialLaunched = false;
-  entry.adversarialCompleted = false;
-  entry.needsReReview = false;
+  union(entry.editedFiles, identifiers);
+  if (isReviewOwed(entry)) entry.adversarialCompleted = false;
   return entry;
+}
+
+// Only source code arms the gate. Plans, notes, memory, lockfiles and lock
+// files are prose or bookkeeping, and gating on them turned every doc fix into
+// a demanded review.
+const CODE_EXTENSIONS = new Set([
+  'ts', 'tsx', 'mts', 'cts', 'js', 'jsx', 'mjs', 'cjs', 'vue', 'svelte', 'astro',
+  'py', 'go', 'rs', 'java', 'kt', 'kts', 'scala', 'swift', 'rb', 'php', 'cs', 'pl',
+  'c', 'h', 'cc', 'cpp', 'hpp', 'm', 'mm', 'dart', 'ex', 'exs', 'lua', 'zig', 'hs', 'clj',
+  'groovy', 'gradle', 'sh', 'bash', 'zsh', 'ps1', 'bat', 'sql', 'prisma', 'graphql', 'gql', 'proto',
+  'css', 'scss', 'sass', 'less', 'html', 'yml', 'yaml', 'tf', 'hcl',
+]);
+
+// Build/infra files named by convention rather than extension. Suffixes are an
+// allowlist so a note named `Dockerfile.md` stays prose.
+const CODE_BASENAMES = [
+  /^(?:[\w-]+\.)?(?:Dockerfile|Containerfile)(?:\.(?:dev|prod|production|staging|test|ci|local|build))?$/,
+  /^(?:Makefile|makefile|GNUmakefile)(?:\.(?:am|in))?$/,
+  /^Jenkinsfile$/,
+];
+
+// Generated lockfiles share code extensions (`pnpm-lock.yaml`) but are bookkeeping.
+const LOCKFILE_BASENAME = /(?:^|[.-])lock\.ya?ml$/i;
+
+function isCodePath(filePath) {
+  const base = path.basename(filePath);
+  if (CODE_BASENAMES.some((pattern) => pattern.test(base))) return true;
+  if (LOCKFILE_BASENAME.test(base)) return false;
+  const match = /\.([A-Za-z0-9]+)$/.exec(base);
+  return match !== null && CODE_EXTENSIONS.has(match[1].toLowerCase());
 }
 
 function shouldTrackEdit(filePath) {
   if (typeof filePath !== 'string' || filePath.length === 0) return false;
-  // Never let the gate's own bookkeeping re-arm the gate.
-  return !filePath.includes('adversarial-state.json');
+  return isCodePath(filePath);
 }
 
 module.exports = {
   armGate,
+  completeReview,
   conversationKey,
   gateMode,
   getEntry,
   isAdversarialInvocation,
   isAdversarialTask,
+  isCodePath,
   isGateEnabled,
+  isReviewInFlight,
+  isReviewOwed,
   readState,
   shouldTrackEdit,
+  startReview,
   stateFile,
   writeState,
 };
