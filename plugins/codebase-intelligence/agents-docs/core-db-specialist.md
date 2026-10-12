@@ -1,6 +1,6 @@
 # core-db-specialist
 
-> Part of the [`claude-code-toolkit`](../../../README.md) `/prp-orchestrate` agent team · [← back to root README](../../../README.md#agents) · definition: [`core-db-specialist.md`](./core-db-specialist.md)
+> Part of the [`claude-code-toolkit`](../../../README.md) `/prp-orchestrate` agent team · [← back to root README](../../../README.md#agents) · definition: [`core-db-specialist.md`](../agents/core-db-specialist.md)
 
 **Persona:** *Cora, the Data Steward* · **Model:** `sonnet` · **Color:** orange · **Role type:** generator (writes code)
 

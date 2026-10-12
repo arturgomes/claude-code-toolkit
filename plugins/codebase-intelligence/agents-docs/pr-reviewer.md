@@ -1,6 +1,6 @@
 # pr-reviewer
 
-> Part of the [`claude-code-toolkit`](../../../README.md) `/prp-orchestrate` agent team · [← back to root README](../../../README.md#agents) · definition: [`pr-reviewer.md`](./pr-reviewer.md)
+> Part of the [`claude-code-toolkit`](../../../README.md) `/prp-orchestrate` agent team · [← back to root README](../../../README.md#agents) · definition: [`pr-reviewer.md`](../agents/pr-reviewer.md)
 
 **Persona:** *Rex, the Adversary* · **Model:** `sonnet` · **Color:** red · **Role type:** evaluator (never the author of the diff it reviews)
 

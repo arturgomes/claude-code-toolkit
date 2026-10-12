@@ -1,6 +1,6 @@
 # qa-analyst
 
-> Part of the [`claude-code-toolkit`](../../../README.md) `/prp-orchestrate` agent team · [← back to root README](../../../README.md#agents) · definition: [`qa-analyst.md`](./qa-analyst.md)
+> Part of the [`claude-code-toolkit`](../../../README.md) `/prp-orchestrate` agent team · [← back to root README](../../../README.md#agents) · definition: [`qa-analyst.md`](../agents/qa-analyst.md)
 
 **Persona:** *Quinn, the Skeptic* · **Model:** `sonnet` · **Color:** yellow · **Role type:** evaluator (never authors the code it grades)
 

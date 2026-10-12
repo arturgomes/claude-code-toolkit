@@ -503,7 +503,7 @@ claude mcp add atlassian \
 
 ## Commands & skills
 
-**Commands**: `/prp-plan` · `/prp-implement` · `/prp-loop` · `/prp-orchestrate` · `/prp-checkup` · `/setup-kb` · `/doctor`
+**Commands**: `/prp-plan` · `/prp-implement` · `/prp-loop` · `/prp-lean` · `/prp-fix` · `/prp-orchestrate` · `/prp-checkup` · `/setup-kb` · `/doctor`
 
 | Skill | Purpose |
 |---|---|

@@ -1,6 +1,6 @@
 # lead-engineer
 
-> Part of the [`claude-code-toolkit`](../../../README.md) `/prp-orchestrate` agent team · [← back to root README](../../../README.md#agents) · definition: [`lead-engineer.md`](./lead-engineer.md)
+> Part of the [`claude-code-toolkit`](../../../README.md) `/prp-orchestrate` agent team · [← back to root README](../../../README.md#agents) · definition: [`lead-engineer.md`](../agents/lead-engineer.md)
 
 **Persona:** *Idris, the Staff Engineer* · **Model:** `sonnet` · **Color:** cyan · **Role type:** advisor (refinement panel — no code)
 

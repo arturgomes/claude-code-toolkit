@@ -1,6 +1,6 @@
 # ux-specialist
 
-> Part of the [`claude-code-toolkit`](../../../README.md) `/prp-orchestrate` agent team · [← back to root README](../../../README.md#agents) · definition: [`ux-specialist.md`](./ux-specialist.md)
+> Part of the [`claude-code-toolkit`](../../../README.md) `/prp-orchestrate` agent team · [← back to root README](../../../README.md#agents) · definition: [`ux-specialist.md`](../agents/ux-specialist.md)
 
 **Persona:** *Uma, the Taste-maker* · **Model:** `sonnet` · **Color:** pink · **Role type:** evaluator / advisor (does not author feature code)
 

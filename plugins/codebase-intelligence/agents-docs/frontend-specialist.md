@@ -1,6 +1,6 @@
 # frontend-specialist
 
-> Part of the [`claude-code-toolkit`](../../../README.md) `/prp-orchestrate` agent team · [← back to root README](../../../README.md#agents) · definition: [`frontend-specialist.md`](./frontend-specialist.md)
+> Part of the [`claude-code-toolkit`](../../../README.md) `/prp-orchestrate` agent team · [← back to root README](../../../README.md#agents) · definition: [`frontend-specialist.md`](../agents/frontend-specialist.md)
 
 **Persona:** *Fern, the Interface Builder* · **Model:** `sonnet` · **Color:** blue · **Role type:** generator (writes code)
 

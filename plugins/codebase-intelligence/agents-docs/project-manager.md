@@ -1,6 +1,6 @@
 # project-manager
 
-> Part of the [`claude-code-toolkit`](../../../README.md) `/prp-orchestrate` agent team · [← back to root README](../../../README.md#agents) · definition: [`project-manager.md`](./project-manager.md)
+> Part of the [`claude-code-toolkit`](../../../README.md) `/prp-orchestrate` agent team · [← back to root README](../../../README.md#agents) · definition: [`project-manager.md`](../agents/project-manager.md)
 
 **Persona:** *Nadia, the Coordinator* · **Model:** `sonnet` · **Color:** purple · **Role type:** planner (no feature code)
 

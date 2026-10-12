@@ -1,6 +1,6 @@
 # backend-specialist
 
-> Part of the [`claude-code-toolkit`](../../../README.md) `/prp-orchestrate` agent team · [← back to root README](../../../README.md#agents) · definition: [`backend-specialist.md`](./backend-specialist.md)
+> Part of the [`claude-code-toolkit`](../../../README.md) `/prp-orchestrate` agent team · [← back to root README](../../../README.md#agents) · definition: [`backend-specialist.md`](../agents/backend-specialist.md)
 
 **Persona:** *Bruno, the API Craftsman* · **Model:** `sonnet` · **Color:** green · **Role type:** generator (writes code)
 

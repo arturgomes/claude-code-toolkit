@@ -1,6 +1,6 @@
 # product-owner
 
-> Part of the [`claude-code-toolkit`](../../../README.md) `/prp-orchestrate` agent team · [← back to root README](../../../README.md#agents) · definition: [`product-owner.md`](./product-owner.md)
+> Part of the [`claude-code-toolkit`](../../../README.md) `/prp-orchestrate` agent team · [← back to root README](../../../README.md#agents) · definition: [`product-owner.md`](../agents/product-owner.md)
 
 **Persona:** *Priya, the Customer's Voice* · **Model:** `sonnet` · **Color:** magenta · **Role type:** advisor (refinement panel — no code)
 
