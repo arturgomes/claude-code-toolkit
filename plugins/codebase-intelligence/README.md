@@ -7,6 +7,21 @@ structural search** (single tier). Cross-session memory lives in an Obsidian vau
 the `ultimate-obsidian` MCP. **No prp-core (or any other plugin) required.**
 
 **Version history**
+- **v3.24.0** — **a short path for defects, a lean front door for features, and an adversarial gate
+  that stops looping.** New **`/prp-fix`** classifies a defect as `bug`, `qa-fail` or `uat-fail` (a
+  UAT round whose rejected behaviour matches the AC is a requirement change, so it escalates to
+  `/prp-plan`), records `kind:` on the session note, and fixes it repro-first through
+  `session-memory` and `pre-pr-gate` — a ~3KB command instead of loading `prp-plan` +
+  `prp-implement` (~72KB). New **`/prp-lean`** plans new behaviour as the smallest complete change,
+  records decisions, asks at most three questions, then returns a binary **GREEN / DOUBT** gate:
+  GREEN runs `/prp-implement`, DOUBT stops with the questions that close it. It never fans out —
+  `/prp-orchestrate` stays the user's choice. The adversarial gate (opt-in via
+  `CI_ADVERSARIAL_GATE`) re-blocked the first Stop of every later turn after a single edit: the
+  one-shot `stop_hook_active` guard let the turn end without disarming the gate, and fixes made after
+  a review re-armed it. Scratchpad, `/tmp`, auto-memory notes and plans also counted as code edits.
+  Now it asks once per arming and both edit trackers ignore those paths. The nine agent README files
+  moved from `agents/` to `agents-docs/`; in `agents/` they registered as nameless agents in every
+  session.
 - **v3.23.0** — **`spec_artifacts` defaults to `vault`, not `both`.** `refinement`, `prp-plan`,
   `mediator`, `spec-converge`, and `spec-analyze` all wrote `specs/<slug>/{spec,plan,tasks}.md` into
   the working repo by default, contradicting this toolkit's own stated principle that the vault is the
