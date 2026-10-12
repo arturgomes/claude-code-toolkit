@@ -16,6 +16,7 @@ const EXCLUDED_PATH_PATTERNS = [
   /^\/var\/tmp\//,
   /\/\.claude\/hooks\/\.state\//,
   /\/scratchpad\//,
+  /\/\.claude\/(?:projects\/[^/]+\/memory|plans)\//,
   /\/node_modules\//,
   /\/\.git\/(?!hooks\/)/,
   /^\/dev\/null$/,

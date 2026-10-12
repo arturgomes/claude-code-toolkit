@@ -10,6 +10,7 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const { isExcludedPath } = require('./bash-write');
 
 // ${CLAUDE_PLUGIN_DATA} outlives plugin updates (${CLAUDE_PLUGIN_ROOT} does
 // not), so it is the right home for state. Fall back to the user cache dir so
@@ -105,8 +106,9 @@ function armGate(entry, identifiers) {
 
 function shouldTrackEdit(filePath) {
   if (typeof filePath !== 'string' || filePath.length === 0) return false;
-  // Never let the gate's own bookkeeping re-arm the gate.
-  return !filePath.includes('adversarial-state.json');
+  // Never let the gate's own bookkeeping re-arm the gate, nor a write that is not
+  // a code edit (scratchpad, /tmp, auto-memory notes, plans) — same list the Bash tracker uses.
+  return !filePath.includes('adversarial-state.json') && !isExcludedPath(filePath);
 }
 
 module.exports = {

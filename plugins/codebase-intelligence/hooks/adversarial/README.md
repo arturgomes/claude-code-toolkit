@@ -43,7 +43,8 @@ code without ever arming it. `lib/bash-write.js` closes that:
   `cp`/`mv`/`rm`/`touch`/`truncate`/`ln`/`patch`/`shred`, `dd of=`, `git apply`,
   and interpreter programs (`python -c`, `node -e`, `python3 - <<PY`) matched on
   write APIs (`write_text`, `writeFileSync`, `open(…, 'w')`, …).
-- **Ignored** — `/tmp`, scratchpad dirs, `/dev/null`, `.git/` internals,
+- **Ignored** (by both edit trackers) — `/tmp`, scratchpad dirs, auto-memory notes and plans under
+  `~/.claude/`, `/dev/null`, `.git/` internals,
   `node_modules`, the gate's own state file, fd dups (`2>&1`), and heredoc
   *bodies* (a body line reading `echo x > /y` is payload, not a redirect).
 - **Unresolvable writes** (`git apply`, an interpreter script) arm the gate under
@@ -51,6 +52,12 @@ code without ever arming it. `lib/bash-write.js` closes that:
 
 Segmentation is quote-aware, so `sed -i 's|a|b|g' file` is one command and not
 three.
+
+## One nag per arming
+
+The gate asks once, then lets go: the Stop that follows its own block (`stop_hook_active`) clears the
+session's entry, and `warn` clears it after reminding. Left armed, it re-blocked the first Stop of every
+later turn — edits or not — and the fixes made after a review re-armed it anyway. New edits re-arm it.
 
 ## Known limitation
 

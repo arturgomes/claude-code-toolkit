@@ -110,6 +110,32 @@ test('stop_hook_active makes the block one-shot', () => {
   assert.deepStrictEqual(stop({ stop_hook_active: true }), {});
 });
 
+test('a released gate stays quiet on later turns with no edits', () => {
+  toolEdit('/repo/src/x.ts');
+  assert.strictEqual(stop().decision, 'block');
+  assert.deepStrictEqual(stop({ stop_hook_active: true }), {});
+  assert.strictEqual(entry(), null);
+  assert.deepStrictEqual(stop(), {}, 'turn 2 has no edits and must not block');
+});
+
+test('fixes made after the review do not re-block the next turn', () => {
+  toolEdit('/repo/src/x.ts');
+  assert.strictEqual(stop().decision, 'block');
+  launch({ description: 'Adversarial review' });
+  subagentStop();
+  toolEdit('/repo/src/x.ts'); // addressing the findings re-arms the gate
+  assert.deepStrictEqual(stop({ stop_hook_active: true }), {});
+  assert.deepStrictEqual(stop(), {});
+});
+
+test('scratchpad, memory notes and plans edited through tools do not arm', () => {
+  toolEdit('/tmp/claude-1/p/s/scratchpad/n.md');
+  toolEdit('/Users/a/.claude/projects/p/memory/m.md');
+  toolEdit('/Users/a/.claude/plans/x.md');
+  assert.strictEqual(entry(), null);
+  assert.deepStrictEqual(stop(), {});
+});
+
 test('interpreter heredoc write arms via an unresolved marker', () => {
   bashEdit("python3 - <<'PY'\nimport pathlib\npathlib.Path('/repo/src/z.ts').write_text('x')\nPY");
   assert.ok(entry().editedFiles.length > 0);
@@ -130,6 +156,7 @@ test('warn mode reminds without blocking', () => {
   const response = stop({}, warn);
   assert.strictEqual(response.decision, undefined);
   assert.match(response.systemMessage, /Adversarial review gate/);
+  assert.deepStrictEqual(stop({}, warn), {}, 'a reminder is given once per arming');
 });
 
 test('malformed payload never throws', () => {
