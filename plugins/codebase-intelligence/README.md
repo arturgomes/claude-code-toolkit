@@ -7,6 +7,13 @@ structural search** (single tier). Cross-session memory lives in an Obsidian vau
 the `ultimate-obsidian` MCP. **No prp-core (or any other plugin) required.**
 
 **Version history**
+- **v3.25.0** — **the full test suite is CI's job; `ship` watches the PR until it is green.**
+  `pre-pr-gate` L5 used to run the repo's whole suite on the integrated branch, which OOMs local
+  machines (seathq-fe needs 4 shards and an 8 GB heap in CI) and left hung runs behind. It now runs
+  only the spec files in the diff, and records a `note` when the diff has none. `ship` gains a
+  mandatory Step 5: `gh pr checks --watch`, the failing file named before any fix on a red check,
+  `prp-pr-review` on Copilot / bugbot / reviewer comments, and a loop (capped at 5 cycles) until every
+  check is green on the latest HEAD with no comment left open.
 - **v3.24.0** — **a short path for defects, a lean front door for features, and an adversarial gate
   that stops looping.** New **`/prp-fix`** classifies a defect as `bug`, `qa-fail` or `uat-fail` (a
   UAT round whose rejected behaviour matches the AC is a requirement change, so it escalates to
