@@ -57,7 +57,7 @@ repos:                         # OPTIONAL but STRONGLY recommended — per-repo 
       typecheck: "<cmd>"       #   whole-repo; use  npx tsc --noEmit  if no script exists
       lint:      "<cmd>|null"  #   MUST be non-mutating (never  eslint --fix );  null  = repo has no linter
       build:     "<cmd>"       #   CI parity
-      test:      "<cmd>"       #   full suite, NON-watch (never a bare  vitest / jest --watch )
+      test:      "<cmd>"       #   NON-watch (never a bare  vitest / jest --watch ); the gate appends only the changed specs (L5), CI runs the rest
       unused_imports: "<cmd>"  #   the dangling/unused-import check (L6) — blocking even if the repo warns
     rulebook:                  # the files pre-pr-gate L7 replays, in precedence order; annotate the
       - "<path>"               #   applyTo glob + rule-ID family per file

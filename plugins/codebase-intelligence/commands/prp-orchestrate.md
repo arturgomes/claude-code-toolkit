@@ -288,7 +288,7 @@ After a slice's last serial merge — and always after the final slice, **before
 2. Layers, in order: **L0** resolve real gate commands (a prescribed script that does not exist is a
    misconfiguration, never a silent pass; never run a mutating command such as `eslint --fix` as a
    gate) → **L1** CI-parity install → **L2** whole-repo typecheck → **L3** changed-files lint at zero
-   warnings → **L4** build → **L5** full non-watch test suite → **L6** dangling / unresolved / unused
+   warnings → **L4** build → **L5** non-watch run of the spec files in the diff (the full suite is CI's job) → **L6** dangling / unresolved / unused
    import sweep → **L7** `applyTo`-scoped bot-parity rulebook replay → **L8** hygiene sweep →
    **L9** constitution + frozen-contract check.
 3. **Cadence.** Mandatory before any PR; run it at **every checkpoint** that is shipped or reviewed

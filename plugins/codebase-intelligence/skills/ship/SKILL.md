@@ -1,6 +1,6 @@
 ---
 name: ship
-description: Scan changes, commit, push, run parallel review fan-out (function/test/security), and create a PR — with confirmation at each step
+description: Scan changes, commit, push, run parallel review fan-out (function/test/security), create a PR, then watch its pipelines and bot reviews until all green — with confirmation at each step
 argument-hint: "[optional commit message or PR title]"
 disable-model-invocation: true
 allowed-tools:
@@ -15,13 +15,17 @@ allowed-tools:
   - Bash(git merge-base *)
   - Bash(gh pr create *)
   - Bash(gh pr view *)
+  # Step 5 — watch the PR's pipelines (read-only)
+  - Bash(gh pr checks *)
+  - Bash(gh run view *)
+  - Bash(gh run list *)
   # Step 3a pre-PR gate — read-only project toolchain (typecheck / lint / build / test)
   - Bash(npm ci *)
   - Bash(npm run *)
   - Bash(npm test *)
   - Bash(npx *)
   - Bash(node -e *)
-version: 2.2.0
+version: 2.3.0
 ---
 
 Ship the current changes through commit, push, and PR creation. Confirm with the user before each step using the AskUserQuestion tool.
@@ -67,7 +71,8 @@ just as thoroughly as a large one.
 
 - ✅ → carry the receipt block into the PR body (Step 4) and continue.
 - 🔴 → **do not create the PR.** Report the blockers, fix them, re-run the gate from L1 on the new HEAD
-  (max 3 cycles), then continue. Never open a PR "so CI can tell us" — the gate already can.
+  (max 3 cycles), then continue. Never open a PR "so CI can tell us" about typecheck, build, imports
+  or rule violations — the gate already can. It leaves one thing to CI: the full test suite (L5).
 
 Confirmations: the gate is read-only, so it runs without asking. Fixing what it finds follows the
 normal edit flow.
@@ -149,12 +154,34 @@ Surface the synthesis to the user before Step 4 drafts the PR body.
 - **ASK the user to confirm or edit** the returned title and body. This confirmation stays: creating a
   PR is outward-facing. What is *not* asked is which tool wrote the description.
 - Only after confirmation: create the PR with `gh pr create`
-- Show the PR URL when done, and pass it back to `pr-description` so it patches `pr:` and `## Links`
-  into the vault note
+- Show the PR URL, pass it back to `pr-description` so it patches `pr:` and `## Links` into the vault
+  note, then continue to Step 5 — the PR is not shipped until its pipelines are green
+
+## Step 5: Watch pipelines until green (MANDATORY — a PR URL is not "done")
+
+CI is where the full test suite runs; it is never run locally. Step 5 runs on the PR just created, or
+on the existing PR when Step 4 found one.
+
+1. **Checks.** `gh pr checks <PR> --watch` in the background (exit 0 = all green, 1 = a check failed,
+   8 = pending); you are notified when it exits. Never report "CI is running" and stop.
+2. **Red check.** `gh run view <run-id> --log-failed`, name the failing file before touching anything —
+   a red check is often an unrelated flake or a worker OOM, not this PR's change. Real failure: fix,
+   then commit + push through Steps 2–3 (confirmations stay). Flake/OOM: say so with the log line and
+   ask before re-running the failed jobs.
+3. **Bot comments.** Once checks settle, run `Skill(codebase-intelligence:prp-pr-review)` on the PR
+   (Copilot, Cursor bugbot, human reviewers). Bots can lag the checks: if it finds nothing, wait about
+   5 minutes and fetch once more before accepting zero. Every comment is applied or rejected with a
+   one-line reason — none left open.
+4. **Loop.** Any push restarts the pipelines and the bots: go back to 1. Stop after 5 cycles and hand
+   the open items to the user.
+5. **Done** only when every check has passed on the latest HEAD **and** no bot or reviewer comment is
+   unresolved. Report each check with its run URL and each comment with its decision. Anything not
+   green is stated as not green, never summarised as "mostly passing".
 
 ## Rules
 
 - NEVER skip a confirmation step — each step requires explicit user approval
+- NEVER run the full test suite locally — CI runs it, and Step 5 watches it
 - NEVER force-push
 - NEVER commit .env, secrets, or credential files
 - If the user says "skip" at any step, skip that step and move to the next — **except Step 3a**: the

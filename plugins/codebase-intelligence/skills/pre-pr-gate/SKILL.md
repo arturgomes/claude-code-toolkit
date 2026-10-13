@@ -119,16 +119,19 @@ npm run build ; echo "exit=$?"
 Whatever CI's build step is. Non-zero ⇒ 🔴. For repos where `build` *is* `tsc --noEmit`, L2 and L4
 coincide — run it once and note the coincidence in the receipt.
 
-## L5 — Tests (CI-equivalent command, non-watch)
+## L5 — Tests: the spec files in the diff only (the full suite is CI's job)
 
 ```bash
-npm run test:ci ; echo "exit=$?"     # or test:run / test -- --run — never a watch-mode script
+SPECS=$(git diff --name-only --diff-filter=ACMR "$MB"..HEAD | grep -E '\.(spec|test)\.[cm]?[jt]sx?$' || true)
+[ -n "$SPECS" ] && npm run test:ci -- $SPECS ; echo "exit=$?"   # the L0 test command + spec paths — never a watch-mode script
 ```
 
+- **Never run the full suite here.** It OOMs local machines (seathq-fe: worker heap limit even on the
+  pinned Node, where CI needs 4 shards + an 8 GB heap) and a hung run blocks the whole gate. The PR's
+  pipelines run it; `ship` Step 5 watches them until green.
+- No spec file in the diff ⇒ status `note`, evidence `no spec in diff; full suite deferred to CI`.
 - A watch-mode script (`vitest`, `jest --watch`) as the gate command hangs the run: resolve to the
   non-watch variant (`vitest run`) and record the substitution.
-- **Full suite on the integration branch.** CI's changed-files-only test scoping
-  (`vitest related`) is an optimization for a single PR; the merged branch runs everything.
 - A test that is newly `.skip` / `.only` / `it.todo` inside the diff ⇒ 🔴 (see L8).
 
 ## L6 — Dangling + unused import sweep (🔴 — CI does NOT catch this)
@@ -300,7 +303,7 @@ blockers, and hand back to the human. Do not open the PR to "let CI decide".
 - [ ] Every intended gate command was verified to exist (L0) — no `Missing script:` treated as a pass.
 - [ ] No mutating command used as a gate.
 - [ ] Typecheck + build ran on the **whole** repo at the **integrated** HEAD, not per-worktree.
-- [ ] Tests ran non-watch, full suite.
+- [ ] Spec files in the diff ran non-watch; the full suite was left to CI.
 - [ ] Dangling/unresolved/unused imports block, even where the repo's own lint only warns.
 - [ ] Rule sources loaded and applied `applyTo`-scoped; MUST violations block; findings cite rule IDs.
 - [ ] Constitution (when ratified) re-checked on the integrated result; every carried violation has a

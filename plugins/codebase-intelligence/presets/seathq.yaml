@@ -169,8 +169,8 @@ repos:
       typecheck: "npx tsc --noEmit"               # no type-check script; tsconfig sets noEmit
       lint: "npx eslint <changed-files> --max-warnings=0"   # never  npm run lint  (eslint --fix)
       build: "npm run build"                      # next build
-      test: "npm run test:ci"                     # full suite, non-watch. CI may scope to  test:related  per
-                                                  # scripts/ci/determine-test-scope.sh — the gate does NOT scope.
+      test: "npm run test:ci"                     # non-watch. The gate appends only the changed spec files
+                                                  # (L5); the full suite runs in CI, sharded, with an 8 GB heap.
       unused_imports: "npx eslint <changed-files> --rule '{\"@typescript-eslint/no-unused-vars\":\"error\"}' --max-warnings=0"
     rulebook:
       - ".github/copilot-instructions.md"                     # repo-wide: CP-* TS-* CF-* DRY-* NS-*

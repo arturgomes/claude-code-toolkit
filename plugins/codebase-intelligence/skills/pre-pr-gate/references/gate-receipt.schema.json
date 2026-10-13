@@ -55,7 +55,7 @@
           "status": {
             "type": "string",
             "enum": ["pass", "block", "note", "degraded", "not-applicable"],
-            "description": "'degraded' = layer could not run for an environment reason (e.g. private registry unavailable) and MUST be disclosed in the PR body. 'not-applicable' is only legal for non-mandatory layers with an empty scope (e.g. L3 with zero changed lintable files)."
+            "description": "'degraded' = layer could not run for an environment reason (e.g. private registry unavailable) and MUST be disclosed in the PR body. L5 is 'note' when the diff has no spec file (the full suite is CI's job). 'not-applicable' is only legal for non-mandatory layers with an empty scope (e.g. L3 with zero changed lintable files)."
           },
           "command": { "type": "string", "description": "Verbatim command executed. Required whenever status is pass or block." },
           "exitCode": { "type": "integer" },
