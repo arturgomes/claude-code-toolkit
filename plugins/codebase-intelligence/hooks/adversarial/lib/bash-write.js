@@ -20,6 +20,7 @@ const EXCLUDED_PATH_PATTERNS = [
   /\/node_modules\//,
   /\/\.git\/(?!hooks\/)/,
   /^\/dev\/null$/,
+  /^"?\$\{?(?:S|SCRATCH|SCRATCHPAD|TMP|TMPDIR|TMP_DIR)\}?\//, // unresolved scratch-dir variable
 ];
 
 // `cmd > file`, `cmd 2>> file`. Excludes fd dups (`2>&1`) and here-docs (`<<`).
@@ -192,7 +193,7 @@ function collectInPlaceTargets(tokens) {
 const INTERPRETERS = new Set(['python', 'python3', 'node', 'ruby', 'perl', 'php', 'deno', 'bun', 'sh', 'bash', 'zsh']);
 
 const INTERPRETER_WRITE_MARKERS =
-  /write_text|write_bytes|writeFileSync|writeFile|appendFileSync|copyfileobj|shutil\.(?:copy|move)|os\.(?:remove|unlink|rename|replace|rmdir|makedirs)|fs\.(?:write|rm|unlink|rename|cp|copyFile)|open\s*\([^)]*['"][wax]|File\.(?:write|delete|rename)|\.unlink\(|\.rename\(|\.replace\(\s*['"]/;
+  /write_text|write_bytes|writeFileSync|writeFile|appendFileSync|copyfileobj|shutil\.(?:copy|move)|os\.(?:remove|unlink|rename|replace|rmdir|makedirs)|fs\.(?:write|rm|unlink|rename|cp|copyFile)|\bopen\s*\([^)]*(?:,|mode\s*=)\s*['"](?:[wax]|r\+|rb\+)|\.open\s*\(\s*['"][wax+]|openSync\s*\([^)]*['"][wax]|createWriteStream|O_WRONLY|O_RDWR|File\.(?:write|delete|rename)|\.unlink\(|\.rename\(|\.replace\(\s*['"]/;
 
 function collectInterpreterWrite(tokens, fullCommand) {
   if (!INTERPRETERS.has(tokens[0])) return null;

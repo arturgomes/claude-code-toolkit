@@ -93,6 +93,18 @@ function armGate(entry, identifiers) {
     if (!entry.editedFiles.includes(identifier)) entry.editedFiles.push(identifier);
   }
 
+  // A finished review stays finished for the turn: fixes to files it already saw must not
+  // summon another review (that was the loop). A path it never saw is new work: re-arm.
+  if (entry.adversarialCompleted) {
+    const reviewed = new Set(entry.reviewedFiles || []);
+    const fresh = identifiers.filter((id) => !reviewed.has(id));
+    if (fresh.length === 0) return entry;
+    entry.adversarialLaunched = false;
+    entry.adversarialCompleted = false;
+    entry.needsReReview = false;
+    return entry;
+  }
+
   if (entry.adversarialLaunched && !entry.adversarialCompleted) {
     entry.needsReReview = true;
     return entry;

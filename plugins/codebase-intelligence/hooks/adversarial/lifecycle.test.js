@@ -128,6 +128,56 @@ test('fixes made after the review do not re-block the next turn', () => {
   assert.deepStrictEqual(stop(), {});
 });
 
+test('fixes after a completed review do not re-arm within the turn (no review loop)', () => {
+  toolEdit('/repo/src/x.ts');
+  launch({ description: 'Adversarial review' });
+  subagentStop();
+  toolEdit('/repo/src/x.ts'); // addressing findings
+  assert.strictEqual(entry().adversarialCompleted, true);
+  assert.deepStrictEqual(stop(), {}, 'no stop_hook_active needed: the review already ran');
+  assert.strictEqual(entry(), null);
+  toolEdit('/repo/src/y.ts'); // next turn edits arm a fresh review
+  assert.strictEqual(stop().decision, 'block');
+});
+
+test('a new file edited after a completed review re-arms; a reviewed one does not', () => {
+  toolEdit('/repo/src/x.ts');
+  launch({ description: 'Adversarial review' });
+  subagentStop();
+  toolEdit('/repo/src/x.ts');
+  assert.deepStrictEqual(stop(), {});
+  toolEdit('/repo/src/x.ts');
+  launch({ description: 'Adversarial review' });
+  subagentStop();
+  toolEdit('/repo/src/new.ts');
+  assert.strictEqual(stop().decision, 'block', 'unreviewed file must be asked about');
+});
+
+test('reset-turn clears a stuck completed entry', () => {
+  toolEdit('/repo/src/x.ts');
+  launch({ description: 'Adversarial review' });
+  subagentStop();
+  runHook('reset-turn.js', {});
+  assert.strictEqual(entry(), null);
+  toolEdit('/repo/src/x.ts');
+  assert.strictEqual(stop().decision, 'block');
+});
+
+test('real write shapes arm; $REPO txt and reopen( shapes behave', () => {
+  for (const c of [`python3 -c "open(p,'r+').write('x')"`, `python3 -c "from pathlib import Path;Path('a').open('w')"`, `node -e "fs.createWriteStream(p)"`, `node -e "fs.openSync(p,'w')"`]) {
+    reset(); bashEdit(c); assert.ok(entry(), c);
+  }
+  reset(); bashEdit('echo x > $REPO/requirements.txt'); assert.ok(entry(), '$REPO file must arm');
+});
+
+test('read-only interpreter open() and $VAR log redirects do not arm', () => {
+  bashEdit(`python3 -c "import json;json.load(open('wt-884-be/package.json'))"`);
+  bashEdit('make test > $S/m1.log 2>&1');
+  assert.strictEqual(entry(), null);
+  bashEdit(`python3 -c "open('/repo/a.ts','w').write('x')"`);
+  assert.ok(entry().editedFiles.length > 0, 'a real write mode still arms');
+});
+
 test('scratchpad, memory notes and plans edited through tools do not arm', () => {
   toolEdit('/tmp/claude-1/p/s/scratchpad/n.md');
   toolEdit('/Users/a/.claude/projects/p/memory/m.md');

@@ -10,8 +10,8 @@ const REASON = [
   'Launch a subagent now (Agent tool):',
   '- subagent_type: general-purpose',
   '- description: Adversarial review  ← must contain "adversarial"; the gate matches on it',
-  '- prompt: Follow the codebase-intelligence `doubt-driven` skill. Critique the design and',
-  '  scrutinise the code written this turn. State the goal, the files touched, and the approach.',
+  '- prompt: Critique the design and scrutinise the code written this turn (the',
+  '  `adversarial-reviewer` skill fits). State the goal, the files touched, and the approach.',
   'Address the real findings (or overrule them explicitly, with reasoning), then close with a',
   'short "Adversarial review" section naming what was raised and what you did about it.',
 ].join('\n');
@@ -35,6 +35,10 @@ runHook((payload) => {
   }
 
   const entry = getEntry(state, key);
+  if (entry.adversarialCompleted) {
+    release();
+    return {};
+  }
   const needsReview = entry.editedFiles.length > 0 && !entry.adversarialCompleted;
   if (!needsReview) return {};
 

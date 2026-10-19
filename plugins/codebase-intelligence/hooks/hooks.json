@@ -60,6 +60,16 @@
           }
         ]
       }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/run-node-hook.sh\" \"${CLAUDE_PLUGIN_ROOT}/hooks/adversarial/reset-turn.js\""
+          }
+        ]
+      }
     ]
   }
 }

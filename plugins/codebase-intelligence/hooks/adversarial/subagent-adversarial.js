@@ -24,6 +24,7 @@ runHook((payload) => {
     entry.needsReReview = false;
   } else {
     entry.adversarialCompleted = true;
+    entry.reviewedFiles = [...entry.editedFiles];
   }
 
   state[key] = entry;

@@ -65,8 +65,9 @@ later turn — edits or not — and the fixes made after a review re-armed it an
 heuristic: whichever subagent stops while an adversarial review is in flight
 clears it. Launch the review on its own to keep that honest.
 
-Edits that land *during* a review re-arm the gate instead of clearing it, so a
-reviewed-then-modified turn is asked again.
+Edits that land *during* a review re-arm the gate instead of clearing it. Edits made
+*after* a review completes (fixing its findings) do not: a finished review is final for the turn,
+and Stop releases the entry — otherwise every review's fixes would summon another review.
 
 ## Tests
 
