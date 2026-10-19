@@ -7,6 +7,7 @@ structural search** (single tier). Cross-session memory lives in an Obsidian vau
 the `ultimate-obsidian` MCP. **No prp-core (or any other plugin) required.**
 
 **Version history**
+- **v3.25.1** — **the adversarial review gate stops looping**: a completed review is final for the turn (only files it never saw re-arm), a `UserPromptSubmit` reset clears stuck entries, read-only `open()`/`$VAR` scratch writes no longer arm it, and the block message no longer points at the one-shot `doubt-driven`.
 - **v3.25.0** — **the full test suite is CI's job; `ship` watches the PR until it is green.**
   `pre-pr-gate` L5 used to run the repo's whole suite on the integrated branch, which OOMs local
   machines (seathq-fe needs 4 shards and an 8 GB heap in CI) and left hung runs behind. It now runs
