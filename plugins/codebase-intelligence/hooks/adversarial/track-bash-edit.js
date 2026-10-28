@@ -24,6 +24,6 @@ runHook((payload) => {
   const key = conversationKey(payload);
   const state = readState();
   state[key] = armGate(getEntry(state, key), identifiers);
-  writeState(state);
+  writeState(state, key);
   return {};
 });

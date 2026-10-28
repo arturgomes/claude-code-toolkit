@@ -14,6 +14,6 @@ runHook((payload) => {
   const entry = getEntry(state, key);
   entry.adversarialLaunched = true;
   state[key] = entry;
-  writeState(state);
+  writeState(state, key);
   return {};
 });

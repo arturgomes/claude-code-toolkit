@@ -320,9 +320,15 @@ every one of the following before returning:
    thought starting "While I'm here, I should also...", "This would be cleaner if...", "I noticed
    this other thing..." → STOP, run drift questions #4 (gold-plate) and #2 (scope boundary); if not
    in AC, note it as a future improvement, do NOT implement now.
+9. **Commit (atomic)** — the gates in 6–7 passed ⇒ **one commit for this task, now**, per
+   `../shared/atomic-commit.md`: stage only the task's `files:`, subject from the task's `commit:`
+   field in the repo's convention, **no AI attribution**, then run that file's predicate on the
+   message. A failed gate ⇒ **no commit**, the tree left as the task found it (stash the attempt),
+   and a failure result. The subagent never returns with uncommitted task work.
 
 The subagent returns a **structured result** — files changed, gate pass/fail (exact command + exit
-code), a one-line summary, and any GOTCHA/lesson discovered — and nothing more. That result is the
+code), **the commit sha (or `no-commit: <reason>`)**, a one-line summary, and any GOTCHA/lesson
+discovered — and nothing more. That result is the
 entire amount of this task's reasoning that crosses back into the main thread's context.
 
 **Capability gate:** if the runtime exposes no Task-tool/Agent support, this is a no-op — execute
@@ -334,6 +340,11 @@ no-op.
 
 On each subagent's result:
 
+- **Commit verification (mechanical, first):** `git log -1 --format='%h %s'` names this task and
+  `git status --porcelain -- <task files:>` is empty (scoped: pre-existing untracked files and the
+  main thread's own notes are not the task's problem). A result claiming done without that commit is not done — the task
+  stays open. A `no-commit` result is re-dispatched **once** with the failure in its brief; a second
+  failure stops the run (Handling Failures). The branch is a sequence of green commits, one per task.
 - **Memory save per milestone (3.8):** every 3 tasks (or after any significant discovery),
   `Skill(codebase-intelligence:session-memory)` → SESSION END protocol. Include: tasks completed
   (with AC mapping), plan deviations, new Context7 findings, drift decisions, next task to resume
@@ -350,8 +361,8 @@ On each subagent's result:
   `frontier`-only; `standard`/`light` still record and consume these lines, never blocked.
 - **Track progress (3.9):**
   ```
-  Task 1: CREATE src/features/x/models.ts ✅ (AC: {which AC})
-  Task 2: CREATE src/features/x/service.ts ✅ (AC: {which AC})
+  Task 1: CREATE src/features/x/models.ts ✅ (AC: {which AC}) — a1b2c3d
+  Task 2: CREATE src/features/x/service.ts ✅ (AC: {which AC}) — d4e5f6a
   ```
 - **Context-consumption guard (3.10):** check if the MAIN THREAD's own context window has reached
   more than 40%. If so, use `Skill(session-memory)` to save the task development and stop,
@@ -371,8 +382,24 @@ recorded — **not** at a sample point mid-run — invoking `Skill(codebase-inte
 **once**, against the FULL set of completed tasks. This catches exactly what per-task isolation cannot see on its own: two tasks each
 individually correct but mutually inconsistent (a shared assumption two briefs made differently, a
 naming choice that diverged between tasks, a type one task introduced that another task's isolated
-context never saw). Halts implementation only on HIGH-severity mismatches; otherwise logs findings
-and continues to Phase 4.
+context never saw).
+
+**This is the run's one adversarial pass, and it is bounded** (`../shared/atomic-commit.md`, "Why the
+adversarial pass is bounded"). doubt-driven's `HALT:` asks for an acknowledgement; in this flow the
+acknowledgement is the triage below, recorded in session-memory. Triage every HIGH finding before
+touching code:
+
+- **REVERT** — the finding says the *approach* is wrong, not that a line is missing. `git revert
+  --no-edit` the task commit(s) it names (newest first), reopen those tasks with the finding in their
+  brief, re-dispatch them through Step 3.1a, and run doubt-driven **one more time over the redone
+  tasks only**. That second pass is the cap: two adversarial passes per run, never a third.
+- **FIX** — addressable in place: one fix commit per finding, gated by typecheck + the task's gate +
+  Phase 4, **never** re-reviewed adversarially. Fixes do not re-open this step.
+- **ACCEPT / overrule** — recorded with the reason in session-memory and in the report's Review Focus.
+
+MEDIUM / LOW findings are FIX or ACCEPT, never REVERT. When the Stop-hook adversarial gate is enabled,
+a review it triggered after the last task **is** this pass — do not stack a second doubt-driven on it.
+Otherwise continue to Phase 4.
 
 **PHASE_3_CHECKPOINT:**
 - [ ] Every task dispatched to its own isolated subagent (model: sonnet) — none shared another
@@ -388,10 +415,17 @@ and continues to Phase 4.
 - [ ] Deviations documented
 - [ ] The cross-item integration pass (doubt-driven) completed once, over ALL tasks, after the
       last one — not a single mid-run sample point
+- [ ] One commit per passing task, verified by `git log` on each return; no uncommitted task work
+      crossed back to the main thread
+- [ ] Adversarial passes in Phase 3 ≤ 2 (one, plus one over REVERT-redone tasks only); every REVERT
+      is a `git revert`, never a reset; fix commits were never re-reviewed adversarially
 
 ---
 
 ## Phase 4: VALIDATE - Full Verification
+
+Every fix this phase makes is its own commit under `../shared/atomic-commit.md` — the branch stays a
+sequence of green steps all the way to the gate, and nothing here re-runs the adversarial pass.
 
 ### 4.0.5 Task-completeness gate (runs FIRST, before 4.1)
 
@@ -414,6 +448,11 @@ checked off, or each remaining one is explicitly justified as descoped (a drift-
 reason, never a silent skip). This is a different question from 4.5's AC verification: a task can
 be checked off with its AC-mapped test still failing (4.5 catches that), and this gate catches the
 reverse — a task never checked off, whether or not its AC was ever separately verified.
+
+**Commit parity (same gate):** `git log --format='%h %s' "$MERGE_BASE"..HEAD` (`$MERGE_BASE` per
+`../shared/git-base-detection.md`) must show one commit per checked task, plus any fix / revert
+commits. A checked task with no commit and no recorded revert is the dropped-task case this gate
+exists for — fail it.
 
 ### 4.1 Static Analysis
 
@@ -507,7 +546,8 @@ class of failure the earlier steps cannot:
 **GATE:** 🔴 ⇒ no PR. Fix, re-run the gate from L1 on the new HEAD, max 3 cycles, then escalate to the
 human. Paste the receipt block into the Phase 5 report, and hand it to
 `Skill(codebase-intelligence:pr-description)` — which writes every PR body this flow produces, under
-the mandatory `[TICKET] task description` title, into `02-Notes/pr-descriptions/` before the PR exists.
+the mandatory `[TICKET] task description` title, into `02-Notes/pr-descriptions/` before the PR exists,
+and rejects any AI attribution in the title or body (`../shared/atomic-commit.md`).
 Never weaken a rule, glob, or lint severity — and never add `@ts-ignore` / `eslint-disable` / `.skip` —
 to clear a blocker.
 
@@ -779,12 +819,20 @@ Run auto-fix, manually fix remainder, re-run.
 If a test reveals an AC item isn't satisfied: this is not optional. Fix the implementation.
 Do not adjust the AC to match the implementation.
 
+### Commit Missing (a task returned "done" with no commit, or a `no-commit` result)
+Not done. Re-dispatch once with the failure (and the stash name, if any) in the brief. A second
+`no-commit` for the same task stops the run: log it to "## Open Failures" with `Verify:` = the gate
+command, save session-memory, and report which task is open. Never commit on the subagent's behalf
+from the main thread — the gate ran there, so the commit happens there.
+
 ### Session Interrupted
-Memory saved every ~3 tasks. Restart with the same command:
+Memory saved every ~3 tasks, and **the branch itself is the task ledger**: `git log --format='%h %s'
+"$MERGE_BASE"..HEAD` names every task that finished (`../shared/atomic-commit.md`). Restart with the
+same command:
 ```
 /codebase-intelligence:prp-implement $ARGUMENTS
 ```
-Pre-phases will restore context automatically.
+Pre-phases will restore context automatically; resume from the first task without a commit.
 
 ---
 

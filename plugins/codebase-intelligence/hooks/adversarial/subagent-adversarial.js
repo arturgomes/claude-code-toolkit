@@ -18,16 +18,18 @@ runHook((payload) => {
   if (!entry.adversarialLaunched || entry.adversarialCompleted) return {};
 
   if (entry.needsReReview) {
-    // Edits landed DURING the review — re-arm so the next Stop asks again.
+    // Edits landed DURING the review — re-arm so the next Stop asks again (one more ask,
+    // still under the session cap).
     entry.adversarialLaunched = false;
     entry.adversarialCompleted = false;
     entry.needsReReview = false;
+    entry.asked = false;
   } else {
     entry.adversarialCompleted = true;
-    entry.reviewedFiles = [...entry.editedFiles];
+    entry.coveredAt = entry.editedFiles.length;
   }
 
   state[key] = entry;
-  writeState(state);
+  writeState(state, key);
   return {};
 });

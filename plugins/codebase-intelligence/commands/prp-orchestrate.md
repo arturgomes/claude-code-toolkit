@@ -69,11 +69,15 @@ R. **Refine (Definition-of-Ready gate)** — convene the grooming panel via `Ski
 3. **Round-judge** — each round: monitor → JUDGE every diff vs the **constitution** and the repo's rule
    sources (`.claude/` + `CLAUDE.md` + `.github/copilot-instructions.md` +
    `.github/instructions/*.instructions.md`, each `applyTo`-scoped) as MUST/SHOULD/MUST-NOT/SHOULD-NOT
-   (drift-guard Q1-8 + rules rubric) → 🔴 blocks that merge.
+   (drift-guard Q1-8 + rules rubric) → 🔴 blocks that merge. Each passing task is **one commit** in
+   its lane; rounds cap at **3 per specialist per slice**, then a human gate.
 4. **Verify** — `qa-analyst` runs the slice's gates, its story's **Independent Test**, and any
-   buildable `SC-###`; `pr-reviewer` does fresh-context adversarial review.
-5. **Merge → checkpoint** — serial merge of passing worktrees only; `ux-specialist` taste check on UI
-   merges; declare the checkpoint (demoable) and start the next slice from that sha.
+   buildable `SC-###`; `pr-reviewer` does **one** fresh-context adversarial pass per slice. Each 🔴 is
+   `REVERT` (the task's commit is `git revert`ed and redone — one more pass over the redo, never a
+   third) or `FIX` (one fix commit, mechanically gated, never re-reviewed). The caps and the revert
+   protocol: `../shared/atomic-commit.md`.
+5. **Merge → checkpoint** — serial merge of passing worktrees only, never squashed; `ux-specialist`
+   taste check on UI merges; declare the checkpoint (demoable) and start the next slice from that sha.
 5.5 **Integration gate (mandatory — `pre-pr-gate`)** — on the **merged** HEAD of every repo with diffs,
    before any PR exists: CI-parity install/typecheck/build/full-test, a dangling+unused-import sweep,
    a hygiene sweep, an `applyTo`-scoped replay of the repo's own `.github` rulebook, and the
@@ -489,6 +493,10 @@ pr-description?" question, because the answer is always yes:
   own Phase 5.5 receipt — never one body shared across layers.
 - The only confirmation left is `gh pr create` itself, which is outward-facing. Which tool wrote the
   description is not asked.
+- **No AI attribution** in the title, the body, or any commit on the branch — no assistant
+  `Co-Authored-By:` trailer, no "Generated with …" footer, no tool mention. The rule and its predicate
+  are `../shared/atomic-commit.md`; `pr-description` runs it before the vault write and `pre-pr-gate`
+  L8 replays it over the branch.
 
 ## Step 5 — Pre-approval note (avoid permission stalls — KB: Agent Teams P05/X01)
 
@@ -517,6 +525,9 @@ user at their `settings.json` allow-list if a specialist would otherwise block.
   gate receipts, and an unreachable vault stops the phase instead of degrading to a local file.
 - Never opens a PR whose body it hand-rolled instead of calling `pr-description`, and never opens one
   whose title lacks the `[TICKET]` / `[repo]` tag.
+- Never squashes lane commits, never re-runs the adversarial reviewer on fixes to its own findings,
+  never resets a branch to undo a rejected task (it `git revert`s), and never runs a fourth round of
+  the same criteria — the caps are `../shared/atomic-commit.md`.
 - Never deletes a branch, a remote branch, or a worktree before its PR is **merged on GitHub**, and
   never deletes the branch of a closed-unmerged PR as routine cleanup. Phase 7 defers to
   `/prp-checkup` rather than guessing.

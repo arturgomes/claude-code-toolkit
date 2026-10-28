@@ -122,6 +122,8 @@
           "rounds": { "$ref": "#/properties/rounds" },
           "mergeLog": { "$ref": "#/properties/mergeLog" },
           "territoryDisjoint": { "type": "boolean", "description": "Set-intersection check over the union of each lane's task files:. False ⇒ ABORT allocation for this slice." },
+          "reviewPasses": { "type": "integer", "minimum": 0, "maximum": 2, "description": "pr-reviewer passes run on this slice. Capped at 2: the second only over work redone after a REVERT; fix commits are never re-reviewed (shared/atomic-commit.md)." },
+          "reverts": { "type": "array", "description": "Task commits undone by a pr-reviewer REVERT verdict — always git revert, never reset.", "items": { "type": "object", "required": ["sha", "revertSha", "finding"], "properties": { "sha": { "type": "string" }, "revertSha": { "type": "string" }, "taskId": { "type": "string" }, "finding": { "type": "string" } } } },
           "checkpoint": {
             "type": "object",
             "additionalProperties": false,

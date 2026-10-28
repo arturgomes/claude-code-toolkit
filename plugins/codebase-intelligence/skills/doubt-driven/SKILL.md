@@ -4,7 +4,7 @@ description: >
   Mid-flight adversarial review: spawn a fresh-context sub-agent to falsify the implementing
   agent's strongest claims via grep, then surface mismatches before more code is written.
   Trigger on "/doubt-this", "challenge my plan", "stress-test this", or auto-invoked from
-  prp-implement at task N/2 (one-shot per session).
+  prp-implement once after the last task (plus once more over REVERT-redone tasks only).
 version: 1.0.0
 ---
 
@@ -20,7 +20,8 @@ Pattern source: Doubt-Driven Development (`agent-skills-framework.md`).
 
 ## When to use
 
-- **Auto**: `prp-implement` at task ⌈N/2⌉. One-shot per session.
+- **Auto**: `prp-implement` Step 3.3, once after the last task — plus at most one further pass over
+  tasks redone after a REVERT verdict, never a third (`../../shared/atomic-commit.md`).
 - **Manual**: user says "doubt this", "challenge my plan", "are you sure about X", "/doubt-this".
 - **Triggered**: when a single task has produced ≥3 files of changes without validation, or when the implementing agent has used phrases like "this is the only call site", "nothing else uses this", "this is safe to remove".
 
@@ -29,7 +30,8 @@ Pattern source: Doubt-Driven Development (`agent-skills-framework.md`).
 - Before any code is written (nothing to falsify yet).
 - After all tasks complete (drift-guard final gate covers it).
 - On trivial single-file changes (<30 LOC, no cross-file refs).
-- More than once per session (diminishing returns; user can re-invoke manually if needed).
+- More than the capped passes above (diminishing returns, and a reviewer re-run on every fix is a
+  loop); the user can still re-invoke manually.
 
 ---
 
@@ -112,7 +114,7 @@ Severity rubric:
 
 Decide based on the highest severity, and emit exactly ONE verdict line as the first line of the STOP decision block. The verdict line MUST begin with one of the tokens `HALT:`, `CONTINUE:`, or `PASS:` — this is the `^(HALT|CONTINUE|PASS):` contract that the Validation section greps for. No other prefix is valid, and the line is written verbatim into the report file so `grep -E '^(HALT|CONTINUE|PASS):'` matches it.
 
-- **Any HIGH** → emit a line starting `HALT:` and halt implementation. Example: `HALT: 1 HIGH mismatch (claim 1 falsified at tests/foo.spec.ts:14) — implementation stopped`. Surface the mismatch table to the user. Do not proceed until the user acknowledges and updates the plan or directs override. Append the decision to session-memory.
+- **Any HIGH** → emit a line starting `HALT:` and halt implementation. Example: `HALT: 1 HIGH mismatch (claim 1 falsified at tests/foo.spec.ts:14) — implementation stopped`. Surface the mismatch table. Do not proceed until it is acknowledged: by the user, or — inside an autonomous `prp-implement` run — by the caller's recorded REVERT / FIX / ACCEPT triage of every HIGH row. Append the decision to session-memory.
 - **MEDIUM only** → emit a line starting `CONTINUE:` and continue. Example: `CONTINUE: 2 MEDIUM mismatches logged — affected tasks adjusted`. Log mismatches in session-memory under `### Doubt-driven findings` and adjust affected tasks.
 - **LOW only or all confirmed** → emit a line starting `PASS:` and continue. Example: `PASS: doubt check passed at task N/2 (3 claims confirmed)`. Append the same one-line note to session-memory.
 
@@ -155,13 +157,13 @@ grep -E '^(HALT|CONTINUE|PASS):' ~/Documents/Obsidian-Vault/02-Notes/Reports/{TI
 
 ## Integration with prp-implement
 
-Hooked once per session at Step 3.7b, immediately after the mid-task drift check (Step 3.7) and before the milestone memory save (Step 3.8). The hook computes `midpoint = ceil(total_tasks / 2)` and fires only when the current task index equals that midpoint. Skip if `total_tasks < 4` (too shallow to bisect meaningfully).
+Hooked at `prp-implement` Step 3.3, once after the last task has been dispatched and recorded, over the full set of completed tasks. A second invocation is allowed only over tasks redone after a REVERT verdict.
 
 ---
 
 ## What this skill does NOT do
 
-- Does **not** re-run after the first invocation in a session. One-shot. User can re-trigger manually.
+- Does **not** re-run on fixes to its own findings. At most two passes per run (the second over REVERT-redone tasks only). User can re-trigger manually.
 - Does **not** modify code. Surfaces mismatches; the main agent or user fixes.
 - Does **not** read the plan, the session memory, or prior context. The sub-agent is intentionally context-starved — that's the whole mechanism.
 - Does **not** trust the references in the CLAIMS list. They are the things being tested, not the evidence.

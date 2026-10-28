@@ -53,21 +53,37 @@ code without ever arming it. `lib/bash-write.js` closes that:
 Segmentation is quote-aware, so `sed -i 's|a|b|g' file` is one command and not
 three.
 
-## One nag per arming
+## One ask per human turn
 
-The gate asks once, then lets go: the Stop that follows its own block (`stop_hook_active`) clears the
-session's entry, and `warn` clears it after reminding. Left armed, it re-blocked the first Stop of every
-later turn — edits or not — and the fixes made after a review re-armed it anyway. New edits re-arm it.
+Reviews run in the background and report in a *later* turn, so the entry outlives the Stop that asked
+(it used to be deleted there, which wiped the in-flight mark; the result then arrived as a "new" turn,
+its fixes re-armed the gate, and one blocked Stop became 95 reviews in a session). The rules now:
+
+- a launched review is never asked for twice — its result will arrive;
+- a completed review covers the turn that applies its findings, whatever files that touches;
+- harness notifications (`<task-notification>`, "Another Claude session sent a message",
+  `<agent-message>`) continue the current human turn and change nothing;
+- the next **human** prompt drops a settled review, drops an ask that was ignored, and drops an
+  in-flight review that still has not reported after a second prompt. An interrupted turn (edits, no
+  Stop) still owes its review on the next prompt;
+- a completed review covers at most ten new paths; past that the gate may ask once more;
+- a second Stop after a settled review (a harness where `UserPromptSubmit` never fired) drops it;
+- **hard cap: three blocks per session.** After that the Stop hook only reminds. Whatever ordering a
+  future harness invents — an unmarked reviewer, a notification shape the regex misses — the gate
+  cannot block a session a fourth time. Entries of sessions quiet for a week are pruned.
+
+`warn` follows the same state machine; it only reminds instead of blocking.
 
 ## Known limitation
 
-`SubagentStop` carries no subagent identity, so the completion signal is a
-heuristic: whichever subagent stops while an adversarial review is in flight
-clears it. Launch the review on its own to keep that honest.
+The completion signal is a heuristic: whichever subagent stops while an adversarial review is in
+flight clears it (newer harnesses send `agent_id` on `SubagentStart`/`SubagentStop`; this gate does
+not yet pair them). Launch the review on its own to keep that honest — a misattribution costs at most
+one extra ask, under the session cap.
 
-Edits that land *during* a review re-arm the gate instead of clearing it. Edits made
-*after* a review completes (fixing its findings) do not: a finished review is final for the turn,
-and Stop releases the entry — otherwise every review's fixes would summon another review.
+Edits that land *during* a review re-arm the gate instead of clearing it. Edits made *after* a
+review completes (fixing its findings) never do — otherwise every review's fixes would summon
+another review.
 
 ## Tests
 

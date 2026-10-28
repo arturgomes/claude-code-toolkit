@@ -15,6 +15,7 @@ what is genuinely its own.
 | `git-base-detection.md` | The canonical base-branch + merge-base + changed-files snippets | anything that diffs against the base or names a base |
 | `comms-register.md` | Engineering vs Stakeholder register, and the red-flag escalation shape | every agent in `agents/` |
 | `secret-scrub.md` | The pre-write secret scrub + redaction marker | anything that writes a note, a PR body, or a ledger row |
+| `atomic-commit.md` | One commit per gated task, the `git revert` protocol for a REVERT verdict, the adversarial-pass caps, and the no-AI-attribution rule + predicate | `prp-plan`, `prp-implement`, `prp-orchestrate`, `mediator`, `ship`, `pr-description`, `pre-pr-gate`, the specialist agents, `pr-reviewer` |
 
 ## How to cite
 

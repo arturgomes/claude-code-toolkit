@@ -73,3 +73,4 @@ Describing a UI change to a business reader: say what the user now **sees and ca
   exception.
 - Stay in territory; message owners for anything outside it.
 - Minimum-to-satisfy-the-criterion; surface scope creep instead of building it.
+- **Commit as you go:** one commit per passing task, made after its gate passes and before you report `submitted` — repo convention, no AI attribution, nothing left uncommitted (`../shared/atomic-commit.md`).

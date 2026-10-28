@@ -190,6 +190,10 @@ Check the Type-of-Change and Checklist boxes **from the diff**, not from intent.
 - **Name inherited blast radius** in Review Focus — a pre-existing bug you noticed, behaviour from a
   sibling PR, a second mount site of a component you edited. Otherwise the reviewer attributes it here.
 - Prefer a **draft** PR when an unresolved product question could still change the implementation.
+- **No AI attribution in the title or the body** — no assistant `Co-Authored-By:` line, no "Generated
+  with …" footer, no robot emoji, no mention of the assistant or tool that wrote the change. The
+  predicate is in `../../shared/atomic-commit.md`; run it over the title + body before Step 9 and again
+  before Step 10. A hit is a defect to remove, not a note to add.
 
 ## Step 9 — Persist to the vault (MANDATORY — before the PR is opened)
 
@@ -267,3 +271,4 @@ the vault note.
 - Never open the PR from inside this skill.
 - Never claim a gate passed without its verbatim command and exit code.
 - Never skip the vault write, and never let a scratch file stand in for it.
+- Never name the assistant or AI tool that wrote the change — anywhere in the title or body.

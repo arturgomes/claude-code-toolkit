@@ -208,6 +208,12 @@ Each hit is 🔴 unless the diff carries an inline justification comment (a tick
 `TODO`, a documented reason for a suppression). Also 🔴:
 
 - staged/committed secrets or env files (`.env*`, `*.pem`, `*.key`, `credentials.json`);
+- an AI-attribution trailer or footer in any commit message in `$MB..HEAD` — replay the predicate in
+  `../../shared/atomic-commit.md` over `git log "$MB"..HEAD --format=%B`. 🔴 while the branch is
+  unpushed (that file has the non-interactive reword recipe); ⚠️ NOTE once pushed, since rewording a
+  pushed branch needs a force-push and is the human's call — `ship` runs the same predicate before
+  its push for exactly this reason.
+  The same string in the PR body is 🔴 regardless (`pr-description` checks first; this is the backstop);
 - a lockfile change with no dependency change in `package.json` (drift);
 - generated output committed by hand (`*.generated.*`, `dist/`, `.next/`) — regenerate via the repo's
   generate script instead;

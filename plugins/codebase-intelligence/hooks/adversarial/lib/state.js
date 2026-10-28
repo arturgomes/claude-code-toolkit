@@ -45,7 +45,23 @@ function readState() {
   }
 }
 
-function writeState(state) {
+// Blocks per session before the gate downgrades itself to a reminder. Whatever ordering a
+// future harness invents, the gate can never block a session more than this many times.
+const MAX_ASKS_PER_SESSION = 3;
+// A completed review covers the fixes that follow it — not a whole new feature. Past this many
+// new paths the coverage lapses and the gate may ask once more (still under the session cap).
+const COVERAGE_LIMIT = 10;
+const PRUNE_AFTER_MS = 7 * 24 * 60 * 60 * 1000;
+
+// `key` is the session being written: it gets a timestamp, and entries of other sessions that
+// went quiet a week ago are pruned — entries are no longer deleted on Stop, so the file would
+// otherwise grow by one entry per session forever.
+function writeState(state, key) {
+  const now = Date.now();
+  if (key && state[key]) state[key].updatedAt = now;
+  for (const k of Object.keys(state)) {
+    if (k !== key && state[k] && state[k].updatedAt && now - state[k].updatedAt > PRUNE_AFTER_MS) delete state[k];
+  }
   const file = stateFile();
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, JSON.stringify(state, null, 2));
@@ -55,16 +71,36 @@ function conversationKey(payload) {
   return payload.session_id || 'default';
 }
 
+function freshEntry(asks) {
+  return {
+    editedFiles: [],
+    adversarialLaunched: false,
+    adversarialCompleted: false,
+    needsReReview: false,
+    asked: false, // Stop already asked for a review in this human turn
+    settled: false, // a Stop has run after the review completed (the fix turn ended)
+    coveredAt: 0, // editedFiles.length when the review completed
+    asks, // blocks issued this session — survives dropEntry, see MAX_ASKS_PER_SESSION
+  };
+}
+
 function getEntry(state, key) {
-  if (!state[key]) {
-    state[key] = {
-      editedFiles: [],
-      adversarialLaunched: false,
-      adversarialCompleted: false,
-      needsReReview: false,
-    };
-  }
+  if (!state[key]) state[key] = freshEntry(0);
+  const entry = state[key];
+  if (typeof entry.asks !== 'number') entry.asks = 0; // entries written by 3.25.x
+  if (typeof entry.coveredAt !== 'number') entry.coveredAt = 0;
+  return entry;
+}
+
+// Forget the arming but not the session's ask count.
+function dropEntry(state, key) {
+  const asks = state[key] && typeof state[key].asks === 'number' ? state[key].asks : 0;
+  state[key] = freshEntry(asks);
   return state[key];
+}
+
+function isArmed(entry) {
+  return entry.editedFiles.length > 0;
 }
 
 // `doubt-driven` is this plugin's adversarial reviewer, so its name counts too.
@@ -93,15 +129,16 @@ function armGate(entry, identifiers) {
     if (!entry.editedFiles.includes(identifier)) entry.editedFiles.push(identifier);
   }
 
-  // A finished review stays finished for the turn: fixes to files it already saw must not
-  // summon another review (that was the loop). A path it never saw is new work: re-arm.
+  // A finished review is final until the next human prompt drops it. Fixing its findings
+  // routinely touches files it never saw (a new test file); asking again for those was the loop.
+  // But a review of three files does not cover a fifty-file feature started afterwards.
   if (entry.adversarialCompleted) {
-    const reviewed = new Set(entry.reviewedFiles || []);
-    const fresh = identifiers.filter((id) => !reviewed.has(id));
-    if (fresh.length === 0) return entry;
+    if (entry.editedFiles.length - entry.coveredAt <= COVERAGE_LIMIT) return entry;
     entry.adversarialLaunched = false;
     entry.adversarialCompleted = false;
     entry.needsReReview = false;
+    entry.asked = false;
+    entry.settled = false;
     return entry;
   }
 
@@ -116,6 +153,17 @@ function armGate(entry, identifiers) {
   return entry;
 }
 
+// Prompts the harness injects between a human's turns: a background subagent's result, a
+// teammate's message. They continue the same human turn, so they must not re-open the ask —
+// that is exactly how one blocked Stop became 95 (block → background review → result arrives
+// as a "new" turn → fixes → block …). Best-effort: the state machine also survives a miss.
+const HARNESS_PROMPT = /<task-notification>|Another Claude session sent a message|<agent-message\b|<teammate-message\b/i;
+
+function isHarnessNotification(prompt) {
+  // Not anchored: a harness may prefix a system-reminder block. Only the head is inspected.
+  return typeof prompt === 'string' && HARNESS_PROMPT.test(prompt.slice(0, 400));
+}
+
 function shouldTrackEdit(filePath) {
   if (typeof filePath !== 'string' || filePath.length === 0) return false;
   // Never let the gate's own bookkeeping re-arm the gate, nor a write that is not
@@ -124,13 +172,17 @@ function shouldTrackEdit(filePath) {
 }
 
 module.exports = {
+  MAX_ASKS_PER_SESSION,
   armGate,
   conversationKey,
+  dropEntry,
   gateMode,
   getEntry,
+  isArmed,
   isAdversarialInvocation,
   isAdversarialTask,
   isGateEnabled,
+  isHarnessNotification,
   readState,
   shouldTrackEdit,
   stateFile,

@@ -49,7 +49,11 @@ Ship the current changes through commit, push, and PR creation. Confirm with the
   `../../shared/branch-rule.md` with `$BASE` from `../../shared/git-base-detection.md`.
   On a 🔴: offer to create `feature/<slug>` off the current work and commit there — never commit to the
   base "just this once", and never resolve it by pushing to the base and opening a PR afterwards.
-- Draft a commit message based on the changes, matching the repo's existing commit style
+- Draft a commit message based on the changes, matching the repo's existing commit style — written by
+  hand with `git commit -m`, **with no AI attribution** (no assistant `Co-Authored-By:` trailer, no
+  "Generated with …" footer). Rule + predicate: `../../shared/atomic-commit.md`; run the predicate over
+  `$MERGE_BASE..HEAD` **before Step 3 pushes** — that is the last point a commit can be reworded
+  without a force-push.
 - **ASK the user to confirm or edit**: show the exact files to stage and the proposed commit message
 - Only after confirmation: stage the files and create the commit
 - If the commit fails (e.g., pre-commit hook), fix the issue and try again with a NEW commit
@@ -124,6 +128,9 @@ Rollback note (longest single suggestion across reviewers)
 ```
 
 Surface the synthesis to the user before Step 4 drafts the PR body.
+
+**One pass.** A NO-GO becomes fix commits re-gated by Step 3a; the fan-out is never re-run on its own
+fixes (`../../shared/atomic-commit.md`, the caps). Surviving findings go into the PR body's Review Focus.
 
 ## Step 4: Pull Request
 

@@ -564,6 +564,9 @@ Each task MUST carry:
 - **Expected gate command:** the executable command that verifies this task passes (e.g. `pnpm test path/to.spec.ts`, `grep -q "symbol" file`).
 - **Gotchas:** known traps, danger-zone warnings, ordering constraints.
 - **Steps:** explicit, numbered implementation steps.
+- **Commit:** the subject of the one atomic commit this task lands once its gate passes — repo
+  convention, no AI attribution (`../shared/atomic-commit.md`). The implementer commits per task;
+  this field is what it commits with.
 
 By default, keep explicit, detailed, prescriptive steps. If the executor is a confirmed top-tier long-horizon model (per Model Routing, below), tasks MAY be expressed as goal+constraints instead of prescriptive micro-steps; otherwise keep explicit steps.
 
@@ -586,6 +589,7 @@ task:
   mirror: `src/X/service.ts:10` — {pattern}
   imports: [ ... ]
   expected_gate: `{executable command}`
+  commit: {type}({scope}): {imperative subject}   # the one commit this task lands after expected_gate passes
   gotchas: [ {trap or danger zone} ]
   steps:
     1. ...

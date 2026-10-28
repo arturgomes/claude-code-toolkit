@@ -376,6 +376,9 @@ Each round, for every `working`/`submitted` specialist in the active slice:
    contract tests**, reporting every exit code. This is deliberately *not* the full gate — it is the
    cheap half that stops obviously broken work from reaching the merge queue. An unused or stale
    import found here is a 🔴 for that specialist even where the repo's own lint config only warns.
+   A passing smoke is followed by **one commit per task** (`../../shared/atomic-commit.md`):
+   uncommitted or multi-task work never reaches `submitted`, and the merge keeps those commits (no
+   squash) so a later REVERT has one sha to name.
 7. Auto-invoke `drift-guard`, `ask-kb` (pattern decisions), and `context7-research` (any external API
    the specialist introduces) **inside** this loop — no manual calls required (AC-5).
 8. A **red blast-radius** change in any diff (auth/payments/deploy/db-migration) ⇒ append a
@@ -383,6 +386,8 @@ Each round, for every `working`/`submitted` specialist in the active slice:
 
 Write each round's verdicts into the slice's `rounds[]`. Loop until every active specialist in the
 slice is `verdict-pass` or the slice's criteria are met (or a hard stop / human gate fires).
+**Bounded: 3 rounds per specialist per slice.** Still 🔴 after round 3 ⇒ a `humanGates` entry and
+STOP — never a fourth round of the same criteria (`../../shared/atomic-commit.md`, the caps).
 
 ---
 
@@ -395,13 +400,23 @@ slice is `verdict-pass` or the slice's criteria are met (or a hard stop / human 
    diff vs the constitution + the repo's rule sources + conventions. Neither evaluator may be the
    author of the code it grades — generator/evaluator/planner keep separate contexts, never
    self-evaluate (KB: Harness Patterns P06).
+   **One pass per slice.** Each 🔴 is tagged `REVERT` (the approach is wrong — no fix commit can
+   satisfy it without re-deciding the design) or `FIX`. REVERT ⇒ the **owning lane** runs
+   `git revert --no-edit <sha>` in its own worktree as its next criterion — Phase D runs before the
+   merge, so the commit lives only there and the mediator never writes inside a lane (protocol and
+   the post-merge case: `../../shared/atomic-commit.md`). The mediator records each in
+   `slices[].reverts[]`, the redo resets that lane's round counter once, and the redo gets **one**
+   further pr-reviewer pass over the redone work only — `slices[].reviewPasses` caps at 2. FIX ⇒ the owning lane lands one fix commit, judged by Phase C's smoke and the Phase E2
+   gate, **never** re-reviewed adversarially. Surviving 🟡/🟢 go to the PR body's Review Focus, not
+   to another pass.
 
 ---
 
 ## Phase E — Serial merge → checkpoint (merge gate) — per slice
 
 1. Merge only `verdict-pass` worktrees, **one at a time** (serial merge — never concurrent), in a
-   deterministic order recorded in the slice's `mergeLog[]`.
+   deterministic order recorded in the slice's `mergeLog[]`. A true merge or fast-forward — **never a
+   squash** — so every task commit survives for a REVERT to name.
 2. Resolve any merge conflict against the territory map (conflicts should be rare — territories are
    disjoint); a conflict that crosses territory is a territory-map bug → back to Phase B.
 3. `ux-specialist` runs a taste check on any UI-affecting merge (design / originality / craft /
@@ -476,7 +491,8 @@ run `Skill(codebase-intelligence:pre-pr-gate)` on the integration branch:
 7. Record the receipt block verbatim and hand it to `Skill(codebase-intelligence:pr-description)`,
    which writes **every** PR this run opens — stacked or single, in this repo or a sibling — with the
    mandatory `[TICKET] task description` title and a vault note in `02-Notes/pr-descriptions/` written
-   before the PR exists. The mediator never asks whether to use it and never hand-rolls a body. The
+   before the PR exists. The mediator never asks whether to use it and never hand-rolls a body, and
+   the title and body carry no AI attribution (`../../shared/atomic-commit.md`). The
    receipt is what lets reviewers and the PR bots find their own rule IDs already answered, with
    commands and exit codes.
 
@@ -580,6 +596,10 @@ Runs after E3 converges and after **every** layer holds a passing E2 receipt bou
 - [ ] Post-spawn branch assertion passed for **every** specialist in **every** repo — no HEAD on
       `main`/`master`/the base branch. Asserted again after any serial-fallback re-branch.
 - [ ] Every round emits a rules **and** constitution verdict per specialist; 🔴 blocks that merge.
+- [ ] Rounds ≤ 3 per specialist per slice; pr-reviewer passes ≤ 2 per slice (the second only over
+      REVERT-redone work); fix commits never re-reviewed adversarially.
+- [ ] One commit per task in every lane, merged without squash; every REVERT is a `git revert`
+      recorded in `slices[].reverts[]`, never a reset.
 - [ ] Recipients named for every specialist (message graph).
 - [ ] Merges are serial; `mergeLog[]` ordered per slice.
 - [ ] Phase E2 integration gate ran on the merged HEAD of **every** repo with diffs, verdict ✅, receipt

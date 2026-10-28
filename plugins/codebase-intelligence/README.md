@@ -7,6 +7,16 @@ structural search** (single tier). Cross-session memory lives in an Obsidian vau
 the `ultimate-obsidian` MCP. **No prp-core (or any other plugin) required.**
 
 **Version history**
+- **v3.26.0** — **atomic commits, bounded adversarial review, no AI attribution.** Every task is one
+  commit, made in its own subagent / lane right after its gate passes and verified by `git log` before
+  the task counts as done (`shared/atomic-commit.md`); an adversarial `REVERT` is a `git revert` of that
+  commit, never a reset; the adversarial pass is capped at one per slice / run (plus one over redone
+  work) and fix commits are never re-reviewed; mediator rounds cap at 3 per specialist per slice;
+  `pr-description`, `ship` and `pre-pr-gate` reject AI-attribution trailers and footers in commits and
+  PR bodies. The Stop-hook gate no longer loops on **background** reviews — the in-flight mark survives
+  the turn end, a completed review covers the turn that applies it, harness notifications don't re-open
+  the ask, the gate asks once per human turn, and a hard cap of three blocks per session makes any
+  future ordering loop-proof (it had reached 95 blocks in one session).
 - **v3.25.1** — **the adversarial review gate stops looping**: a completed review is final for the turn (only files it never saw re-arm), a `UserPromptSubmit` reset clears stuck entries, read-only `open()`/`$VAR` scratch writes no longer arm it, and the block message no longer points at the one-shot `doubt-driven`.
 - **v3.25.0** — **the full test suite is CI's job; `ship` watches the PR until it is green.**
   `pre-pr-gate` L5 used to run the repo's whole suite on the integrated branch, which OOMs local

@@ -13,6 +13,6 @@ runHook((payload) => {
   const key = conversationKey(payload);
   const state = readState();
   state[key] = armGate(getEntry(state, key), [filePath]);
-  writeState(state);
+  writeState(state, key);
   return {};
 });

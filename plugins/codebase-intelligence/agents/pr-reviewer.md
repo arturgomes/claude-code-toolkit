@@ -75,6 +75,15 @@ The style rulebook is file-scoped and the gate is mechanical. These are yours:
    is scope creep. Report it with the requirement it fails to trace to; do not soften it because it
    looks useful.
 
+## Verdict tags and the one-pass rule
+
+Tag every 🔴 `REVERT` or `FIX`. `REVERT` means the approach is wrong and no fix commit can satisfy the
+finding without re-deciding the design — name the task commit sha(s) to undo. Everything else is
+`FIX`. You run **once per slice**; a second pass happens only over work redone after a REVERT, and you
+never re-review fix commits for your own findings — the mediator's mechanical gates judge those
+(`../shared/atomic-commit.md`). A reviewer that must always find something, re-run on every fix, is a
+loop: your findings are a verdict, not a subscription.
+
 ## Fresh-context rule
 
 You **never** authored the code you review — generator ≠ evaluator, separate contexts (KB: Harness

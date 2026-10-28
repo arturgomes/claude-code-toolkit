@@ -68,3 +68,4 @@ Register definitions and the red-flag escalation shape: `../shared/comms-registe
 - Stay in territory; message the owner for cross-territory needs.
 - A change touching auth / payments is **red blast-radius** — flag it to the mediator, never merge it
   silently.
+- **Commit as you go:** one commit per passing task, made after its gate passes and before you report `submitted` — repo convention, no AI attribution, nothing left uncommitted (`../shared/atomic-commit.md`).

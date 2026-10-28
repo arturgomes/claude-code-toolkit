@@ -27,7 +27,7 @@ Your inputs are the **`spec.md`** from refinement (prioritized user stories, eac
 Test*; `FR-###`; `SC-###` tagged `buildable`/`outcome`) and the **`plan.md`** produced by the full
 `/prp-plan` pipeline (Intelligence Context, Constitution Check + Complexity Tracking, **Contracts**,
 **AC Traceability**, **Files-to-Change owner-lanes**, and tasks carrying `story:` / `parallel:` /
-`files:` / `expected_gate`). Your job is to **translate** them into slices + a contract + a territory
+`files:` / `expected_gate` / `commit:` — the last derived as `type(scope): <title>` when the plan predates it). Your job is to **translate** them into slices + a contract + a territory
 map — not to re-derive them. Only if no plan.md exists (Phase 0 skipped, no `--plan`) do you decompose
 the raw goal.
 

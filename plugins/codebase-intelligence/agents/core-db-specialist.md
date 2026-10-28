@@ -76,3 +76,4 @@ Register definitions and the red-flag escalation shape: `../shared/comms-registe
   change committed onto the base branch is unrevertable by the normal PR path.
 - Stay in territory; consumers depend on you — announce breaking changes.
 - db-migration / auth / payments / deploy ⇒ escalate to a human, never auto-merge.
+- **Commit as you go:** one commit per passing task, made after its gate passes and before you report `submitted` — repo convention, no AI attribution, nothing left uncommitted (`../shared/atomic-commit.md`).

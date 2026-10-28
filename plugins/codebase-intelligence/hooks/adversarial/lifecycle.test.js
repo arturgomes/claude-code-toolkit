@@ -24,7 +24,9 @@ function runHook(script, payload, env = {}) {
 
 function entry() {
   if (!fs.existsSync(STATE_FILE)) return null;
-  return JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'))[SESSION] ?? null;
+  const e = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'))[SESSION] ?? null;
+  // a dropped arming is an empty entry (it keeps the session's ask count); report it as absent
+  return e && e.editedFiles.length === 0 ? null : e;
 }
 
 function reset() {
@@ -37,6 +39,8 @@ const toolEdit = (filePath, env) => runHook('track-edit.js', { tool_name: 'Edit'
 const launch = (toolInput, env) => runHook('mark-adversarial.js', { tool_name: 'Agent', tool_input: toolInput }, env);
 const subagentStop = (env) => runHook('subagent-adversarial.js', {}, env);
 const stop = (extra = {}, env) => runHook('require-adversarial.js', extra, env);
+const humanPrompt = () => runHook('reset-turn.js', { prompt: 'please continue with the next thing' });
+const notification = (text) => runHook('reset-turn.js', { prompt: text });
 
 const cases = [];
 const test = (name, fn) => cases.push([name, fn]);
@@ -110,10 +114,11 @@ test('stop_hook_active makes the block one-shot', () => {
   assert.deepStrictEqual(stop({ stop_hook_active: true }), {});
 });
 
-test('a released gate stays quiet on later turns with no edits', () => {
+test('an ignored ask is dropped on the next human prompt (one nag per arming)', () => {
   toolEdit('/repo/src/x.ts');
   assert.strictEqual(stop().decision, 'block');
   assert.deepStrictEqual(stop({ stop_hook_active: true }), {});
+  humanPrompt();
   assert.strictEqual(entry(), null);
   assert.deepStrictEqual(stop(), {}, 'turn 2 has no edits and must not block');
 });
@@ -133,34 +138,149 @@ test('fixes after a completed review do not re-arm within the turn (no review lo
   launch({ description: 'Adversarial review' });
   subagentStop();
   toolEdit('/repo/src/x.ts'); // addressing findings
+  toolEdit('/repo/src/new-test.spec.ts'); // a file the review never saw: still the same fix turn
   assert.strictEqual(entry().adversarialCompleted, true);
   assert.deepStrictEqual(stop(), {}, 'no stop_hook_active needed: the review already ran');
-  assert.strictEqual(entry(), null);
+  humanPrompt();
+  assert.strictEqual(entry(), null, 'a settled review is dropped on the next human prompt');
   toolEdit('/repo/src/y.ts'); // next turn edits arm a fresh review
   assert.strictEqual(stop().decision, 'block');
 });
 
-test('a new file edited after a completed review re-arms; a reviewed one does not', () => {
-  toolEdit('/repo/src/x.ts');
-  launch({ description: 'Adversarial review' });
-  subagentStop();
-  toolEdit('/repo/src/x.ts');
-  assert.deepStrictEqual(stop(), {});
-  toolEdit('/repo/src/x.ts');
-  launch({ description: 'Adversarial review' });
-  subagentStop();
-  toolEdit('/repo/src/new.ts');
-  assert.strictEqual(stop().decision, 'block', 'unreviewed file must be asked about');
-});
-
-test('reset-turn clears a stuck completed entry', () => {
-  toolEdit('/repo/src/x.ts');
-  launch({ description: 'Adversarial review' });
-  subagentStop();
-  runHook('reset-turn.js', {});
-  assert.strictEqual(entry(), null);
+test('background review: the result turn is covered, no second block (the 95-block loop)', () => {
   toolEdit('/repo/src/x.ts');
   assert.strictEqual(stop().decision, 'block');
+  launch({ description: 'Adversarial review of x' }); // runs in the background
+  assert.deepStrictEqual(stop({ stop_hook_active: true }), {}, 'turn ends while the review runs');
+  assert.strictEqual(entry().adversarialLaunched, true, 'the in-flight mark must survive the turn end');
+  subagentStop(); // the background reviewer finishes
+  assert.strictEqual(entry().adversarialCompleted, true);
+  notification('Another Claude session sent a message: <agent-message from="a1">findings</agent-message>');
+  toolEdit('/repo/src/x.ts'); // applying the findings
+  toolEdit('/repo/src/z.ts');
+  assert.deepStrictEqual(stop(), {}, 'the fix turn must not be blocked again');
+  humanPrompt();
+  assert.strictEqual(entry(), null);
+});
+
+test('background review whose result arrives as an undetected prompt still does not loop', () => {
+  toolEdit('/repo/src/x.ts');
+  assert.strictEqual(stop().decision, 'block');
+  launch({ description: 'Adversarial review of x' });
+  assert.deepStrictEqual(stop({ stop_hook_active: true }), {});
+  subagentStop();
+  humanPrompt(); // the harness changed its notification text: treated as a human prompt
+  toolEdit('/repo/src/x.ts');
+  assert.deepStrictEqual(stop(), {}, 'completed-but-unsettled review covers this one turn');
+  humanPrompt();
+  assert.strictEqual(entry(), null);
+});
+
+test('a task-notification prompt does not re-open the ask', () => {
+  toolEdit('/repo/src/x.ts');
+  assert.strictEqual(stop().decision, 'block');
+  assert.deepStrictEqual(stop({ stop_hook_active: true }), {});
+  notification('<task-notification><task-id>b1</task-id>done</task-notification>');
+  toolEdit('/repo/src/y.ts');
+  assert.deepStrictEqual(stop(), {}, 'one ask per human turn');
+});
+
+test('a review in flight is never asked for twice', () => {
+  toolEdit('/repo/src/x.ts');
+  launch({ description: 'Adversarial review' });
+  assert.deepStrictEqual(stop(), {}, 'the launched review will report; do not ask again');
+});
+
+test('an abandoned in-flight review is dropped after two human prompts', () => {
+  toolEdit('/repo/src/x.ts');
+  assert.strictEqual(stop().decision, 'block');
+  launch({ description: 'Adversarial review' });
+  humanPrompt();
+  assert.ok(entry(), 'kept once: the result may still arrive');
+  humanPrompt();
+  assert.strictEqual(entry(), null);
+});
+
+test('an interrupted turn still owes its review on the next human prompt', () => {
+  toolEdit('/repo/src/x.ts'); // no Stop ever ran (interrupt)
+  humanPrompt();
+  assert.strictEqual(stop().decision, 'block');
+});
+
+test('session cap: after three blocks the gate only reminds, whatever the ordering', () => {
+  for (let i = 1; i <= 3; i += 1) {
+    humanPrompt();
+    toolEdit(`/repo/src/f${i}.ts`);
+    assert.strictEqual(stop().decision, 'block', `block ${i}`);
+    assert.deepStrictEqual(stop({ stop_hook_active: true }), {});
+  }
+  humanPrompt();
+  toolEdit('/repo/src/f4.ts');
+  const fourth = stop();
+  assert.strictEqual(fourth.decision, undefined, 'no fourth block in a session');
+  assert.match(fourth.systemMessage, /Adversarial review gate/);
+});
+
+test('an unmarked review whose result arrives as a human prompt cannot loop past the cap', () => {
+  // the model launched "Review the diff" (never marked), so every fix turn re-arms from scratch
+  for (let i = 1; i <= 5; i += 1) {
+    humanPrompt();
+    toolEdit(`/repo/src/g${i}.ts`);
+    const r = stop();
+    if (i <= 3) assert.strictEqual(r.decision, 'block');
+    else assert.strictEqual(r.decision, undefined, `turn ${i} must not block`);
+    stop({ stop_hook_active: true });
+  }
+});
+
+test('edits during an in-flight review are asked about once more', () => {
+  toolEdit('/repo/src/x.ts');
+  assert.strictEqual(stop().decision, 'block');
+  launch({ description: 'Adversarial review' });
+  toolEdit('/repo/src/y.ts'); // landed while the reviewer was reading
+  subagentStop();
+  assert.strictEqual(stop().decision, 'block', 'y.ts was never reviewed');
+});
+
+test('a second Stop after a settled review drops it even if reset-turn never fired', () => {
+  toolEdit('/repo/src/x.ts');
+  launch({ description: 'Adversarial review' });
+  subagentStop();
+  assert.deepStrictEqual(stop(), {}); // settles
+  assert.deepStrictEqual(stop(), {}); // a later turn with no UserPromptSubmit hook
+  assert.strictEqual(entry(), null);
+  toolEdit('/repo/src/y.ts');
+  assert.strictEqual(stop().decision, 'block');
+});
+
+test('a non-adversarial SubagentStop before any launch changes nothing', () => {
+  toolEdit('/repo/src/x.ts');
+  subagentStop();
+  assert.strictEqual(entry().adversarialCompleted, false);
+  assert.strictEqual(stop().decision, 'block');
+});
+
+test('a completed review stops covering after many new files', () => {
+  toolEdit('/repo/src/x.ts');
+  launch({ description: 'Adversarial review' });
+  subagentStop();
+  for (let i = 1; i <= 11; i += 1) toolEdit(`/repo/src/feature/${i}.ts`);
+  assert.strictEqual(entry().adversarialCompleted, false, 'coverage lapsed');
+  assert.strictEqual(stop().decision, 'block');
+});
+
+test('an entry written by 3.25.x (no asked/settled/asks) still works', () => {
+  fs.writeFileSync(STATE_FILE, JSON.stringify({ [SESSION]: {
+    editedFiles: ['/repo/src/x.ts'], adversarialLaunched: false, adversarialCompleted: false, needsReReview: false,
+  } }));
+  assert.strictEqual(stop().decision, 'block');
+  assert.deepStrictEqual(stop({ stop_hook_active: true }), {});
+});
+
+test('stale sessions are pruned from the state file', () => {
+  fs.writeFileSync(STATE_FILE, JSON.stringify({ old: { editedFiles: ['/a'], updatedAt: Date.now() - 8 * 86400000 } }));
+  toolEdit('/repo/src/x.ts');
+  assert.strictEqual(JSON.parse(fs.readFileSync(STATE_FILE, 'utf8')).old, undefined);
 });
 
 test('real write shapes arm; $REPO txt and reopen( shapes behave', () => {
