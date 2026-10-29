@@ -33,9 +33,15 @@ unwritten finding is a lost finding.
 JSON document is an unparseable file. A note holding a history (a session, a ledger of attempts, a
 ticket node) is always append, so the earlier rows survive.
 
-**Step log blocks.** Each entry is `## Step NN — {ISO-8601} — {phase} / {actor}` followed by the content
-verbatim, after the scrub in `./secret-scrub.md`. `NN` = the count of existing `## Step` headers + 1. The
-orchestrating context is the single writer; subagents return text and never append.
+**Step log blocks.** `<TICKET>-<SUFFIX>` is exactly the session note's (session-memory's naming step —
+resolve or create the session note first; the step log is that path with `.md` → `.steps.md`). Frontmatter:
+`type: steps`, `related: "[[<TICKET>-<SUFFIX>]]"`. Each entry is `## Step NN — {ISO-8601} — {phase} / {actor}`
+(e.g. `## Step 03 — 2026-10-29T10:12:00Z — refinement / product-owner`) followed by the content verbatim,
+after the scrub in `./secret-scrub.md`. `NN` is zero-padded to two digits, re-counted from the note
+immediately before each append (`^## Step \d+`) — never from a cached count. One writer per note: the
+orchestrating context appends parallel returns in arrival order; in a worktree fan-out only the mediator
+writes it. Subagents return text and never append. The `.state.md` beside it is a different note:
+machine-readable, overwrite.
 
 **Match the existing folder convention by listing the target directory first** — never invent a
 layout. Session notes follow `02-Notes/Sessions/_session-template.md`.
@@ -68,12 +74,15 @@ The session scratchpad, `/tmp`, and repo-local staging dirs (`planning/`, `.plan
 `artur-documents/`, …) are ephemeral working space for a single phase. **Anything written there that a
 future session would want must also be written to the vault before the phase closes.**
 
-**Markdown never goes to scratch.** Any `*.md` a run produces is appended to the step log the moment it
-exists; reading it back is `read_note`, not `cat`. Scratch remains for non-markdown working files only.
-A PreToolUse guard hook refuses `*.md` writes under `/tmp` or the scratchpad; opt out with
+**Working markdown never goes to scratch.** Intermediate `*.md` — panel lens outputs, subagent
+reports, drafts not destined for a repo path or a §1 vault path — is appended to the step log the moment
+it exists; reading it back is `read_note`, not `cat`. Deliverable markdown (repo files, opt-in `specs/`,
+`.claude/constitution.md`, auto-memory notes) is unaffected. Scratch remains for non-markdown working
+files only. A PreToolUse guard hook (`hooks/scratch-guard/`) refuses `*.md` writes under `/tmp` or the
+scratchpad — fail-open, path-based, so a checkout that itself lives under `/tmp` needs
 `CI_SCRATCH_MD_GUARD=off`.
 
-Exactly two things legitimately live outside the vault:
+Beyond those, exactly two things legitimately live outside the vault:
 
 1. **`.claude/constitution.md`** — a repo owns this by contract; it has no vault twin.
    `specs/<slug>/spec.md`, `plan.md`, `tasks.md`, `contracts/`, `checklists/` are **NOT** written by

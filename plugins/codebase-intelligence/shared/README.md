@@ -10,7 +10,7 @@ what is genuinely its own.
 | File | Owns | Cited by |
 |---|---|---|
 | `model-tier.md` | `CI_MODEL_TIER` semantics, single-tier fallback, evidence-first rule, blast-radius routing | every command + every skill with a "Model capability" section |
-| `vault-persistence.md` | The persistence contract: what must be a vault note, where each artifact type lives, the write protocol, write-scope, and the no-local-mirror rule | every command + every skill that produces a durable artifact |
+| `vault-persistence.md` | The persistence contract: what must be a vault note, where each artifact type lives (incl. the per-session step log for working markdown), the write protocol, write-scope, and the no-local-mirror rule | every command + every skill that produces a durable artifact |
 | `branch-rule.md` | Never write on `main`/`master`/the base branch, and the mechanical assertion | `worktree-lifecycle`, `ship`, `pre-pr-gate`, `pr-description`, `mediator`, the specialist agents |
 | `git-base-detection.md` | The canonical base-branch + merge-base + changed-files snippets | anything that diffs against the base or names a base |
 | `comms-register.md` | Engineering vs Stakeholder register, and the red-flag escalation shape | every agent in `agents/` |
