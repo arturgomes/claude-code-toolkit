@@ -519,7 +519,8 @@ user at their `settings.json` allow-list if a specialist would otherwise block.
 - Never deletes `unrequested` code found at convergence — it reports it with evidence.
 - Never treats a repo-local scratch directory (`planning/`, `.planning/`, `artur-documents/`, the
   session scratchpad, `/tmp`) as a substitute for the vault, and never ends a run whose findings exist
-  only there — see Step 4.5.
+  only there — see Step 4.5 — and never writes intermediate markdown there: panel lenses, subagent
+  reports and any other `.md` go to the step log.
 - Never writes `<repo>/.claude/orchestration-state.json`, `<repo>/.claude/pre-pr-gate.json`, or any
   other local mirror of run state — the vault state note is the only copy of both the state and the
   gate receipts, and an unreachable vault stops the phase instead of degrading to a local file.

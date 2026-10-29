@@ -112,6 +112,10 @@ stated explicitly — an AC or decision carried over is cited, never silently as
 
 Each panelist returns their lens output (see each agent's brief) — stories with priorities, FRs, SCs,
 business + edge/error scenarios, technical DoD, per-role readiness call + candidate questions.
+Panelists return text only and never write files. The facilitator appends each returned lens as one step
+block to `02-Notes/Sessions/<TICKET>-<SUFFIX>.steps.md` (block format and the no-scratch rule:
+`../../shared/vault-persistence.md` §1 / §4) the moment it arrives, then synthesizes from those blocks —
+never from scratchpad or `/tmp` files, never via `cat`.
 
 ### 3. Ambiguity + coverage scan (taxonomy — do this before writing any question)
 
