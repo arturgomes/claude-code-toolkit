@@ -9,6 +9,7 @@ const { stripHeredocBodies, splitSegments } = require('../adversarial/lib/bash-w
 
 const SCRATCH = [/^\/tmp\//, /^\/var\/tmp\//, /\/scratchpad\//, /^"?\$\{?(?:S|SCRATCH|SCRATCHPAD|TMP|TMPDIR|TMP_DIR)\}?\//];
 const REDIRECT_RE = /(?:^|\s)\d?>{1,2}\s*(?!&)("[^"]*"|'[^']*'|[^\s;|&<>()]+)/g;
+const REDIRECT_ANY_RE = /\s*\d?[<>]{1,2}\s*("[^"]*"|'[^']*'|[^\s;|&<>()]+)/g;
 const OPERAND_WRITERS = { tee: 'all', touch: 'all', cp: 'last', mv: 'last' };
 
 const REASON =
@@ -23,14 +24,19 @@ function bashTargets(command) {
   const targets = [];
   let cwd = '';
   for (const segment of splitSegments(stripHeredocBodies(command))) {
-    const tokens = (segment.match(/"[^"]*"|'[^']*'|\S+/g) ?? []).map(unquote);
+    // operands exclude redirections, so `tee x < /tmp/a.md` reads /tmp/a.md rather than writing it
+    const tokens = (segment.replace(REDIRECT_ANY_RE, ' ').match(/"[^"]*"|'[^']*'|\S+/g) ?? []).map(unquote);
     // shortcut: only `cd <path>` is tracked for relative targets; `pushd`, subshells and `cd -` are not.
     if (tokens[0] === 'cd' && tokens[1]) cwd = path.resolve(cwd || '/', tokens[1]);
     const ops = tokens.slice(1).filter((t) => !t.startsWith('-'));
     const strategy = OPERAND_WRITERS[tokens[0]];
     const found = [...segment.matchAll(REDIRECT_RE)].map((m) => unquote(m[1]));
     if (strategy === 'all') found.push(...ops);
-    else if (strategy && ops.length > 1) found.push(ops[ops.length - 1]);
+    else if (strategy && ops.length > 1) {
+      const dest = ops[ops.length - 1];
+      // `mv a.md /tmp/` lands /tmp/a.md — the directory destination carries the sources' names
+      found.push(dest, ...ops.slice(0, -1).map((src) => path.posix.join(dest, path.posix.basename(src))));
+    }
     for (const t of found) targets.push(cwd && !path.isAbsolute(t) ? path.resolve(cwd, t) : t);
   }
   return targets;

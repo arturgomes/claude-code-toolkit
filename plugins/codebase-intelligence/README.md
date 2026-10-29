@@ -20,7 +20,7 @@ the `ultimate-obsidian` MCP. **No prp-core (or any other plugin) required.**
   `/tmp/`, `/var/tmp/` and `*/scratchpad/` — file tools by `file_path`, Bash by redirects, `tee`,
   `touch`, `cp`/`mv` destinations (plain `cd` tracked, heredoc bodies stripped) — and the deny reason
   names the step-log path. On by default; `CI_SCRATCH_MD_GUARD=off|0|false` bypasses it; fail-open
-  (any error allows the call). `scripts/validate.sh` C9 runs its 21-case test.
+  (any error allows the call). `scripts/validate.sh` C9 runs its 24-case test.
 - **v3.26.0** — **atomic commits, bounded adversarial review, no AI attribution.** Every task is one
   commit, made in its own subagent / lane right after its gate passes and verified by `git log` before
   the task counts as done (`shared/atomic-commit.md`); an adversarial `REVERT` is a `git revert` of that

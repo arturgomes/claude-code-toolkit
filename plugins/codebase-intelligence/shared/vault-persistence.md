@@ -80,7 +80,7 @@ it exists; reading it back is `read_note`, not `cat`. Deliverable markdown (repo
 `.claude/constitution.md`, auto-memory notes) is unaffected. Scratch remains for non-markdown working
 files only. A PreToolUse guard hook (`hooks/scratch-guard/`) refuses `*.md` writes under `/tmp` or the
 scratchpad — fail-open, path-based, so a checkout that itself lives under `/tmp` needs
-`CI_SCRATCH_MD_GUARD=off`.
+`CI_SCRATCH_MD_GUARD=off` (also `0` / `false`).
 
 Beyond those, exactly two things legitimately live outside the vault:
 

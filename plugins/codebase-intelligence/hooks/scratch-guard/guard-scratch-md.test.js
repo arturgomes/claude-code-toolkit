@@ -27,6 +27,7 @@ const DENY = [
   ['bash cp destination', () => bash('cp /home/a/a.md /tmp/b.md')],
   ['bash touch', () => bash('touch /var/tmp/t.md')],
   ['bash cd then relative redirect', () => bash('cd /tmp/x/scratchpad && echo hi > panel-le.md')],
+  ['bash mv into scratch dir', () => bash('mv /home/a/a.md /tmp/')],
 ];
 
 const ALLOW = [
@@ -42,6 +43,8 @@ const ALLOW = [
   ['garbage stdin', () => run('not json')],
   ['empty stdin', () => run('')],
   ['missing fields', () => call('Write', {})],
+  ['tee reading scratch md', () => bash('tee /home/u/a.md < /tmp/a.md')],
+  ['cp out of scratch', () => bash('cp /tmp/a.md /home/u/')],
 ];
 
 let failed = 0;
@@ -60,6 +63,7 @@ for (const [name, fn] of DENY) {
     assert.strictEqual(res.hookSpecificOutput.hookEventName, 'PreToolUse');
     assert.strictEqual(res.hookSpecificOutput.permissionDecision, 'deny');
     assert.ok(res.hookSpecificOutput.permissionDecisionReason.includes('steps.md'));
+    assert.ok(res.hookSpecificOutput.permissionDecisionReason.includes('mode: append'));
   });
 }
 for (const [name, fn] of ALLOW) check(`allow: ${name}`, fn, (res) => assert.deepStrictEqual(res, {}));
