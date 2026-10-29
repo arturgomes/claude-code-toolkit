@@ -257,10 +257,10 @@ fi
 # and its Bash-write detection are executable checks, not prose. node is optional
 # here for the same reason the claude CLI is: absent ⇒ skipped, never a fail.
 echo
-echo "C9 adversarial hook tests"
+echo "C9 node hook tests"
 if command -v node >/dev/null 2>&1; then
   ran=0
-  for t in "$ROOT"/hooks/adversarial/lib/bash-write.test.js "$ROOT"/hooks/adversarial/lifecycle.test.js; do
+  for t in "$ROOT"/hooks/adversarial/lib/bash-write.test.js "$ROOT"/hooks/adversarial/lifecycle.test.js "$ROOT"/hooks/scratch-guard/guard-scratch-md.test.js; do
     [ -f "$t" ] || continue
     ran=$((ran+1))
     if out="$(node "$t" 2>&1)"; then
