@@ -12,6 +12,15 @@
     ],
     "PreToolUse": [
       {
+        "matcher": "Write|Edit|MultiEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/run-node-hook.sh\" \"${CLAUDE_PLUGIN_ROOT}/hooks/scratch-guard/guard-scratch-md.js\""
+          }
+        ]
+      },
+      {
         "matcher": "Agent|Task|Skill",
         "hooks": [
           {
