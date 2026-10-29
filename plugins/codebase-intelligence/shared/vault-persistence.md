@@ -15,6 +15,7 @@ unwritten finding is a lost finding.
 | Artifact | Vault path | Mode |
 |---|---|---|
 | Session memory | `02-Notes/Sessions/<TICKET>-<SUFFIX>.md` | append |
+| **Step log** — panel lens outputs, subagent reports, any intermediate markdown | `02-Notes/Sessions/<TICKET>-<SUFFIX>.steps.md` | append |
 | **Orchestration state** (machine-readable run state) | `02-Notes/Sessions/<TICKET>-<SUFFIX>.state.md` | **overwrite** |
 | **`pre-pr-gate` receipt** | `receipts[]` inside that same `.state.md` | **overwrite** |
 | Refinement contract | `02-Notes/Plans/<slug>.refinement.md` | overwrite |
@@ -31,6 +32,10 @@ unwritten finding is a lost finding.
 (`.state.md`, a receipt, a plan) is always a whole-note overwrite of one full instance — an appended
 JSON document is an unparseable file. A note holding a history (a session, a ledger of attempts, a
 ticket node) is always append, so the earlier rows survive.
+
+**Step log blocks.** Each entry is `## Step NN — {ISO-8601} — {phase} / {actor}` followed by the content
+verbatim, after the scrub in `./secret-scrub.md`. `NN` = the count of existing `## Step` headers + 1. The
+orchestrating context is the single writer; subagents return text and never append.
 
 **Match the existing folder convention by listing the target directory first** — never invent a
 layout. Session notes follow `02-Notes/Sessions/_session-template.md`.
@@ -62,6 +67,11 @@ end". Report the write, then report the finding.
 The session scratchpad, `/tmp`, and repo-local staging dirs (`planning/`, `.planning/`,
 `artur-documents/`, …) are ephemeral working space for a single phase. **Anything written there that a
 future session would want must also be written to the vault before the phase closes.**
+
+**Markdown never goes to scratch.** Any `*.md` a run produces is appended to the step log the moment it
+exists; reading it back is `read_note`, not `cat`. Scratch remains for non-markdown working files only.
+A PreToolUse guard hook refuses `*.md` writes under `/tmp` or the scratchpad; opt out with
+`CI_SCRATCH_MD_GUARD=off`.
 
 Exactly two things legitimately live outside the vault:
 
