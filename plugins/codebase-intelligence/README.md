@@ -7,6 +7,20 @@ structural search** (single tier). Cross-session memory lives in an Obsidian vau
 the `ultimate-obsidian` MCP. **No prp-core (or any other plugin) required.**
 
 **Version history**
+- **v3.27.0** — **intermediate markdown goes to a step log in the vault, not to scratch.** Runs were
+  writing `panel-po-2409.md` and friends into `/tmp/claude-…/scratchpad/` and `cat`-looping them back,
+  which left no record you could follow. `shared/vault-persistence.md` gains a **Step log**,
+  `02-Notes/Sessions/<TICKET>-<SUFFIX>.steps.md` (frontmatter `type: steps`, append-only), one block
+  per step headed `## Step NN — {ISO-8601} — {phase} / {actor}` with NN zero-padded and re-counted
+  before each append; the orchestrating context is the single writer (the mediator in fan-outs), and
+  §4 states that working markdown (panel lenses, subagent reports, drafts) never goes to scratch —
+  deliverable markdown is unaffected. `refinement` panelists now return text only; the facilitator
+  appends each lens to the step log and synthesizes from those blocks. A new PreToolUse hook,
+  `hooks/scratch-guard/guard-scratch-md.js` (`Write|Edit|MultiEdit|Bash`), denies `*.md` writes under
+  `/tmp/`, `/var/tmp/` and `*/scratchpad/` — file tools by `file_path`, Bash by redirects, `tee`,
+  `touch`, `cp`/`mv` destinations (plain `cd` tracked, heredoc bodies stripped) — and the deny reason
+  names the step-log path. On by default; `CI_SCRATCH_MD_GUARD=off|0|false` bypasses it; fail-open
+  (any error allows the call). `scripts/validate.sh` C9 runs its 21-case test.
 - **v3.26.0** — **atomic commits, bounded adversarial review, no AI attribution.** Every task is one
   commit, made in its own subagent / lane right after its gate passes and verified by `git log` before
   the task counts as done (`shared/atomic-commit.md`); an adversarial `REVERT` is a `git revert` of that

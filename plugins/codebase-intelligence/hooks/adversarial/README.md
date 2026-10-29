@@ -14,6 +14,8 @@ reviewed it. Opt-in — see [Enabling](#enabling).
 State lives in `${CLAUDE_PLUGIN_DATA}/adversarial-state.json` (falling back to
 `~/.cache/codebase-intelligence/`), keyed by `session_id`.
 
+Sibling, not part of the gate: `hooks/scratch-guard/guard-scratch-md.js` (`PreToolUse` `Write|Edit|MultiEdit|Bash`) denies `*.md` writes to scratch dirs; independent of `CI_ADVERSARIAL_GATE`, opt-out `CI_SCRATCH_MD_GUARD=off`.
+
 ## Enabling
 
 Off by default: this gate blocks the end of a turn, and installing a plugin must
