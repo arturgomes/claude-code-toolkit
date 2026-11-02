@@ -46,19 +46,21 @@ again. Optionally `read_note` a top hit's `source_relpath` to pull fuller contex
 Session notes carry `### General Rules (distilled)` — ticket-agnostic lessons from earlier work. They are
 ordinary vault notes, so Step 2's whole-vault search buries them under book chunks.
 
-1. Call `mcp__ultimate-obsidian__search_kb` again with the SAME expanded terms plus
-   `path_prefix: "02-Notes/Sessions"` and `limit: 25`.
+1. Call `mcp__ultimate-obsidian__search_kb` again with the final expanded terms from Step 1 (including any
+   re-expansion) plus `path_prefix: "02-Notes/Sessions"` and `limit: 25`.
 2. `path_prefix` exists only in a `search_kb` version that supports it; an older server silently ignores
    unknown params. So ALWAYS filter client-side: keep only hits whose `source_relpath` starts with
    `02-Notes/Sessions/` AND whose `heading_path` (a ` > ` breadcrumb) contains `General Rules` (case-insensitive).
    The suffix varies across notes — `(distilled)`, `(added)`, `(new)`, `(reusable)`, `(additions)`, `(append)`, or none —
    so never match on the suffix.
-3. If no hit survives: say once "no distilled rule matched (or search_kb lacks path_prefix)" and continue
-   with Step 3. Never invent a rule.
-4. Present survivors (max 3) under `From your distilled rules`, BEFORE the book-based `From Your Knowledge Base`
-   block, cited as `[[session-note-stem]]` (`source_relpath` stem, no `.md`).
+3. If the filtered result is empty (a server without `path_prefix` returns whole-vault hits), retry once with
+   `general rules distilled` appended to the terms (measured: whole-vault kept 0 without it, 15 with it) and
+   filter again.
+4. If none survive: omit the block silently (no announcement) and continue with Step 3. Never invent a rule.
+5. Present survivors (max 3) under `From your distilled rules`, right after the direct answer, ahead of
+   `From Your Knowledge Base`, cited as `[[session-note-stem]]` (`source_relpath` stem, no `.md`).
 
-Query order is immaterial; PRESENTATION order is what makes them first.
+Query order is immaterial; PRESENTATION order is what puts them ahead of the book-based block.
 
 ### Step 3 — Parse hits and extract citations
 
@@ -72,7 +74,7 @@ Use the top 3-4 hits.
 
 ### Step 4 — Formulate the Answer
 
-- Present the Step 2b distilled-rules block FIRST, above `From Your Knowledge Base` (omit it when nothing survived)
+- Present the Step 2b distilled-rules block right after the direct answer, ahead of `From Your Knowledge Base` (omit it silently when nothing survived)
 - Cite every key claim: `[Source: {book-slug} — {heading_path}]`
 - Cross-reference multiple hits when they converge on the same principle
 - Note if hits are vault notes vs KB books (`source_relpath` prefix: `02-Notes/` vs `05-Knowledge-Base/`)
@@ -86,7 +88,7 @@ low-confidence results for this topic. I can answer from general knowledge inste
 
 If the MCP tool errors with "KB index not built", trigger a build once via
 `mcp__ultimate-obsidian__reindex_kb` `{}` (incremental; `{ "force": true }` for a full rebuild), then
-retry Step 2. If the MCP itself is unreachable:
+retry Step 2. If the MCP itself is unreachable (skip Step 2b on this path):
 1. Say: "KB index unavailable — falling back to flat-file search."
 2. Find `kb-registry.yaml` at `$KB_ROOT/kb-registry.yaml` → `~/kb/kb-registry.yaml` → `./kb/kb-registry.yaml`
 3. Score KBs by keyword match, read relevant markdown files, answer with flat-file citations.
@@ -96,13 +98,13 @@ retry Step 2. If the MCP itself is unreachable:
 ## Output Format
 
 ```
-## From your distilled rules  (optional, first — only if Step 2b kept a hit; max 3)
-
-- [Rule, one line] — [[session-note-stem]]
-
 ## Answer
 
 [Direct answer to the question, 2-5 sentences]
+
+## From your distilled rules  (optional — only if Step 2b kept a hit; max 3)
+
+- [Rule, one line] — [[session-note-stem]]
 
 ## From Your Knowledge Base
 
