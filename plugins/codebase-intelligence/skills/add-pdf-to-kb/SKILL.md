@@ -50,11 +50,13 @@ Verify the file exists and is a supported format (`.pdf` or `.epub`).
    ```
    Then `mcp__ultimate-obsidian__check_exists` and `read_note` on `01-Reference/Books/{book-slug}.md`,
    and compare the note's `source_sha256` to the new hash:
-   - **Note exists, same hash** → report "already ingested" and STOP. Do not run the pipeline.
+   - **Note exists, same hash** → report "already ingested" and STOP. Do not run the pipeline, unless the
+     user explicitly says to force a re-ingest (e.g. an earlier run was partial).
    - **Note exists, different hash** → do NOT overwrite. Show both hashes, ask whether to replace.
      Continue only on an explicit yes.
-   - **Note exists, no `source_sha256`** (made before this rule) → proceed as today (overwrite) and
-     write the hash. Do not call it stale; do not backfill other notes.
+   - **Note exists, no `source_sha256`** (made before this rule) → do NOT overwrite silently: the note may
+     be a different edition. Show its `imported` date and ask before overwriting. Continue only on an
+     explicit yes; the new note then carries the hash. Do not call it stale; do not backfill other notes.
    - **No note** → normal path.
 
 3. **Choose bookrag domain** — ask user or infer from content:
@@ -154,8 +156,9 @@ on the next obsidian-vault DB rebuild.
 
 Call `mcp__ultimate-obsidian__create_or_update_note` with:
 - **filepath**: `01-Reference/Books/{book-slug}.md`
-- **mode**: `overwrite` — reached only via the Step 2 hash check: new book, hash-less older note,
-  or user-approved replace. Reuse the hash computed there.
+- **mode**: `overwrite` — reached only via the Step 2 hash check: new book, user-approved replace of a
+  hash-less note, user-approved replace of a changed file, or an explicit force re-ingest. Reuse the hash
+  computed there.
 - **content** (template below — fill in all `{placeholders}`):
 
 ```markdown
