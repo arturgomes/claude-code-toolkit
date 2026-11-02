@@ -206,19 +206,25 @@ case "$WRITE_PATH" in
 esac
 ```
 
-This `case` list is the agent's own pre-write check. It mirrors `DEFAULT_SCOPE` in the MCP's
-`src/writes.ts`, which is authoritative: if the two disagree, the code wins. The MCP applies the same
-rules at its own boundary, but by default (`warn`) it only warns: an out-of-scope write **still
-succeeds**, with the message in the result's `warnings`. `strict` blocks it before any byte is written.
+This `case` list is the agent's own pre-write check. It mirrors `DEFAULT_SCOPE` in
+`ultimate-obsidian-mcp/src/writes.ts` (the MCP's repo, not this one), which is authoritative: if the two
+disagree, the code wins. With a custom `OBSIDIAN_WRITE_SCOPE` this `case` list is stale; the env var is
+what the MCP uses. The MCP applies the same rules at its own boundary, but by default (`warn`) it only
+warns: an out-of-scope write **still succeeds**, with the message in the result's `warnings`. `strict`
+blocks it before any byte is written.
 
 | Variable | Default | Effect |
 |---|---|---|
-| `OBSIDIAN_WRITE_GUARD` | `warn` | `warn`: an out-of-scope or non-month-bucketed write succeeds with a warning. `strict`: it throws before any byte is written. `off`: skips the scope and month-bucket checks. |
+| `OBSIDIAN_WRITE_GUARD` | `warn` | `warn`: an out-of-scope or non-month-bucketed write succeeds with a warning. `strict`: it throws before any byte is written. `off`: skips the scope and month-bucket checks. Any other value (`on`, `true`, `STRICT`) silently means `warn`. |
 | `OBSIDIAN_WRITE_SCOPE` | the six prefixes above | Comma-separated vault-relative prefixes. **Replaces** the default list; it does not extend it. |
 
-A path containing a `..` segment always throws, even with `OBSIDIAN_WRITE_GUARD=off`. A write directly
-under `02-Notes/Plans/` or `02-Notes/Reports/` that is not inside a `YYYY-MM/` folder produces a warning
-(a throw under `strict`). The MCP also scrubs secret values on write (`scrubSecrets` in `writes.ts`;
+The `..`, scope and month-bucket checks cover write **destinations** only: create, patch, replace,
+frontmatter, and a move's destination. `delete_note` and a move's **source** path are not checked at
+all, not even for a `../x.md` path, so the agent must vet those paths itself. A path containing a `..`
+segment in a checked destination always throws, even with `OBSIDIAN_WRITE_GUARD=off`. The month-bucket
+check applies only to a file directly under `02-Notes/Plans/` or `02-Notes/Reports/` that is not inside
+a `YYYY-MM/` folder: it warns (a throw under `strict`), while a nested `Plans/misc/x.md` does not. The MCP
+also scrubs secret values on write (`scrubSecrets` in the same `writes.ts`;
 `OBSIDIAN_SECRET_SCRUB=off` disables it) — a backstop, not a replacement for scrubbing before you write.
 
 Widening to a new path requires an **explicit note in the session** (`### Lessons`, or a
