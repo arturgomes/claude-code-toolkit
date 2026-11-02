@@ -196,7 +196,7 @@ the gate. Create a missing service node from `_templates/system.md` with a canon
 
 ### Write-scope
 
-Writes are confined to these prefixes:
+The intended write prefixes:
 
 ```bash
 case "$WRITE_PATH" in
@@ -211,7 +211,9 @@ This `case` list is the agent's own pre-write check. It mirrors `DEFAULT_SCOPE` 
 disagree, the code wins. With a custom `OBSIDIAN_WRITE_SCOPE` this `case` list is stale; the env var is
 what the MCP uses. The MCP applies the same rules at its own boundary, but by default (`warn`) it only
 warns: an out-of-scope write **still succeeds**, with the message in the result's `warnings`. `strict`
-blocks it before any byte is written.
+blocks it before any byte is written. A result carrying `warnings: ["outside write-scope: …"]` means the
+widening note (below) is missing: stop and write that note or move the write to an in-scope path; do
+not ignore it.
 
 | Variable | Default | Effect |
 |---|---|---|
@@ -225,7 +227,7 @@ segment in a checked destination always throws, even with `OBSIDIAN_WRITE_GUARD=
 check applies only to a file directly under `02-Notes/Plans/` or `02-Notes/Reports/` that is not inside
 a `YYYY-MM/` folder: it warns (a throw under `strict`), while a nested `Plans/misc/x.md` does not. The MCP
 also scrubs secret values on write (`scrubSecrets` in the same `writes.ts`;
-`OBSIDIAN_SECRET_SCRUB=off` disables it) — a backstop, not a replacement for scrubbing before you write.
+`OBSIDIAN_SECRET_SCRUB=off` disables it).
 
 Widening to a new path requires an **explicit note in the session** (`### Lessons`, or a
 `Widened write-scope:` line) naming the path and the reason. Silent widening is forbidden — including
