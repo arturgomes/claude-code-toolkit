@@ -107,7 +107,25 @@ cd $REPO && uv run python $SCRIPTS/choose_domain.py \
     --settings "$SETTINGS"
   ```
 
-Then move the staged markdown into the chosen domain:
+**Change detection** (before the `mv`). Per page, hash the fresh staged `{slug}.md` and find its card in any domain:
+```bash
+H=$(shasum -a 256 "$DOMAINS/_staging/$SLUG/{slug}.md" | cut -d' ' -f1)   # macOS; Linux: sha256sum
+CARD=$(find "$DOMAINS" -maxdepth 4 -path "*/kb/$SLUG/{slug}.md" | head -1)
+CARD_DOMAIN=${CARD#$DOMAINS/}; CARD_DOMAIN=${CARD_DOMAIN%%/*}            # empty when no card
+OLD=$(grep -m1 '^Source-SHA256:' "$CARD" 2>/dev/null | awk '{print $2}')
+```
+Keep the `{slug}` -> `H` pairs; hand them to the Step 4 subagents.
+- **No card**: normal path (the `mv` below).
+- **`OLD` == `H`** (`unchanged`): skip the page: no distill. Say so. Staging is per collection: delete `$DOMAINS/_staging/$SLUG` only when every page is unchanged; otherwise it rides along (raw copy is byte-identical).
+- **`OLD` non-empty and != `H`** (`source changed`): re-distill, say so. Remove the old raw dir first so the `mv` cannot nest, then move into the card's domain:
+  ```bash
+  rm -rf "$DOMAINS/$CARD_DOMAIN/markdown/$SLUG"    # only in the two replace branches
+  mv "$DOMAINS/_staging/$SLUG" "$DOMAINS/$CARD_DOMAIN/markdown/$SLUG"
+  ```
+  If `CARD_DOMAIN` differs from the domain chosen for this run, use `CARD_DOMAIN` for this page and report it.
+- **Card, `OLD` empty** (no `Source-SHA256`, made before this rule): normal re-ingest, not stale. Same replace sequence, re-distill, write the hash. Do not backfill other cards.
+
+Normal path: move the staged markdown into the chosen domain:
 ```bash
 mkdir -p "$DOMAINS/<DOMAIN>/markdown" && mv "$DOMAINS/_staging/$SLUG" "$DOMAINS/<DOMAIN>/markdown/$SLUG"
 ```
@@ -130,6 +148,7 @@ Each subagent, for each slug:
 # {Page Title}
 
 Source: {url from the raw file}
+Source-SHA256: {sha256 of the raw markdown file, computed in Step 3}
 Type: web-doc
 
 ## Summary
@@ -171,7 +190,7 @@ config, numbers — from the page. If the page has no reusable framework, write 
 ````
 
 Subagents keep final messages brief (they are not shown to the user). After all finish, verify:
-every scraped slug has a matching kb card, each card has all 6 `##` sections. Re-run any missing.
+every scraped slug has a matching kb card (pages skipped as `unchanged` count as complete, not missing), each card has all 6 `##` sections and a `Source-SHA256` equal to the value computed in Step 3. Re-run any missing.
 
 ### Step 5 — Refresh the FTS5 index (no key, no vectors)
 
