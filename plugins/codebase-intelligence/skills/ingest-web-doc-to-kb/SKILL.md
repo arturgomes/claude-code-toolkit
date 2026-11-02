@@ -111,7 +111,7 @@ cd $REPO && uv run python $SCRIPTS/choose_domain.py \
 ```bash
 DOMAINS=~/Documents/Obsidian-Vault/05-Knowledge-Base/domains; SLUG=<slug>
 unchanged=0; changed=0; new=0; DOMS=""
-for f in "$DOMAINS/_staging/$SLUG"/*.md; do
+while IFS= read -r f; do
   slug=$(basename "$f" .md)
   H=$(shasum -a 256 "$f" | cut -d' ' -f1)                                    # macOS; Linux: sha256sum
   CARDS=$(find "$DOMAINS" -maxdepth 4 -path "$DOMAINS/*/kb/$SLUG/$slug.md")   # zsh-safe: no glob
@@ -120,10 +120,11 @@ for f in "$DOMAINS/_staging/$SLUG"/*.md; do
   OLD=$(grep -m1 '^Source-SHA256:' "$(printf '%s\n' "$CARDS" | head -1)" | awk '{print $2}')
   if [ "$OLD" = "$H" ]; then unchanged=$((unchanged+1)); echo "unchanged $slug $H"
   else changed=$((changed+1)); echo "changed $slug $H"; fi
-done
+done < <(find "$DOMAINS/_staging/$SLUG" -maxdepth 1 -name '*.md' | sort)   # no glob: an empty dir must not abort zsh
 echo "unchanged=$unchanged changed=$changed new=$new"
 printf '%s' "$DOMS" | sort -u      # domains that already hold cards of this collection
 ```
+If `unchanged`, `changed` and `new` are all 0, the staging dir held no pages: report "no pages in staging" and stop. This is NOT the "every page `unchanged`" case below, which would otherwise report a vacuous success.
 Keep the printed `slug H` lines of the `new` and `changed` pages; hand them to the Step 4 subagents.
 - **`unchanged`** (`OLD` == `H`): no distill. Say so.
 - **`changed`** (`OLD` non-empty and != `H`): re-distill, say so.
