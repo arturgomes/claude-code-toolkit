@@ -83,8 +83,8 @@ cd $REPO && uv run --with trafilatura python $SCRIPTS/scrape.py \
 
 But `<DOMAIN>` isn't known yet — so scrape to a temp dir first, OR run Step 3 before Step 2 using a
 sample. **Order that works:** scrape into a neutral staging dir
-`$DOMAINS/_staging/$SLUG/`, then in Step 3 decide the domain, then `mv` the staging dir into
-`$DOMAINS/<DOMAIN>/markdown/$SLUG/`. trafilatura is pulled ephemerally by uv (`--with`); no install
+`$DOMAINS/_staging/$SLUG/`, then in Step 3 decide the domain, then move the staging dir into
+`$DOMAINS/<DOMAIN>/markdown/$SLUG/` (merged when that dir already exists). trafilatura is pulled ephemerally by uv (`--with`); no install
 needed. Confirm the file count matches the URL count (allow a few skips for thin pages).
 
 ### Step 3 — Choose the domain (auto)
@@ -107,28 +107,46 @@ cd $REPO && uv run python $SCRIPTS/choose_domain.py \
     --settings "$SETTINGS"
   ```
 
-**Change detection** (before the `mv`). Per page, hash the fresh staged `{slug}.md` and find its card in any domain:
+**Change detection** (before the move). Pages are classified one by one; the move is per collection and happens ONCE, after every page is classified. Define `DOMAINS`, `SLUG` (and later `DOMAIN`) inside every Bash call that uses them: shell variables are not exported across Bash calls.
 ```bash
-H=$(shasum -a 256 "$DOMAINS/_staging/$SLUG/{slug}.md" | cut -d' ' -f1)   # macOS; Linux: sha256sum
-CARD=$(find "$DOMAINS" -maxdepth 4 -path "*/kb/$SLUG/{slug}.md" | head -1)
-CARD_DOMAIN=${CARD#$DOMAINS/}; CARD_DOMAIN=${CARD_DOMAIN%%/*}            # empty when no card
-OLD=$(grep -m1 '^Source-SHA256:' "$CARD" 2>/dev/null | awk '{print $2}')
+DOMAINS=~/Documents/Obsidian-Vault/05-Knowledge-Base/domains; SLUG=<slug>
+unchanged=0; changed=0; new=0; DOMS=""
+for f in "$DOMAINS/_staging/$SLUG"/*.md; do
+  slug=$(basename "$f" .md)
+  H=$(shasum -a 256 "$f" | cut -d' ' -f1)                                    # macOS; Linux: sha256sum
+  CARDS=$(find "$DOMAINS" -maxdepth 4 -path "$DOMAINS/*/kb/$SLUG/$slug.md")   # zsh-safe: no glob
+  if [ -z "$CARDS" ]; then new=$((new+1)); echo "new $slug $H"; continue; fi
+  while IFS= read -r c; do d=${c#"$DOMAINS"/}; DOMS="$DOMS${d%%/*}"$'\n'; done <<< "$CARDS"
+  OLD=$(grep -m1 '^Source-SHA256:' "$(printf '%s\n' "$CARDS" | head -1)" | awk '{print $2}')
+  if [ "$OLD" = "$H" ]; then unchanged=$((unchanged+1)); echo "unchanged $slug $H"
+  else changed=$((changed+1)); echo "changed $slug $H"; fi
+done
+echo "unchanged=$unchanged changed=$changed new=$new"
+printf '%s' "$DOMS" | sort -u      # domains that already hold cards of this collection
 ```
-Keep the `{slug}` -> `H` pairs; hand them to the Step 4 subagents.
-- **No card**: normal path (the `mv` below).
-- **`OLD` == `H`** (`unchanged`): skip the page: no distill. Say so. Staging is per collection: delete `$DOMAINS/_staging/$SLUG` only when every page is unchanged; otherwise it rides along (raw copy is byte-identical).
-- **`OLD` non-empty and != `H`** (`source changed`): re-distill, say so. Remove the old raw dir first so the `mv` cannot nest, then move into the card's domain:
-  ```bash
-  rm -rf "$DOMAINS/$CARD_DOMAIN/markdown/$SLUG"    # only in the two replace branches
-  mv "$DOMAINS/_staging/$SLUG" "$DOMAINS/$CARD_DOMAIN/markdown/$SLUG"
-  ```
-  If `CARD_DOMAIN` differs from the domain chosen for this run, use `CARD_DOMAIN` for this page and report it.
-- **Card, `OLD` empty** (no `Source-SHA256`, made before this rule): normal re-ingest, not stale. Same replace sequence, re-distill, write the hash. Do not backfill other cards.
+Keep the printed `slug H` lines of the `new` and `changed` pages; hand them to the Step 4 subagents.
+- **`unchanged`** (`OLD` == `H`): no distill. Say so.
+- **`changed`** (`OLD` non-empty and != `H`): re-distill, say so.
+- **`changed`, card has no `Source-SHA256`** (made before this rule): a deliberate choice, counted as `changed` — a user re-running ingest on an existing hash-less card wants a refresh, and nothing is deleted any more. Re-distill and write the hash. Do not backfill other cards.
+- **`new`** (no card): distill.
 
-Normal path: move the staged markdown into the chosen domain:
-```bash
-mkdir -p "$DOMAINS/<DOMAIN>/markdown" && mv "$DOMAINS/_staging/$SLUG" "$DOMAINS/<DOMAIN>/markdown/$SLUG"
-```
+Then decide the collection once:
+- **Every page `unchanged`** (`changed=0`, `new=0`): skip the whole collection. Remove only the staging dir, skip Steps 4-7, and go to the Step 8 report:
+  ```bash
+  rm -r -- "${DOMAINS:?}/_staging/${SLUG:?}"
+  ```
+- **Collection domain.** If the `sort -u` output above is exactly one domain, `DOMAIN` is that domain (report it when it differs from the domain chosen above). If it is empty, `DOMAIN` is the domain chosen above. If it lists more than one, STOP before moving anything and ask which domain wins — a plain-text question ending the run, not `AskUserQuestion`.
+- **Move once, never delete old raw files.** If the destination does not exist, move the staging dir; if it exists, merge into it (a plain `mv` onto an existing dir would nest `markdown/$SLUG/$SLUG`):
+  ```bash
+  DOMAINS=~/Documents/Obsidian-Vault/05-Knowledge-Base/domains; SLUG=<slug>; DOMAIN=<domain>
+  DEST="$DOMAINS/${DOMAIN:?}/markdown/${SLUG:?}"
+  if [ -e "$DEST" ]; then
+    cp -R "$DOMAINS/_staging/$SLUG/." "$DEST/" && rm -r -- "${DOMAINS:?}/_staging/${SLUG:?}"
+  else
+    mkdir -p "$(dirname "$DEST")" && mv "$DOMAINS/_staging/$SLUG" "$DEST"
+  fi
+  ```
+  A page present only in the old raw dir (not re-scraped) keeps its raw file and its card; a re-scraped page overwrites its raw file.
 
 ### Step 4 — Distill each page into KB cards (in-session, key-free)
 
@@ -219,7 +237,7 @@ self-indexes it into FTS5.)
 
 ### Step 8 — Report
 
-Summarize: source URL, pages scraped, domain chosen (and whether newly created), SLUG, cards
+Summarize: source URL, pages scraped (with the Step 3 counts: unchanged / changed / new), domain chosen (and whether newly created), SLUG, cards
 written, FTS5 reindex result, verify result, and reference-note path. Give a ready-to-run
 `/ask-kb "<topic>"` example. No master-DB rebuild needed — the FTS5 index is already current.
 
