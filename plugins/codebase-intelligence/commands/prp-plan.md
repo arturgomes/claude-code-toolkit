@@ -68,12 +68,28 @@ Follow the skill's SESSION START protocol:
 The skill handles:
 - Vault-based session persistence at using Obsidian MCP `~/Documents/Obsidian-Vault/02-Notes/Sessions/`
 - Frontmatter metadata (ticket, branch, date, phase, keywords, tags)
-- FTS5 search index at `~/.claude/memory/{TICKET}/session_index.db`
+- Search via `search_sessions` over the vault index (rebuildable cache; the vault note is the record)
 
 **PRE-PHASE-I CHECKPOINT:**
 - [ ] session-memory skill executed
 - [ ] Session context loaded or created
 - [ ] User confirmed next action
+
+---
+
+## Pre-Phase I.5: CONSTRAINTS — Load repo-learned rules
+
+`Skill(codebase-intelligence:prp-constraints)` → LOAD protocol.
+
+```
+Skill(prp-constraints)
+```
+
+Reads `<repo-root>/.claude/CONSTRAINTS.md` if present and injects every rule as a hard constraint for this plan. Missing file = first run on this repo, skip silently. If any rule contradicts $ARGUMENTS, STOP and flag the conflict before planning.
+
+**PRE-PHASE-I.5 CHECKPOINT:**
+- [ ] CONSTRAINTS.md loaded (or absent, noted)
+- [ ] No rule contradicts the task (or conflict surfaced to user)
 
 ---
 

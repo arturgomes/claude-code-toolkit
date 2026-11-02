@@ -347,6 +347,13 @@ When `enabled = false`, every phase below behaves exactly as it did before this 
    `project-manager → {mediator}`.
 4. **Pre-approve tools** — teammates inherit the main session's permissions; unapproved tools stall
    them (KB: Agent Teams P05/X01). Confirm the preapproval checklist before spawning.
+5. **Evaluator/planner roles keep their restricted tool set — never widen it.** `pr-reviewer`,
+   `qa-analyst`, `ux-specialist`, `product-owner`, `lead-engineer`, `project-manager`, and the
+   `codebase-*`/`web-researcher` roles carry a `tools:` allow-list with no `Edit`/`Write`/`NotebookEdit`
+   by design (`../../shared/read-only-mandate.md`) — a review or plan is a `SendMessage` back to you,
+   never a patch that role applies itself. Do not re-dispatch one of these findings through a
+   full-tool/generic agent just because a fix "looks small"; route it to the owning generator
+   specialist as next-round criteria instead.
 
 ---
 
@@ -408,7 +415,8 @@ STOP — never a fourth round of the same criteria (`../../shared/atomic-commit.
    `slices[].reverts[]`, the redo resets that lane's round counter once, and the redo gets **one**
    further pr-reviewer pass over the redone work only — `slices[].reviewPasses` caps at 2. FIX ⇒ the owning lane lands one fix commit, judged by Phase C's smoke and the Phase E2
    gate, **never** re-reviewed adversarially. Surviving 🟡/🟢 go to the PR body's Review Focus, not
-   to another pass.
+   to another pass. A 🔴 carrying `proposed-constraint:` → run `Skill(codebase-intelligence:prp-constraints)`
+   APPEND with that line on the integration branch (pr-reviewer has no write tools).
 
 ---
 

@@ -74,6 +74,22 @@ The skill handles:
 
 ---
 
+## Pre-Phase I.5: CONSTRAINTS — Load repo-learned rules
+
+`Skill(codebase-intelligence:prp-constraints)` → LOAD protocol.
+
+```
+Skill(prp-constraints)
+```
+
+Reads `<repo-root>/.claude/CONSTRAINTS.md` if present and injects every rule as a hard constraint for every task below. Missing file = first run on this repo, skip silently. If a rule contradicts a plan task, STOP and flag it before coding.
+
+**PRE-PHASE-I.5 CHECKPOINT:**
+- [ ] CONSTRAINTS.md loaded (or absent, noted)
+- [ ] No rule contradicts a plan task (or conflict surfaced to user)
+
+---
+
 ## Pre-Phase II: ANCHOR — Load requirements anchor
 
 Read the plan file's "Intelligence Context" section and extract:
@@ -261,7 +277,11 @@ parallelism — one subagent dispatched, awaited, recorded, then the next.
 
 ### Step 3.1 — Prior-incident scan (S6, main thread, before dispatch)
 
-Query `mcp__ultimate-obsidian__search_sessions` (scoped to the "## Open Failures", "## Lessons", and "## Loop Constraints" sections) for the file(s) this task changes — before building the brief in Step 3.1a, so a match rides into the subagent's brief instead of being discovered mid-task. If a prior failure matches, note it for the brief:
+Query `mcp__ultimate-obsidian__search_sessions` (scoped to the "## Open Failures", "## Lessons", and "## Loop Constraints" sections) for the file(s) this task changes — before building the brief in Step 3.1a, so a match rides into the subagent's brief instead of being discovered mid-task:
+```
+mcp__ultimate-obsidian__search_sessions({ query: "{file basenames}", sections: ["Open Failures", "Lessons", "Loop Constraints"], limit: 5 })
+```
+If a prior failure matches, note it for the brief:
 ```
 ⚠️ prior incident: <session:date> — <one-line summary>
 ```

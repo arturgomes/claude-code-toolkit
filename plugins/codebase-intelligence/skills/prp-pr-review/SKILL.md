@@ -152,4 +152,6 @@ argument in a review cycle.
   a coin flip.
 - **Also:** promote any rejection that will recur (a bot rule that is wrong for this repo) into the
   session note's `## General Rules`, so the next review starts from the settled answer.
+- **And:** call `Skill(codebase-intelligence:prp-constraints)` → APPEND with the same one-line rule, so
+  the next prp-plan / prp-implement run on this repo loads it automatically. Dedup is the skill's job.
 - Protocol and frontmatter: `../../shared/vault-persistence.md`.

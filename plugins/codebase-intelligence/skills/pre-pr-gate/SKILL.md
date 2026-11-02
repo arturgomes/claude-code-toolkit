@@ -49,12 +49,17 @@ every layer of a stack, not just the bottom one. Gating the top of a stack and i
 downward is the same mistake as gating one worktree and inheriting it across lanes: a receipt whose
 SHA is not that layer's tip counts as absent.
 
-Two hard rules:
+Three hard rules:
 
 1. **Evidence or it did not happen.** Every layer records the *verbatim command*, its *exit code*, and
    the decisive output line. "Ran typecheck, looks fine" is a gate failure, not a pass.
 2. **Never edit the gate to make it pass.** Loosening a rule, adding `// @ts-ignore`, `eslint-disable`,
    `.skip`, or narrowing a glob to dodge a finding is itself a 🔴. Fix the code.
+3. **Feed every 🔴 BLOCK back into the next run's constraints.** When a layer fails with a 🔴 that
+   reflects a repeatable repo-level rule (not a one-off typo), call
+   `Skill(codebase-intelligence:prp-constraints)` → APPEND with a one-line imperative rule derived from
+   the failing finding, so `prp-plan` / `prp-implement` load it before re-attempting the same mistake.
+   Dedup is the skill's job.
 
 ---
 

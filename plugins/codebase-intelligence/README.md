@@ -7,6 +7,19 @@ structural search** (single tier). Cross-session memory lives in an Obsidian vau
 the `ultimate-obsidian` MCP. **No prp-core (or any other plugin) required.**
 
 **Version history**
+- **v3.28.0** — **review roles can't write code, every record is a vault note, rejections feed the next
+  run.** Review and planning agents (`pr-reviewer`, `lead-engineer`, `product-owner`, `project-manager`,
+  `ux-specialist`, `codebase-analyst/explorer/researcher`, `web-researcher`) now carry a `tools:`
+  allow-list with no `Edit`/`Write`/`NotebookEdit`, because a prose "review only" brief did not stop a
+  reviewer from implementing its own recommendations (`shared/read-only-mandate.md`). `shared/vault-persistence.md`
+  §4: no record may exist only in `~/.claude`, `/tmp`, the scratchpad or a repo dir; the per-ticket
+  `session_index.db` is retired (search is served from the vault index), and the write ledger comes from
+  `get_write_ledger` — this needs an `ultimate-obsidian` MCP that has those tools. New `prp-constraints`
+  skill: `prp-plan` / `prp-implement` load `.claude/CONSTRAINTS.md` (Pre-Phase I.5), and a 🔴 from
+  `pre-pr-gate`, `prp-pr-review` or `pr-reviewer` (via its `proposed-constraint:` line) appends a one-line
+  rule so the same rejection is not re-learned. KB skills: `ask-kb` / `consult-kb` query the distilled
+  General Rules; `add-pdf-to-kb` and `ingest-web-doc-to-kb` record a source SHA-256, skip an already
+  ingested source, and merge into an existing raw dir instead of nesting or deleting it.
 - **v3.27.0** — **intermediate markdown goes to a step log in the vault, not to scratch.** Runs were
   writing `panel-po-2409.md` and friends into `/tmp/claude-…/scratchpad/` and `cat`-looping them back,
   which left no record you could follow. `shared/vault-persistence.md` gains a **Step log**,
@@ -530,8 +543,8 @@ claude mcp add serena \
      serena start-mcp-server --transport stdio
 
 # ultimate-obsidian — vault-backed session memory, plans, reports (required)
-#   Provides create_or_update_note, read_note, check_exists, list_vault,
-#   index_note (FTS5), search_sessions. Point it at ~/Documents/Obsidian-Vault/.
+#   Provides create_or_update_note, read_note, check_exists, list_vault, search_sessions,
+#   find_related_work, read_state/write_state, get_write_ledger. Point it at ~/Documents/Obsidian-Vault/.
 
 # Context7 — verified library docs
 claude mcp add context7 \
@@ -561,6 +574,7 @@ claude mcp add atlassian \
 | `pre-pr-gate` | Mandatory pre-PR gate on the **integrated** branch: CI-parity install/typecheck/build/full-test, dangling+unused-import sweep, hygiene sweep, an `applyTo`-scoped replay of the repo's own `.github` rulebook citing its real rule IDs (Copilot / bugbot parity), and an L9 constitution + frozen-contract check. SHA-bound receipt written to the run's **vault state note** (`receipts[]`) and pasted into the PR body — never `<repo>/.claude/pre-pr-gate.json`, which was invisible to the sibling worktree and the stack layer that had to verify it; 🔴 ⇒ no PR. **One receipt per PR** — a stacked chain is N PRs, so it is N gate runs |
 | `spec-converge` | Append-only reconciliation (Phase 5.75) of the gated branch against the spec: classifies every gap `missing / partial / contradicts / unrequested`, appends the remaining work as gated tasks, leaves `tasks.md` byte-for-byte unchanged when converged, and surfaces unrequested code with evidence rather than deleting it |
 | `drift-guard` | Anchor every decision to the AC — mechanical pre-scan + 8 drift questions, at every gate |
+| `prp-constraints` | Feedback loop: loads the repo's `.claude/CONSTRAINTS.md` at the start of `prp-plan` / `prp-implement`, appends a one-line rule on every 🔴 from `pre-pr-gate` / `prp-pr-review` / `pr-reviewer` |
 | `loop-contract` | Define/validate a Loop Contract (executable gate, budget, blast-radius, stop rules); refuse without a binary gate |
 | `session-memory` | Persist/restore findings, decisions, failures to the vault (BM25); write-before-stop / read-at-start gates; Loop Ledger; **SESSION CLOSE** — the one-time conclusion note written after the PR merges (outcome, PR URL, cleanup performed, `Carried forward`), frontmatter `phase: closed`, index line `done` |
 | `worktree-lifecycle` | ENTER a fresh worktree off the detected base for an implementation run; EXIT tears it down on user satisfaction (save-before-delete, confirm-before-remove); capability-gated with an in-place serial fallback. Owns the lifecycle detail behind the **never-implement-on-`main`/`master`** rule (the rule itself is `shared/branch-rule.md`): work happens on a dedicated feature branch forked from the up-to-date base, asserted mechanically **after** ENTER (the serial fallback drops isolation, never the branch), per repo, with no diff-size exemption. Owns the **pre-merge** half of the lifecycle only — branch deletion and session closure belong to `post-merge-cleanup` |
@@ -633,7 +647,7 @@ non-descriptive branches (`main`/`master`/`develop`/…). Each session file carr
 - **Segmented sections** — `## Verified Facts` · `## General Rules` · `## Open Failures` · `## Lessons` · `## Last-Session State (resume here)`
 - **Loop sections** (prp-loop only) — `## Loop Contract` · `## Loop Ledger` · `## Loop Constraints`
 - **Wikilinks** — `[[TICKET-SUFFIX]]` for cross-referencing
-- **BM25 search** — SQLite FTS5 index at `~/.claude/memory/<TICKET>/session_index.db`
+- **BM25 search** — `search_sessions` over the vault's FTS5 index (a rebuildable cache; every record is a vault note — nothing lives only in `~/.claude` or `/tmp`)
 
 ### Gates
 
