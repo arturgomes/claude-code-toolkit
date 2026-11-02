@@ -36,8 +36,12 @@ Call `mcp__ultimate-obsidian__search_kb` once more with the same expanded terms 
 `path_prefix: "02-Notes/Sessions"` and `limit: 25`. An older server silently ignores `path_prefix`,
 so ALWAYS keep only hits whose `source_relpath` starts with `02-Notes/Sessions/` AND whose
 `heading_path` contains `General Rules` (case-insensitive; the suffix varies — `(distilled)`, `(added)`, `(new)`,
-`(reusable)`, `(additions)`, `(append)`, or none — so never match on it). None survive → continue silently and note it
-under KB Coverage. Never invent a rule.
+`(reusable)`, `(additions)`, `(append)`, or none — so never match on it).
+
+If the filtered result is empty (a server without `path_prefix` returns whole-vault hits), retry ONCE with
+`general rules distilled` appended to the terms (measured: whole-vault kept 0 without it, 15 with it) and
+filter again the same way. None survive the retry → continue silently and note it under KB Coverage
+(`Distilled rules matched` counts survivors after the retry). Never invent a rule.
 
 ### Step 3 — Load hit contexts
 
@@ -128,7 +132,7 @@ book principle from Step 2 also supports it. Cite as `[[session-note-stem]]`.
 ### KB Coverage
 KBs consulted: [list]  
 Files read: [list]  
-Distilled rules matched: [N, or "none / path_prefix unsupported"]  
+Distilled rules matched: [N survivors after the Step 2b retry, or "none / path_prefix unsupported" when the retry is also empty]  
 Topics not covered by KB: [list — honest about gaps]
 ```
 
