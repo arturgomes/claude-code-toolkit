@@ -128,9 +128,9 @@ while IFS= read -r f; do
   OLD=$(grep -m1 '^Source-SHA256:' "$(printf '%s\n' "$CARDS" | head -1)" | awk '{print $2}')
   if [ "$OLD" = "$H" ]; then unchanged=$((unchanged+1)); echo "unchanged $slug $H"
   else changed=$((changed+1)); echo "changed $slug $H"; fi
-done < <(find "$DOMAINS/_staging/$SLUG" -maxdepth 1 -name '*.md' | sort)   # no glob: an empty dir must not abort zsh
+done < <(find "$DOMAINS/_staging/$SLUG" -maxdepth 1 -type f -name '*.md' | sort)   # no glob: an empty dir must not abort zsh
 echo "unchanged=$unchanged changed=$changed new=$new"
-printf '%s' "$DOMS" | grep -v '^$' | sort | uniq -c | sort -k1,1nr -k2      # "<cards> <domain>" per domain that holds cards of this collection, most cards first, ties alphabetical
+printf '%s' "$DOMS" | grep -v '^$' | LC_ALL=C sort | uniq -c | LC_ALL=C sort -k1,1nr -k2      # "<cards> <domain>" per domain, most cards first, ties in C-locale order
 ```
 Backstop for the Step 2 zero-file check: if `unchanged`, `changed` and `new` are all 0, do the same (`rmdir` the staging dir, report "no pages scraped", stop). This is NOT the "every page `unchanged`" case below.
 Keep the printed `slug H` lines of the `new` and `changed` pages; hand them to the Step 4 subagents.
@@ -144,7 +144,7 @@ Then decide the collection once:
   ```bash
   rm -r -- "${DOMAINS:?}/_staging/${SLUG:?}"
   ```
-- **Collection domain.** If the `<cards> <domain>` list above has exactly one line, `DOMAIN` is that domain. If it is empty, `DOMAIN` is the domain chosen above. If it has more than one line, the domain holding the MOST cards of this collection wins (the first line; a tie goes to the alphabetically first domain, which the sort already did): report the losers in one warning line and continue — NEVER stop to ask. In every case, report it when `DOMAIN` differs from the domain chosen above. A `changed` page is re-distilled into the winner, so any card it already has in a losing domain is now a **stale** duplicate (two versions exist). This skill never deletes a card: the warning line names each stale card by path (`cards also exist in X, Y — kept in Z; stale: <path>, <path>`), found with `find "$DOMAINS" -path "$DOMAINS/*/kb/$SLUG/<slug>.md" ! -path "$DOMAINS/$DOMAIN/*" | sort`, and Step 8 lists them again so the user can remove them.
+- **Collection domain.** The `<cards> <domain>` list counts only staged pages that already have cards (a page with cards in two domains counts for both), so "most cards" means most of those. If the list has exactly one line, `DOMAIN` is that domain. If it is empty, `DOMAIN` is the domain chosen above. If it has more than one line, the domain holding the MOST cards wins: `DOMAIN` is the 2nd whitespace-separated field of line 1 (`uniq -c` prefixes spaces and the count, so strip them, e.g. `awk 'NR==1{print $2}'`); a tie goes to the first domain in C-locale order, which the `LC_ALL=C` sorts already did. Report the losers in one warning line and continue — NEVER stop to ask. In every case, report it when `DOMAIN` differs from the domain chosen above. A `changed` page is re-distilled into the winner, so any card it already has in a losing domain is now a **stale** duplicate (two versions exist). This skill never deletes a card: the warning line names each stale card by path (`cards also exist in X, Y — kept in Z; stale: <path>, <path>`), found with `find "$DOMAINS" -path "$DOMAINS/*/kb/$SLUG/<slug>.md" ! -path "$DOMAINS/$DOMAIN/*" | sort`, and Step 8 lists them again so the user can remove them.
 - **Move once, never delete old raw files.** If the destination does not exist, move the staging dir; if it exists, merge into it (a plain `mv` onto an existing dir would nest `markdown/$SLUG/$SLUG`):
   ```bash
   DOMAINS=~/Documents/Obsidian-Vault/05-Knowledge-Base/domains; SLUG=<slug>; DOMAIN=<domain>
