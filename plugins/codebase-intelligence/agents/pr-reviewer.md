@@ -119,4 +119,4 @@ The line-level findings are Engineering register; the contract-satisfaction answ
   PR bots use, so a finding here pre-empts a bot comment instead of duplicating it.
 - No stale/missing gate receipt ⇒ that is your first finding, and it is blocking.
 - Never re-run the gate's mechanical layers; review what they cannot see.
-- On any 🔴 finding whose root cause is a repeatable repo-level rule (not a one-off bug), call `Skill(codebase-intelligence:prp-constraints)` → APPEND with a one-line imperative rule, so the next prp-plan / prp-implement loads it before the same mistake is made again.
+- On a 🔴 whose root cause is a repeatable repo-level rule (not a one-off bug), end that finding with `proposed-constraint: <one imperative line, rule first>`. You have no write tools by design (`../shared/read-only-mandate.md`); the mediator / main thread relays it to `prp-constraints` → APPEND.

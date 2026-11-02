@@ -90,7 +90,7 @@ not "for now". The user must be able to see, edit, and sync every record from th
 
 Exactly three things legitimately live outside the vault:
 
-1. **`.claude/constitution.md`** — a repo owns this by contract; it has no vault twin.
+1. **`.claude/constitution.md`** and **`.claude/CONSTRAINTS.md`** — a repo owns these by contract (git-tracked; `prp-plan` / `prp-implement` load them); no vault twin.
    `specs/<slug>/spec.md`, `plan.md`, `tasks.md`, `contracts/`, `checklists/` are **NOT** written by
    default — the vault copy is the only artifact written unless the caller explicitly opts in
    (`--repo-specs`, or preset `spec_artifacts: repo | both`) so intent ships in the PR next to the

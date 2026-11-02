@@ -5,7 +5,7 @@ description: >
   Use when information is beyond training data — KB and Context7 run first to minimize unnecessary web calls.
 model: sonnet
 color: magenta
-tools: [Read, Grep, Glob, Bash, WebFetch, WebSearch, mcp__context7__resolve-library-id, mcp__context7__query-docs, mcp__ultimate-obsidian__search_kb, mcp__ultimate-obsidian__search_vault]
+tools: [Read, Grep, Glob, Bash, WebFetch, WebSearch, mcp__context7__resolve-library-id, mcp__context7__query-docs, mcp__ultimate-obsidian__search_kb, mcp__ultimate-obsidian__search_vault, Skill]
 ---
 
 **Mandate is mechanical, not just stated.** No Edit/Write/NotebookEdit on this agent — findings are

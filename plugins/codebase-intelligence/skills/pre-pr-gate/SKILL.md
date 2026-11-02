@@ -49,7 +49,7 @@ every layer of a stack, not just the bottom one. Gating the top of a stack and i
 downward is the same mistake as gating one worktree and inheriting it across lanes: a receipt whose
 SHA is not that layer's tip counts as absent.
 
-Two hard rules:
+Three hard rules:
 
 1. **Evidence or it did not happen.** Every layer records the *verbatim command*, its *exit code*, and
    the decisive output line. "Ran typecheck, looks fine" is a gate failure, not a pass.

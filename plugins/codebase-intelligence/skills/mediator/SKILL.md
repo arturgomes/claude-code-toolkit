@@ -415,7 +415,8 @@ STOP — never a fourth round of the same criteria (`../../shared/atomic-commit.
    `slices[].reverts[]`, the redo resets that lane's round counter once, and the redo gets **one**
    further pr-reviewer pass over the redone work only — `slices[].reviewPasses` caps at 2. FIX ⇒ the owning lane lands one fix commit, judged by Phase C's smoke and the Phase E2
    gate, **never** re-reviewed adversarially. Surviving 🟡/🟢 go to the PR body's Review Focus, not
-   to another pass.
+   to another pass. A 🔴 carrying `proposed-constraint:` → run `Skill(codebase-intelligence:prp-constraints)`
+   APPEND with that line on the integration branch (pr-reviewer has no write tools).
 
 ---
 

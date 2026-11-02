@@ -45,6 +45,11 @@ agent won't touch files — take away its ability to.
   full-tool agent given only a prose mandate** — that substitution is exactly what produced the
   incident.
 
+- A role that runs the `session-memory` or `ask-kb` skill keeps `Skill` plus the vault tools those
+  protocols call (`check_exists`, `list_vault`, `search_sessions`, session-note writes, `search_kb`).
+  A session note is the system of record, not code — this rule removes the ability to write code, not
+  memory. Without `Skill` in the list, a body line "Follow skill: …" silently does nothing.
+
 ## Checklist when adding or auditing a role
 
 1. Does the role's own description say it never writes code? → strip `Edit`/`Write`/`NotebookEdit`.

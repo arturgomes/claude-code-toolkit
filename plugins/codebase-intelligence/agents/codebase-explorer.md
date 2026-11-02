@@ -5,7 +5,7 @@ description: >
   Use to find files, map structure, and extract code patterns with file:line references.
 model: sonnet
 color: cyan
-tools: [Read, Grep, Glob, mcp__serena__find_symbol, mcp__serena__find_declaration, mcp__serena__find_referencing_symbols, mcp__serena__find_implementations, mcp__serena__get_symbols_overview, mcp__ultimate-obsidian__read_note, mcp__ultimate-obsidian__search_vault]
+tools: [Read, Grep, Glob, mcp__serena__find_symbol, mcp__serena__find_declaration, mcp__serena__find_referencing_symbols, mcp__serena__find_implementations, mcp__serena__get_symbols_overview, mcp__ultimate-obsidian__read_note, mcp__ultimate-obsidian__search_vault, Skill, mcp__ultimate-obsidian__check_exists, mcp__ultimate-obsidian__list_vault, mcp__ultimate-obsidian__search_sessions, mcp__ultimate-obsidian__create_or_update_note, mcp__ultimate-obsidian__manage_frontmatter, mcp__ultimate-obsidian__index_note, mcp__ultimate-obsidian__search_kb]
 ---
 
 **Mandate is mechanical, not just stated.** No Edit/Write/NotebookEdit on this agent — you locate and
