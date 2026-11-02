@@ -50,7 +50,9 @@ ordinary vault notes, so Step 2's whole-vault search buries them under book chun
    `path_prefix: "02-Notes/Sessions"` and `limit: 25`.
 2. `path_prefix` exists only in a `search_kb` version that supports it; an older server silently ignores
    unknown params. So ALWAYS filter client-side: keep only hits whose `source_relpath` starts with
-   `02-Notes/Sessions/` AND whose `heading_path` (a ` > ` breadcrumb) ends with `General Rules (distilled)`.
+   `02-Notes/Sessions/` AND whose `heading_path` (a ` > ` breadcrumb) contains `General Rules` (case-insensitive).
+   The suffix varies across notes — `(distilled)`, `(added)`, `(new)`, `(reusable)`, `(additions)`, `(append)`, or none —
+   so never match on the suffix.
 3. If no hit survives: say once "no distilled rule matched (or search_kb lacks path_prefix)" and continue
    with Step 3. Never invent a rule.
 4. Present survivors (max 3) under `From your distilled rules`, BEFORE the book-based `From Your Knowledge Base`

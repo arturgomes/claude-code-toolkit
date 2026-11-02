@@ -35,7 +35,8 @@ vault — no model, portable, kept fresh automatically.)
 Call `mcp__ultimate-obsidian__search_kb` once more with the same expanded terms plus
 `path_prefix: "02-Notes/Sessions"` and `limit: 25`. An older server silently ignores `path_prefix`,
 so ALWAYS keep only hits whose `source_relpath` starts with `02-Notes/Sessions/` AND whose
-`heading_path` ends with `General Rules (distilled)`. None survive → continue silently and note it
+`heading_path` contains `General Rules` (case-insensitive; the suffix varies — `(distilled)`, `(added)`, `(new)`,
+`(reusable)`, `(additions)`, `(append)`, or none — so never match on it). None survive → continue silently and note it
 under KB Coverage. Never invent a rule.
 
 ### Step 3 — Load hit contexts
