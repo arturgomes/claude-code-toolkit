@@ -122,7 +122,7 @@ while IFS= read -r f; do
   else changed=$((changed+1)); echo "changed $slug $H"; fi
 done < <(find "$DOMAINS/_staging/$SLUG" -maxdepth 1 -name '*.md' | sort)   # no glob: an empty dir must not abort zsh
 echo "unchanged=$unchanged changed=$changed new=$new"
-printf '%s' "$DOMS" | sort -u      # domains that already hold cards of this collection
+printf '%s' "$DOMS" | grep -v '^$' | sort | uniq -c | sort -k1,1nr -k2      # "<cards> <domain>" per domain that holds cards of this collection, most cards first, ties alphabetical
 ```
 If `unchanged`, `changed` and `new` are all 0, the staging dir held no pages: report "no pages in staging" and stop. This is NOT the "every page `unchanged`" case below, which would otherwise report a vacuous success.
 Keep the printed `slug H` lines of the `new` and `changed` pages; hand them to the Step 4 subagents.
@@ -136,7 +136,7 @@ Then decide the collection once:
   ```bash
   rm -r -- "${DOMAINS:?}/_staging/${SLUG:?}"
   ```
-- **Collection domain.** If the `sort -u` output above is exactly one domain, `DOMAIN` is that domain (report it when it differs from the domain chosen above). If it is empty, `DOMAIN` is the domain chosen above. If it lists more than one, STOP before moving anything and ask which domain wins — a plain-text question ending the run, not `AskUserQuestion`.
+- **Collection domain.** If the `<cards> <domain>` list above has exactly one line, `DOMAIN` is that domain. If it is empty, `DOMAIN` is the domain chosen above. If it has more than one line, the domain holding the MOST cards of this collection wins (the first line; a tie goes to the alphabetically first domain, which the sort already did): report the losers in one warning line ("cards also exist in X, Y — kept in Z") and continue — NEVER stop to ask. In every case, report it when `DOMAIN` differs from the domain chosen above.
 - **Move once, never delete old raw files.** If the destination does not exist, move the staging dir; if it exists, merge into it (a plain `mv` onto an existing dir would nest `markdown/$SLUG/$SLUG`):
   ```bash
   DOMAINS=~/Documents/Obsidian-Vault/05-Knowledge-Base/domains; SLUG=<slug>; DOMAIN=<domain>
