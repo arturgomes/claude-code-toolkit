@@ -77,6 +77,22 @@ The skill handles:
 
 ---
 
+## Pre-Phase I.5: CONSTRAINTS — Load repo-learned rules
+
+`Skill(codebase-intelligence:prp-constraints)` → LOAD protocol.
+
+```
+Skill(prp-constraints)
+```
+
+Reads `<repo-root>/.claude/CONSTRAINTS.md` if present and injects every rule as a hard constraint for this plan. Missing file = first run on this repo, skip silently. If any rule contradicts $ARGUMENTS, STOP and flag the conflict before planning.
+
+**PRE-PHASE-I.5 CHECKPOINT:**
+- [ ] CONSTRAINTS.md loaded (or absent, noted)
+- [ ] No rule contradicts the task (or conflict surfaced to user)
+
+---
+
 ## Pre-Phase II: JIRA — Inject ticket context
 
 If Atlassian MCP available and ticket ID found: `get_issue(ticket_id)` → extract summary, description, AC, labels, priority. Scan comments for: fail, reject, QA, blocked, doesn't pass. Print QA failures as `⚠️ QA failure ({date}): {summary}`. If unavailable: note and skip.

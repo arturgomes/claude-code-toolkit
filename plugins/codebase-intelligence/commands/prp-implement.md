@@ -74,6 +74,22 @@ The skill handles:
 
 ---
 
+## Pre-Phase I.5: CONSTRAINTS — Load repo-learned rules
+
+`Skill(codebase-intelligence:prp-constraints)` → LOAD protocol.
+
+```
+Skill(prp-constraints)
+```
+
+Reads `<repo-root>/.claude/CONSTRAINTS.md` if present and injects every rule as a hard constraint for every task below. Missing file = first run on this repo, skip silently. If a rule contradicts a plan task, STOP and flag it before coding.
+
+**PRE-PHASE-I.5 CHECKPOINT:**
+- [ ] CONSTRAINTS.md loaded (or absent, noted)
+- [ ] No rule contradicts a plan task (or conflict surfaced to user)
+
+---
+
 ## Pre-Phase II: ANCHOR — Load requirements anchor
 
 Read the plan file's "Intelligence Context" section and extract:
