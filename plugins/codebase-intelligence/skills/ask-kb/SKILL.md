@@ -41,6 +41,23 @@ Output is JSON: `{ "query": "...", "hits": [ { "text", "source_relpath", "headin
 If the first pass is thin or off-topic, **iterate once**: broaden or swap synonyms and call `search_kb`
 again. Optionally `read_note` a top hit's `source_relpath` to pull fuller context before answering.
 
+### Step 2b — Distilled rules pass
+
+Session notes carry `### General Rules (distilled)` — ticket-agnostic lessons from earlier work. They are
+ordinary vault notes, so Step 2's whole-vault search buries them under book chunks.
+
+1. Call `mcp__ultimate-obsidian__search_kb` again with the SAME expanded terms plus
+   `path_prefix: "02-Notes/Sessions"` and `limit: 25`.
+2. `path_prefix` exists only in a `search_kb` version that supports it; an older server silently ignores
+   unknown params. So ALWAYS filter client-side: keep only hits whose `source_relpath` starts with
+   `02-Notes/Sessions/` AND whose `heading_path` (a ` > ` breadcrumb) ends with `General Rules (distilled)`.
+3. If no hit survives: say once "no distilled rule matched (or search_kb lacks path_prefix)" and continue
+   with Step 3. Never invent a rule.
+4. Present survivors (max 3) under `From your distilled rules`, BEFORE the book-based `From Your Knowledge Base`
+   block, cited as `[[session-note-stem]]` (`source_relpath` stem, no `.md`).
+
+Query order is immaterial; PRESENTATION order is what makes them first.
+
 ### Step 3 — Parse hits and extract citations
 
 For each hit:
@@ -53,6 +70,7 @@ Use the top 3-4 hits.
 
 ### Step 4 — Formulate the Answer
 
+- Present the Step 2b distilled-rules block FIRST, above `From Your Knowledge Base` (omit it when nothing survived)
 - Cite every key claim: `[Source: {book-slug} — {heading_path}]`
 - Cross-reference multiple hits when they converge on the same principle
 - Note if hits are vault notes vs KB books (`source_relpath` prefix: `02-Notes/` vs `05-Knowledge-Base/`)
@@ -76,6 +94,10 @@ retry Step 2. If the MCP itself is unreachable:
 ## Output Format
 
 ```
+## From your distilled rules  (optional, first — only if Step 2b kept a hit; max 3)
+
+- [Rule, one line] — [[session-note-stem]]
+
 ## Answer
 
 [Direct answer to the question, 2-5 sentences]
