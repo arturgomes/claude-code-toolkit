@@ -122,7 +122,7 @@ unchanged=0; changed=0; new=0; DOMS=""
 while IFS= read -r f; do
   slug=$(basename "$f" .md)
   H=$(shasum -a 256 "$f" | cut -d' ' -f1)                                    # macOS; Linux: sha256sum
-  CARDS=$(find "$DOMAINS" -maxdepth 4 -path "$DOMAINS/*/kb/$SLUG/$slug.md")   # zsh-safe: no glob
+  CARDS=$(find "$DOMAINS" -maxdepth 4 -path "$DOMAINS/*/kb/$SLUG/$slug.md" | sort)   # zsh-safe: no glob; sorted so OLD below is the same card on every run
   if [ -z "$CARDS" ]; then new=$((new+1)); echo "new $slug $H"; continue; fi
   while IFS= read -r c; do d=${c#"$DOMAINS"/}; DOMS="$DOMS${d%%/*}"$'\n'; done <<< "$CARDS"
   OLD=$(grep -m1 '^Source-SHA256:' "$(printf '%s\n' "$CARDS" | head -1)" | awk '{print $2}')
@@ -144,7 +144,7 @@ Then decide the collection once:
   ```bash
   rm -r -- "${DOMAINS:?}/_staging/${SLUG:?}"
   ```
-- **Collection domain.** If the `<cards> <domain>` list above has exactly one line, `DOMAIN` is that domain. If it is empty, `DOMAIN` is the domain chosen above. If it has more than one line, the domain holding the MOST cards of this collection wins (the first line; a tie goes to the alphabetically first domain, which the sort already did): report the losers in one warning line ("cards also exist in X, Y — kept in Z") and continue — NEVER stop to ask. In every case, report it when `DOMAIN` differs from the domain chosen above.
+- **Collection domain.** If the `<cards> <domain>` list above has exactly one line, `DOMAIN` is that domain. If it is empty, `DOMAIN` is the domain chosen above. If it has more than one line, the domain holding the MOST cards of this collection wins (the first line; a tie goes to the alphabetically first domain, which the sort already did): report the losers in one warning line and continue — NEVER stop to ask. In every case, report it when `DOMAIN` differs from the domain chosen above. A `changed` page is re-distilled into the winner, so any card it already has in a losing domain is now a **stale** duplicate (two versions exist). This skill never deletes a card: the warning line names each stale card by path (`cards also exist in X, Y — kept in Z; stale: <path>, <path>`), found with `find "$DOMAINS" -path "$DOMAINS/*/kb/$SLUG/<slug>.md" ! -path "$DOMAINS/$DOMAIN/*" | sort`, and Step 8 lists them again so the user can remove them.
 - **Move once, never delete old raw files.** If the destination does not exist, move the staging dir; if it exists, merge into it (a plain `mv` onto an existing dir would nest `markdown/$SLUG/$SLUG`):
   ```bash
   DOMAINS=~/Documents/Obsidian-Vault/05-Knowledge-Base/domains; SLUG=<slug>; DOMAIN=<domain>
@@ -246,7 +246,7 @@ self-indexes it into FTS5.)
 
 ### Step 8 — Report
 
-Summarize: source URL, pages scraped (with the Step 3 counts: unchanged / changed / new), domain chosen (and whether newly created), SLUG, cards
+Summarize: source URL, pages scraped (with the Step 3 counts: unchanged / changed / new), domain chosen (and whether newly created), any stale duplicate cards left in losing domains (by path; never deleted), SLUG, cards
 written, FTS5 reindex result, verify result, and reference-note path. Give a ready-to-run
 `/ask-kb "<topic>"` example. No master-DB rebuild needed — the FTS5 index is already current.
 
