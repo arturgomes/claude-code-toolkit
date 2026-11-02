@@ -53,9 +53,10 @@ ordinary vault notes, so Step 2's whole-vault search buries them under book chun
    `02-Notes/Sessions/` AND whose `heading_path` (a ` > ` breadcrumb) contains `General Rules` (case-insensitive).
    The suffix varies across notes — `(distilled)`, `(added)`, `(new)`, `(reusable)`, `(additions)`, `(append)`, or none —
    so never match on the suffix.
-3. If the filtered result is empty (a server without `path_prefix` returns whole-vault hits), retry once with
-   `general rules distilled` appended to the terms (measured: whole-vault kept 0 without it, 15 with it) and
-   filter again.
+3. If the filtered result is empty (a server without `path_prefix` returns whole-vault hits), retry once:
+   repeat the item-1 call unchanged (same `path_prefix: "02-Notes/Sessions"` and `limit: 25`) except that
+   `general rules distilled` is appended to the terms (measured: whole-vault kept 0 without it, 15 with it),
+   then filter again as in item 2.
 4. If none survive: omit the block silently (no announcement) and continue with Step 3. Never invent a rule.
 5. Present survivors (max 3) under `From your distilled rules`, right after the direct answer, ahead of
    `From Your Knowledge Base`, cited as `[[session-note-stem]]` (`source_relpath` stem, no `.md`).
