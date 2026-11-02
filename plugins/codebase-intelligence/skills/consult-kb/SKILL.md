@@ -30,6 +30,14 @@ Call `mcp__ultimate-obsidian__search_kb` with `{ query: "<expanded terms>", limi
 calls if the artifact spans multiple domains. (Retrieval is the local FTS5/BM25 index over the
 vault — no model, portable, kept fresh automatically.)
 
+### Step 2b — Distilled rules pass
+
+Call `mcp__ultimate-obsidian__search_kb` once more with the same expanded terms plus
+`path_prefix: "02-Notes/Sessions"` and `limit: 25`. An older server silently ignores `path_prefix`,
+so ALWAYS keep only hits whose `source_relpath` starts with `02-Notes/Sessions/` AND whose
+`heading_path` ends with `General Rules (distilled)`. None survive → continue silently and note it
+under KB Coverage. Never invent a rule.
+
 ### Step 3 — Load hit contexts
 
 `search_kb` returns `{ "hits": [ { "text", "source_relpath", "heading_path", "domain", "score" } ] }`,
@@ -42,7 +50,7 @@ best-first (`score` = `bm25()`, more negative = more relevant). For each strong 
 ### Fallback (search_kb unavailable)
 
 If the tool errors with "KB index not built", run `mcp__ultimate-obsidian__reindex_kb` `{}` once and
-retry. If the MCP is unreachable:
+retry. If the MCP is unreachable (skip Step 2b on this path):
 1. Say: "KB index unavailable — falling back to kb-registry.yaml"
 2. Find `kb-registry.yaml` at: `$KB_ROOT/kb-registry.yaml` → `~/kb/kb-registry.yaml` → `./kb/kb-registry.yaml`
 3. Map artifact domain to KB keywords, read relevant markdown files
@@ -62,6 +70,10 @@ Categorize findings:
 - 🟡 **Tension**: Deviates from a pattern, but has potential justification
 - 🟢 **Aligned**: Explicitly matches a KB recommendation (worth noting)
 - 💡 **Suggestion**: KB has a better approach not currently used
+
+A surviving distilled rule (Step 2b) that the artifact conflicts with is a 🟡 Tension by default —
+it is the owner's own earlier lesson, possibly context-specific. Escalate to 🔴 Violation only when a
+book principle from Step 2 also supports it. Cite as `[[session-note-stem]]`.
 
 ### Step 5 — Output Format
 
@@ -115,6 +127,7 @@ Categorize findings:
 ### KB Coverage
 KBs consulted: [list]  
 Files read: [list]  
+Distilled rules matched: [N, or "none / path_prefix unsupported"]  
 Topics not covered by KB: [list — honest about gaps]
 ```
 
