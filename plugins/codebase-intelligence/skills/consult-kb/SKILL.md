@@ -38,9 +38,9 @@ so ALWAYS keep only hits whose `source_relpath` starts with `02-Notes/Sessions/`
 `heading_path` contains `General Rules` (case-insensitive; the suffix varies — `(distilled)`, `(added)`, `(new)`,
 `(reusable)`, `(additions)`, `(append)`, or none — so never match on it).
 
-If the filtered result is empty (a server without `path_prefix` returns whole-vault hits), retry ONCE with
-`general rules distilled` appended to the terms (measured: whole-vault kept 0 without it, 15 with it) and
-filter again the same way. None survive the retry → continue silently and note it under KB Coverage
+If the filtered result is empty (a server without `path_prefix` returns whole-vault hits), retry ONCE: repeat
+the Step 2b call unchanged (same `path_prefix` and `limit`) except that `general rules distilled` is
+appended to the terms (measured: whole-vault kept 0 without it, 15 with it), and filter again the same way. None survive the retry → continue silently and note it under KB Coverage
 (`Distilled rules matched` counts survivors after the retry). Never invent a rule.
 
 ### Step 3 — Load hit contexts
