@@ -87,6 +87,14 @@ sample. **Order that works:** scrape into a neutral staging dir
 `$DOMAINS/<DOMAIN>/markdown/$SLUG/` (merged when that dir already exists). trafilatura is pulled ephemerally by uv (`--with`); no install
 needed. Confirm the file count matches the URL count (allow a few skips for thin pages).
 
+**Zero-file check (end of Step 2).** If the scrape produced no `.md` file, remove the empty staging dir, report "no pages scraped" and stop BEFORE Step 3: `choose_domain.py` prints `NEW:<slug>` for an empty sample, so going on would register an empty domain. `rmdir` only removes an empty dir, so nothing scraped is ever deleted:
+```bash
+DOMAINS=~/Documents/Obsidian-Vault/05-Knowledge-Base/domains; SLUG=<slug>
+[ -n "$(find "$DOMAINS/_staging/$SLUG" -maxdepth 1 -type f -name '*.md' 2>/dev/null | head -1)" ] \
+  || { rmdir -- "${DOMAINS:?}/_staging/${SLUG:?}" 2>/dev/null; echo "no pages scraped"; }
+```
+If it printed `no pages scraped`, go to the Step 8 report with that as the result; do not run Step 3 onward.
+
 ### Step 3 — Choose the domain (auto)
 
 If the user passed a domain token, use it. Otherwise:
@@ -124,7 +132,7 @@ done < <(find "$DOMAINS/_staging/$SLUG" -maxdepth 1 -name '*.md' | sort)   # no 
 echo "unchanged=$unchanged changed=$changed new=$new"
 printf '%s' "$DOMS" | grep -v '^$' | sort | uniq -c | sort -k1,1nr -k2      # "<cards> <domain>" per domain that holds cards of this collection, most cards first, ties alphabetical
 ```
-If `unchanged`, `changed` and `new` are all 0, the staging dir held no pages: report "no pages in staging" and stop. This is NOT the "every page `unchanged`" case below, which would otherwise report a vacuous success.
+Backstop for the Step 2 zero-file check: if `unchanged`, `changed` and `new` are all 0, do the same (`rmdir` the staging dir, report "no pages scraped", stop). This is NOT the "every page `unchanged`" case below.
 Keep the printed `slug H` lines of the `new` and `changed` pages; hand them to the Step 4 subagents.
 - **`unchanged`** (`OLD` == `H`): no distill. Say so.
 - **`changed`** (`OLD` non-empty and != `H`): re-distill, say so.
@@ -132,7 +140,7 @@ Keep the printed `slug H` lines of the `new` and `changed` pages; hand them to t
 - **`new`** (no card): distill.
 
 Then decide the collection once:
-- **Every page `unchanged`** (`changed=0`, `new=0`): skip the whole collection. Remove only the staging dir, skip Steps 4-7, and go to the Step 8 report:
+- **Every page `unchanged`** (`unchanged>0`, `changed=0`, `new=0`): skip the whole collection. Remove only the staging dir, skip Steps 4-7, and go to the Step 8 report:
   ```bash
   rm -r -- "${DOMAINS:?}/_staging/${SLUG:?}"
   ```
