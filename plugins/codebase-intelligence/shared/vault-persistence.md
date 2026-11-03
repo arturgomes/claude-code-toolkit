@@ -220,14 +220,23 @@ not ignore it.
 | `OBSIDIAN_WRITE_GUARD` | `warn` | `warn`: an out-of-scope or non-month-bucketed write succeeds with a warning. `strict`: it throws before any byte is written. `off`: skips the scope and month-bucket checks. Any other value (`on`, `true`, `STRICT`) silently means `warn`. |
 | `OBSIDIAN_WRITE_SCOPE` | the six prefixes above | Comma-separated vault-relative prefixes. **Replaces** the default list; it does not extend it. |
 
-The `..`, scope and month-bucket checks cover write **destinations** only: create, patch, replace,
-frontmatter, and a move's destination. `delete_note` and a move's **source** path are not checked at
-all, not even for a `../x.md` path, so the agent must vet those paths itself. A path containing a `..`
-segment in a checked destination always throws, even with `OBSIDIAN_WRITE_GUARD=off`. The month-bucket
-check applies only to a file directly under `02-Notes/Plans/` or `02-Notes/Reports/` that is not inside
-a `YYYY-MM/` folder: it warns (a throw under `strict`), while a nested `Plans/misc/x.md` does not. The MCP
-also scrubs secret values on write (`scrubSecrets` in the same `writes.ts`;
-`OBSIDIAN_SECRET_SCRUB=off` disables it).
+The `..`, scope and month-bucket checks cover every path the MCP changes: create, patch, replace,
+frontmatter, `write_state`, the path of `delete_note`, and **both** the source and the destination of a
+move. They run before any client call, so a `strict` throw leaves the vault untouched. A path containing
+a `..` segment always throws, even with `OBSIDIAN_WRITE_GUARD=off`. The month-bucket check applies only to
+a file directly under `02-Notes/Plans/` or `02-Notes/Reports/` that is not inside a `YYYY-MM/` folder: it
+warns (a throw under `strict`), while a nested `Plans/misc/x.md` does not. Because a move's source is
+checked too, under `strict` a flat legacy `02-Notes/Plans/x.plan.md` cannot be moved in place into a
+month folder: use `warn` (or the Obsidian app) for that one move. The MCP also scrubs secret values on
+write (`scrubSecrets` in the same `writes.ts`; `OBSIDIAN_SECRET_SCRUB=off` disables it).
+
+Where the warnings land: writes and moves report them in `warnings` (structuredContent) and as
+`  ⚠ <warning>` lines in the text; `delete_note` has no structuredContent, so its warnings appear **only**
+as `  ⚠ <warning>` lines in the result text. Read the text of a delete result: an `outside write-scope`
+line there means the same as in `warnings`. This describes `ultimate-obsidian-mcp` commit `f69df9f` and
+later. A server built before it has no check at all on `delete_note` or on a move's source, not even for a
+`../x.md` path, so the agent must vet those paths itself; a newer build takes effect only after a rebuild
+and a restart of the MCP server.
 
 Widening to a new path requires an **explicit note in the session** (`### Lessons`, or a
 `Widened write-scope:` line) naming the path and the reason. Silent widening is forbidden — including
