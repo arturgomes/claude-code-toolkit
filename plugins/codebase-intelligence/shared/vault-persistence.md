@@ -164,8 +164,9 @@ Three steps, in order, every time:
 3. **Write, then verify the call returned OK.** A silent failure is indistinguishable from a skipped
    write; treat an unconfirmed write as no write. Write tools return `structuredContent`
    `{ ok, path, sha, warnings, redactions }` — `sha` is the note as read back, so a non-empty `sha` is
-   the confirmation. Read `warnings` (out of write-scope, not month-bucketed) and fix the path rather
-   than ignoring them.
+   the confirmation (`delete_note` returns no `sha`: its `OK: deleted <path>` text is the
+   confirmation). Read `warnings` (out of write-scope, not month-bucketed) and fix the path rather than
+   ignoring them.
 
 The MCP also enforces the scrub and the scope/month rules at its own boundary (secret values are
 redacted to `[REDACTED]`; `OBSIDIAN_WRITE_GUARD=strict` turns scope warnings into rejections). That is a
@@ -210,19 +211,23 @@ This `case` list is the agent's own pre-write check. It mirrors `DEFAULT_SCOPE` 
 `ultimate-obsidian-mcp/src/writes.ts` (the MCP's repo, not this one), which is authoritative: if the two
 disagree, the code wins. With a custom `OBSIDIAN_WRITE_SCOPE` this `case` list is stale; the env var is
 what the MCP uses. The MCP applies the same rules at its own boundary, but by default (`warn`) it only
-warns: an out-of-scope write **still succeeds**, with the message in the result's `warnings`. `strict`
-blocks it before any byte is written. A result carrying `warnings: ["outside write-scope: …"]` means the
-widening note (below) is missing: stop and write that note or move the write to an in-scope path; do
-not ignore it.
+warns: an out-of-scope write **still succeeds**, with the message in the result (`warnings` for writes
+and moves, `⚠` text lines for `delete_note`). `strict` blocks it before any byte is written. A result
+carrying `warnings: ["outside write-scope: …"]` means the widening note (below) is missing: stop and
+write that note or move the write to an in-scope path; do not ignore it. A delete or a move has already
+run when its result comes back, so for those the warning is too late: run the `case` check above on the
+delete path and on **both** move paths before calling, and treat an out-of-scope hit as a stop.
 
 | Variable | Default | Effect |
 |---|---|---|
 | `OBSIDIAN_WRITE_GUARD` | `warn` | `warn`: an out-of-scope or non-month-bucketed write succeeds with a warning. `strict`: it throws before any byte is written. `off`: skips the scope and month-bucket checks. Any other value (`on`, `true`, `STRICT`) silently means `warn`. |
 | `OBSIDIAN_WRITE_SCOPE` | the six prefixes above | Comma-separated vault-relative prefixes. **Replaces** the default list; it does not extend it. |
 
-The `..`, scope and month-bucket checks cover every path the MCP changes: create, patch, replace,
-frontmatter, `write_state`, the path of `delete_note`, and **both** the source and the destination of a
-move. They run before any client call, so a `strict` throw leaves the vault untouched. A path containing
+The `..`, scope and month-bucket checks cover every write tool (create, patch, replace, frontmatter,
+`write_state`), the path of `delete_note`, and **both** the source and the destination of `move_note`.
+`index_note` is the exception: it rewrites the note's `keywords:` frontmatter on disk with no path check,
+so vet its path yourself. The checks run before any write (a few tools read the note first), so a
+`strict` throw leaves the vault untouched. A path containing
 a `..` segment always throws, even with `OBSIDIAN_WRITE_GUARD=off`. The month-bucket check applies only to
 a file directly under `02-Notes/Plans/` or `02-Notes/Reports/` that is not inside a `YYYY-MM/` folder: it
 warns (a throw under `strict`), while a nested `Plans/misc/x.md` does not. Because a move's source is
