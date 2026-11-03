@@ -203,8 +203,9 @@ mcp__ultimate-obsidian__create_or_update_note({
 contain `General Rules` (any suffix, so `General Rules (distilled)` matches). `ask-kb` presents the
 surviving rules right after the direct answer, ahead of the book-based hits. `consult-kb` has no
 direct answer; it folds them into the review, where a distilled rule the artifact conflicts with is
-a Tension, escalated to a Violation only when a book principle also supports the rule. Distilled rules are ticket-agnostic and reusable, which is
-why they are worth surfacing; the order in which the sources are queried is not significant.
+a Tension, escalated to a Violation only when a book principle also supports the rule. Distilled
+rules are ticket-agnostic and reusable, which is why they are worth surfacing; the order in which
+the sources are queried is not significant.
 
 **Step 2 — Refresh keywords:**
 ```
