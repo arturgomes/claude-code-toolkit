@@ -42,14 +42,14 @@
     },
     "layers": {
       "type": "array",
-      "description": "One entry per layer L0-L9. Mandatory layers (L0, L2, L4, L5, L6, L7) must be present with status pass|block — never skipped, regardless of diff size. L9 (constitution + frozen contracts) is mandatory whenever a constitution file or a frozen contract set exists, and 'not-applicable' otherwise.",
+      "description": "One entry per layer L0-L10. Mandatory layers (L0, L2, L4, L5, L6, L7) must be present with status pass|block — never skipped, regardless of diff size. L9 (constitution + frozen contracts) is mandatory whenever a constitution file or a frozen contract set exists, and 'not-applicable' otherwise. L10 (CI jobs outside install/build/test, the preset's ci_extra list) is mandatory whenever the repo's CI has such a job; one entry per command, and an unmirrored CI job is a 'block'.",
       "minItems": 1,
       "items": {
         "type": "object",
         "additionalProperties": false,
         "required": ["id", "status"],
         "properties": {
-          "id": { "type": "string", "enum": ["L0", "L1", "L2", "L3", "L4", "L5", "L6", "L7", "L8", "L9"] },
+          "id": { "type": "string", "enum": ["L0", "L1", "L2", "L3", "L4", "L5", "L6", "L7", "L8", "L9", "L10"] },
           "name": { "type": "string" },
           "mandatory": { "type": "boolean" },
           "status": {

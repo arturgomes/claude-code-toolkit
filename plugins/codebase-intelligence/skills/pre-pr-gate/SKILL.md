@@ -25,11 +25,12 @@ unchecked merge broke 4 PRs; this gate is the fix.
 ## Model capability (read first)
 
 Tier semantics: `../../shared/model-tier.md`. Here, `frontier` may run the layers in the cheapest
-correct order rather than L0→L9.
+correct order rather than L0→L10.
 
 **Mandatory at every tier, never skipped, never sampled, no "small diff" exemption:**
 L0 command resolution · L2 typecheck · L4 build · L5 tests · L6 import sweep · L7 bot-parity replay ·
-L9 whenever a constitution or a frozen contract set exists · **the receipt written to the vault** ·
+L9 whenever a constitution or a frozen contract set exists · L10 whenever the repo's CI has a job
+beyond install/build/test · **the receipt written to the vault** ·
 and **no PR on a 🔴**. A gate that is skipped because the diff "looked small" is the exact incident
 this skill exists to stop.
 
@@ -75,6 +76,11 @@ layer is the fix and it is mandatory.
 2. **Resolve every gate command** through `../../shared/gate-command-resolution.md`: package manager
    from the lockfile, preset first, verify each script exists, mirror CI, never a mutating or
    watch-mode command, and never loosen a gate to pass it.
+
+3. **Enumerate CI's jobs.** Read `ci_workflow` and list every job and its `run:` steps. Each one must
+   be covered by L1–L5 or by the preset's `ci_extra` list (L10). A job that is neither is a
+   misconfiguration: name it in the receipt as `unmirrored CI job: <name>` and 🔴 until the preset lists
+   it — a gate that mirrors only the jobs it was written for goes stale the day CI adds one.
 
 Record in the receipt: package manager, per-layer command, and every substitution with its reason.
 
@@ -256,6 +262,23 @@ a failure.
 Carry every surviving Complexity Tracking row into the receipt. The reviewer should meet the
 justification and the code that cost it on the same screen.
 
+## L10 — CI jobs outside install/build/test (🔴 — the jobs L1–L5 do not mirror)
+
+CI can fail on a job that is none of install, typecheck, build or tests: a generated-file drift check, a
+contract or catalog check, a schema diff. These are the cheap, deterministic ones, and the first push
+is where they used to be found.
+
+Run every command in the preset's `pre_pr_gate.ci_extra` list, in CI's own order, and record each
+command with its exit code.
+
+- Run the commands exactly as CI does. A generate step followed by a `git diff --exit-code <file>` is one
+  check: regenerate, then fail if the file changed. The regenerated file is the fix — commit it, then
+  re-run the gate from L1 (L8's "generated output committed by hand" bans hand-editing, not regenerating).
+- Non-zero ⇒ 🔴. Never loosen the check, edit a baseline, or add a suppression to pass it.
+- `ci_extra` empty and no unmirrored CI job (L0 step 3) ⇒ `not-applicable`.
+- seathq-fe example: `gen:testids` → `git diff --exit-code docs/testids.json` → `check:testids` →
+  `check:testid-hygiene` → `check:testid-lint`.
+
 ---
 
 ## The gate receipt (no receipt ⇒ no PR)
@@ -289,6 +312,7 @@ L7 bot-parity : {✅|🔴} MUST={n} SHOULD={n} — sources: {rule files applied}
 L8 hygiene    : {✅|🔴} {findings or none}
 L9 arch       : {✅|🔴|n/a} constitution={ratified|draft|none} MUST={n} · contracts frozen={n} violated={n}
                 complexity rows carried: {violation → simpler alternative rejected because …, or none}
+L10 ci-extra  : {✅|🔴|n/a} `{cmd}` exit={n} — one line per ci_extra command; unmirrored CI jobs: {names or none}
 Blockers      : {rule-ID/layer + file:line, one per line, or "none"}
 Verdict       : {✅ PR-ready | 🔴 BLOCKED — do not open the PR}
 ```
