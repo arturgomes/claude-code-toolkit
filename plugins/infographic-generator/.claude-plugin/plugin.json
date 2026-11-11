@@ -1,0 +1,13 @@
+{
+  "name": "infographic-generator",
+  "version": "1.0.0",
+  "description": "Turns a lesson, text or topic into a ready-to-use image prompt for an educational infographic aimed at school students (early, middle, high). 18 layouts x 15 styles, text in pt-BR or en. Derived from baoyu-infographic (MIT).",
+  "author": {
+    "name": "Artur Gomes",
+    "url": "https://github.com/arturgomes"
+  },
+  "homepage": "https://github.com/arturgomes/claude-code-toolkit",
+  "repository": "https://github.com/arturgomes/claude-code-toolkit",
+  "license": "MIT",
+  "keywords": ["infographic", "education", "students", "school", "image-prompt", "pt-BR"]
+}
