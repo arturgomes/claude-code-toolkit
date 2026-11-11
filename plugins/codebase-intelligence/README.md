@@ -7,6 +7,11 @@ structural search** (single tier). Cross-session memory lives in an Obsidian vau
 the `ultimate-obsidian` MCP. **No prp-core (or any other plugin) required.**
 
 **Version history**
+- **v3.29.0** — **the pre-PR gate mirrors every CI job, not just install/build/test.** New layer L10 runs
+  the preset's `pre_pr_gate.ci_extra` commands (seathq-fe: the `testid-contract` job — `gen:testids`,
+  `git diff --exit-code docs/testids.json`, `check:testids`, `check:testid-hygiene`, `check:testid-lint`),
+  and L0 now lists CI's jobs and blocks on any it neither mirrors nor lists. A new test id used to pass the
+  gate and fail CI on the first push because `docs/testids.json` was never regenerated.
 - **v3.28.0** — **review roles can't write code, every record is a vault note, rejections feed the next
   run.** Review and planning agents (`pr-reviewer`, `lead-engineer`, `product-owner`, `project-manager`,
   `ux-specialist`, `codebase-analyst/explorer/researcher`, `web-researcher`) now carry a `tools:`
@@ -180,7 +185,7 @@ Per-task (Phase 3):
 
 Phase 4.5      → AC verification = pasted command + exit code + proving output (no narrative claims);
                  each green AC appended to a "## Verified Invariants" block in session-memory
-Phase 4.7      → pre-pr-gate on the integrated HEAD (L0-L9) — 🔴 ⇒ no PR
+Phase 4.7      → pre-pr-gate on the integrated HEAD (L0-L10) — 🔴 ⇒ no PR
 Phase 4.7b     → spec-converge on the gated HEAD: missing / partial / contradicts / unrequested;
                  gaps appended as gated tasks (≤3 passes, each smaller); unrequested reported, not deleted
 Phase 5        → Intelligence Summary · AC coverage table · "## Lessons" · optional skillify (5.6)
@@ -264,7 +269,7 @@ flowchart TD
     RED -->|no| MG[Phase E · serial merge → CHECKPOINT<br/>demoable increment · next slice forks here]:::gate
     MG --> MORE{more slices?}:::decide
     MORE -->|yes| WT
-    MORE -->|no| G2{Phase E2 · pre-pr-gate on merged HEAD<br/>L0-L9 · no receipt, no PR}:::decide
+    MORE -->|no| G2{Phase E2 · pre-pr-gate on merged HEAD<br/>L0-L10 · no receipt, no PR}:::decide
     G2 -->|🔴| BACKC[blockers → owning lane<br/>max 3 re-gate cycles]:::warn
     BACKC --> RJ
     G2 -->|✅| CV{Phase E3 · spec-converge<br/>missing · partial · contradicts · unrequested}:::decide

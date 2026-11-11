@@ -59,6 +59,9 @@ repos:                         # OPTIONAL but STRONGLY recommended — per-repo 
       build:     "<cmd>"       #   CI parity
       test:      "<cmd>"       #   NON-watch (never a bare  vitest / jest --watch ); the gate appends only the changed specs (L5), CI runs the rest
       unused_imports: "<cmd>"  #   the dangling/unused-import check (L6) — blocking even if the repo warns
+      ci_extra:  ["<cmd>", ...] #   OPTIONAL — commands from CI jobs that are not install/build/test (generated-file
+                                #   drift, contract/catalog checks), in CI's order; L10 runs each. Every CI job must be
+                                #   covered by L1-L5 or listed here, or the gate blocks on "unmirrored CI job"
     rulebook:                  # the files pre-pr-gate L7 replays, in precedence order; annotate the
       - "<path>"               #   applyTo glob + rule-ID family per file
     blocking_rule_families: ["FR-1", ...]   # rule IDs treated as MUST for this repo

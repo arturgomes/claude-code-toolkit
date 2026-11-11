@@ -300,7 +300,7 @@
               "additionalProperties": false,
               "required": ["layer", "summary"],
               "properties": {
-                "layer": { "type": "string", "description": "L0-L9 of the gate." },
+                "layer": { "type": "string", "description": "L0-L10 of the gate." },
                 "ruleId": { "type": "string", "description": "Repo rule ID for bot-parity findings (e.g. FR-2, DB-3, CORE-002)." },
                 "location": { "type": "string", "description": "file:line." },
                 "summary": { "type": "string" },
