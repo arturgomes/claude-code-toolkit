@@ -24,6 +24,7 @@ unwritten finding is a lost finding.
 | Report — implementation, loop, doubt, audit, review, convergence, analysis | `02-Notes/Reports/<YYYY-MM>/<slug>-report.md` | overwrite |
 | PR description (**before** the PR is opened) | `02-Notes/pr-descriptions/<YYYY-MM-DD>-<TICKET>-<slug>[-<repo>].md` | overwrite |
 | Cleanup ledger (`/prp-checkup`) | `02-Notes/Sessions/prp-checkup-<repo>.md` | overwrite |
+| Epic run ledger (`/prp-epic`) | `02-Notes/Sessions/epic-<KEY>.md` | overwrite |
 | Ticket node | `03-Systems/tickets/<TICKET>.md` | append |
 | Service / table node | `03-Systems/…` from `_templates/system.md` | append |
 | Drafted external comms (Jira comment bodies, review replies) | the session note, or beside the plan in `02-Notes/Plans/` | append |

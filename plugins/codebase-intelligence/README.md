@@ -7,6 +7,18 @@ structural search** (single tier). Cross-session memory lives in an Obsidian vau
 the `ultimate-obsidian` MCP. **No prp-core (or any other plugin) required.**
 
 **Version history**
+- **v3.30.0** — **`/prp-epic`: a whole epic to PRs, unattended.** Takes a Jira epic key, or an umbrella
+  plan whose `## Children` table lists smaller plans and/or tickets with their deps. Each child runs as its
+  own detached headless `claude -p` process: a ticket through `/prp-orchestrate`, a plan through
+  `/prp-implement`. Children run N at a time (default 3) in a sliding window, in dependency order. A
+  watchdog judges heartbeat from the child's log, last worktree commit and vault notes; a hung child is
+  killed (worktrees kept), relaunched once from its session memory, then parked as `needs-human` while the
+  rest keep going. PR CI is watched and a red PR gets one `/prp-fix` run. Lint/typecheck are delegated to
+  CI only where the project's `.claude/epic-ci-delegation.tsv` proves CI runs them. One tick per call,
+  driven by `/loop`; all state is one vault ledger, `02-Notes/Sessions/epic-<KEY>.md`, so any session can
+  take over; `--status` is the read-only dashboard. Never merges. Process supervision is
+  `scripts/epic.sh` with a 45-check self-test (`scripts/epic.test.sh`, bash 5 and macOS bash 3.2).
+  **Not yet run against a real epic**: do a `--dry-run` and one live child first.
 - **v3.29.0** — **the pre-PR gate mirrors every CI job, not just install/build/test.** New layer L10 runs
   the preset's `pre_pr_gate.ci_extra` commands (seathq-fe: the `testid-contract` job — `gen:testids`,
   `git diff --exit-code docs/testids.json`, `check:testids`, `check:testid-hygiene`, `check:testid-lint`),
@@ -568,7 +580,7 @@ claude mcp add atlassian \
 
 ## Commands & skills
 
-**Commands**: `/prp-plan` · `/prp-implement` · `/prp-loop` · `/prp-lean` · `/prp-fix` · `/prp-orchestrate` · `/prp-checkup` · `/setup-kb` · `/doctor`
+**Commands**: `/prp-plan` · `/prp-implement` · `/prp-loop` · `/prp-lean` · `/prp-fix` · `/prp-orchestrate` · `/prp-epic` · `/prp-checkup` · `/setup-kb` · `/doctor`
 
 | Skill | Purpose |
 |---|---|
