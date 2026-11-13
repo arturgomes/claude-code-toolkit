@@ -1,60 +1,60 @@
 # chalkboard
 
-Black chalkboard background with colorful chalk drawing style
+Fundo de lousa preta com estilo de desenho em giz colorido
 
-## Design Aesthetic
+## Estética
 
-Classic classroom chalkboard aesthetic with hand-drawn chalk illustrations. Nostalgic educational feel with imperfect, sketchy lines that capture the warmth of traditional teaching. Colorful chalk creates visual hierarchy while maintaining the authentic chalkboard experience.
+Estética clássica de lousa de sala de aula, com ilustrações em giz desenhadas à mão. Clima educacional nostálgico, com linhas imperfeitas e esboçadas que capturam o calor do ensino tradicional. O giz colorido cria hierarquia visual sem perder a experiência autêntica da lousa.
 
-## Background
+## Fundo
 
-- Color: Chalkboard Black (#1A1A1A) or Dark Green-Black (#1C2B1C)
-- Texture: Realistic chalkboard texture with subtle scratches, dust particles, and faint eraser marks
+- Cor: Preto lousa (#1A1A1A) ou preto-esverdeado escuro (#1C2B1C)
+- Textura: Textura realista de lousa, com arranhões sutis, partículas de pó e leves marcas de apagador
 
-## Typography
+## Tipografia
 
-Hand-drawn chalk lettering style with visible chalk texture. Imperfect baseline adds authenticity. White or bright colored chalk for emphasis.
+Letras desenhadas à mão no estilo giz, com textura de giz visível. A linha de base imperfeita reforça a autenticidade. Giz branco ou de cores vivas para dar ênfase.
 
-## Color Palette
+## Paleta de cores
 
-| Role | Color | Hex | Usage |
+| Papel | Cor | Hex | Uso |
 |------|-------|-----|-------|
-| Background | Chalkboard Black | #1A1A1A | Primary background |
-| Alt Background | Green-Black | #1C2B1C | Traditional green board |
-| Primary Text | Chalk White | #F5F5F5 | Main text, outlines |
-| Accent 1 | Chalk Yellow | #FFE566 | Highlights, emphasis |
-| Accent 2 | Chalk Pink | #FF9999 | Secondary highlights |
-| Accent 3 | Chalk Blue | #66B3FF | Diagrams, links |
-| Accent 4 | Chalk Green | #90EE90 | Success, nature |
-| Accent 5 | Chalk Orange | #FFB366 | Warnings, energy |
+| Fundo | Preto lousa | #1A1A1A | Fundo principal |
+| Fundo alternativo | Preto-esverdeado | #1C2B1C | Lousa verde tradicional |
+| Texto principal | Branco giz | #F5F5F5 | Texto principal, contornos |
+| Destaque 1 | Amarelo giz | #FFE566 | Realces, ênfase |
+| Destaque 2 | Rosa giz | #FF9999 | Realces secundários |
+| Destaque 3 | Azul giz | #66B3FF | Diagramas, links |
+| Destaque 4 | Verde giz | #90EE90 | Sucesso, natureza |
+| Destaque 5 | Laranja giz | #FFB366 | Avisos, energia |
 
-## Visual Elements
+## Elementos visuais
 
-- Hand-drawn chalk illustrations with sketchy, imperfect lines
-- Chalk dust effects around text and key elements
-- Doodles: stars, arrows, underlines, circles, checkmarks
-- Mathematical formulas and simple diagrams
-- Eraser smudges and chalk residue textures
-- Wooden frame border optional
-- Stick figures and simple icons
-- Connection lines with hand-drawn feel
+- Ilustrações em giz desenhadas à mão, com linhas esboçadas e imperfeitas
+- Efeitos de pó de giz ao redor do texto e dos elementos principais
+- Rabiscos: estrelas, setas, sublinhados, círculos, sinais de visto
+- Fórmulas matemáticas e diagramas simples
+- Borrões de apagador e texturas de resíduo de giz
+- Moldura de madeira opcional
+- Bonecos de palito e ícones simples
+- Linhas de conexão com aparência de traço feito à mão
 
-## Style Rules
+## Regras de estilo
 
-### Do
+### Faça
 
-- Maintain authentic chalk texture on all elements
-- Use imperfect, hand-drawn quality throughout
-- Add subtle chalk dust and smudge effects
-- Create visual hierarchy with color variety
-- Include playful doodles and annotations
+- Mantenha a textura autêntica de giz em todos os elementos
+- Use a qualidade imperfeita, feita à mão, do início ao fim
+- Adicione efeitos sutis de pó de giz e borrões
+- Crie hierarquia visual com variedade de cores
+- Inclua rabiscos e anotações divertidos
 
-### Don't
+### Não faça
 
-- Use perfect geometric shapes
-- Create clean digital-looking lines
-- Add photorealistic elements
-- Use gradients or glossy effects
+- Usar formas geométricas perfeitas
+- Criar linhas limpas, com aparência digital
+- Adicionar elementos fotorrealistas
+- Usar degradês ou efeitos brilhantes
 
 ## Best For
 

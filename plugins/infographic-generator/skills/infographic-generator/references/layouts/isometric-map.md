@@ -1,14 +1,14 @@
 # isometric-map
 
-3D-style spatial layout showing locations, relationships, or journey through space.
+Layout espacial em estilo 3D que mostra locais, relações ou um percurso pelo espaço.
 
-## Structure
+## Estrutura
 
-- Isometric 3D perspective
-- Locations as buildings/landmarks
-- Paths connecting locations
-- Spatial relationships visible
-- Bird's eye view angle
+- Perspectiva isométrica 3D
+- Locais como edifícios/pontos de referência
+- Caminhos ligando os locais
+- Relações espaciais visíveis
+- Ângulo de visão aérea
 
 ## Best For
 
@@ -18,21 +18,21 @@
 - System architecture
 - Process landscapes
 
-## Visual Elements
+## Elementos visuais
 
-- Consistent isometric angle (30°)
-- 3D buildings or objects
-- Pathways and roads
-- Labels floating above
-- Mini scenes at locations
+- Ângulo isométrico consistente (30°)
+- Edifícios ou objetos em 3D
+- Caminhos e estradas
+- Rótulos flutuando acima
+- Minicenas nos locais
 
-## Text Placement
+## Posição do texto
 
-- Title at top corner
-- Location labels above objects
-- Path labels along routes
-- Legend for symbols
-- Scale indicator if relevant
+- Título em um canto superior
+- Rótulos dos locais acima dos objetos
+- Rótulos dos caminhos ao longo das rotas
+- Legenda dos símbolos
+- Indicador de escala, se relevante
 
 ## Recommended Pairings
 

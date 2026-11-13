@@ -1,24 +1,24 @@
 # high
 
-Ages 15-17 (pt-BR: Ensino Médio; en: high school).
+Idades 15-17 (pt-BR: Ensino Médio; en: high school).
 
-## Content Limits
+## Limites de conteúdo
 
-- 5-8 sections; one idea per section
-- Labels of up to 10 words; sentences of 20 words or fewer, at most three per section
-- Formulas, units, data tables, dates and short quotes allowed, copied exactly
-- Key terms kept in their technical form with a one-line gloss
+- 5-8 seções; uma ideia por seção
+- Rótulos de até 10 palavras; frases de 20 palavras ou menos, no máximo três por seção
+- Fórmulas, unidades, tabelas de dados, datas e citações curtas são permitidas, copiadas exatamente
+- Termos-chave mantidos na forma técnica, com uma explicação de uma linha
 
-## Language
+## Linguagem
 
-- Precise vocabulary at textbook level; no baby talk, no cartoon mascots
-- Cause-and-effect wording where the content has it ("porque", "therefore")
+- Vocabulário preciso, no nível de livro didático; sem linguagem infantilizada, sem mascotes de desenho animado
+- Relações de causa e efeito quando o conteúdo as tiver ("porque", "portanto")
 
-## Visual Treatment
+## Tratamento visual
 
-- Clean, subdued palette with strong text contrast; accent color reserved for the key idea
-- Diagrams, annotated figures and small data visuals carry the content
-- Dense is fine if the hierarchy stays obvious (headline, section titles, details)
+- Paleta limpa e sóbria com texto bem contrastado; cor de destaque reservada para a ideia principal
+- Diagramas, figuras com anotações e pequenos gráficos de dados carregam o conteúdo
+- Denso tudo bem, se a hierarquia ficar óbvia (título, títulos de seção, detalhes)
 
 ## Style Fit
 

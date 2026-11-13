@@ -1,14 +1,14 @@
 # comic-strip
 
-Sequential narrative panels telling a story or explaining a concept.
+Quadrinhos sequenciais que contam uma história ou explicam um conceito.
 
-## Structure
+## Estrutura
 
-- Multiple panels in sequence
-- Left-to-right, top-to-bottom reading
-- Characters or subjects in scenes
-- Speech/thought bubbles
-- Panel borders clearly defined
+- Vários quadrinhos em sequência
+- Leitura da esquerda para a direita, de cima para baixo
+- Personagens ou elementos nas cenas
+- Balões de fala e de pensamento
+- Bordas dos quadrinhos bem definidas
 
 ## Best For
 
@@ -18,21 +18,21 @@ Sequential narrative panels telling a story or explaining a concept.
 - Step sequences with context
 - Before/during/after stories
 
-## Visual Elements
+## Elementos visuais
 
-- Panel frames
-- Speech and thought bubbles
-- Sound effects (optional)
-- Characters with expressions
-- Scene backgrounds
+- Molduras dos quadrinhos
+- Balões de fala e de pensamento
+- Efeitos sonoros (opcional)
+- Personagens com expressões
+- Cenários de fundo
 
-## Text Placement
+## Posição do texto
 
-- Title at top
-- Dialogue in speech bubbles
-- Narration in caption boxes
-- Sound effects integrated
-- Panel numbers if needed
+- Título no topo
+- Diálogo nos balões de fala
+- Narração em caixas de legenda
+- Efeitos sonoros integrados
+- Números dos quadrinhos, se necessário
 
 ## Recommended Pairings
 

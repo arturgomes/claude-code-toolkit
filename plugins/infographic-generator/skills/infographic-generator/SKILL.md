@@ -168,7 +168,7 @@ Work in `infographic/{topic-slug}/`: slug of 2-4 ASCII words in kebab-case witho
 ## Verification
 
 - `prompts/infographic.md` exists and contains no `{{` placeholder
-- Its language line says `Brazilian Portuguese (pt-BR)` or `English`; the content block quotes the title and every on-image label, and quotes nothing else
+- Its language line says `português do Brasil (pt-BR)` or `inglês (English)`; the content block quotes the title and every on-image label, and quotes nothing else
 - Section count and label length respect the chosen level
 - Numbers, dates, names and formulas match `source.md` exactly
 - If rendered: all accents correct, text readable at phone size, nothing drawn that the content does not state

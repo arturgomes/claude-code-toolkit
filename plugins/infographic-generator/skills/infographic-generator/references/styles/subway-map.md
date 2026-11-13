@@ -1,28 +1,28 @@
 # subway-map
 
-Transit diagram style with colored lines and stations
+Estilo de diagrama de transporte, com linhas coloridas e estações
 
-## Color Palette
+## Paleta de cores
 
-- Primary: Transit line colors - red, blue, green, yellow, orange
-- Background: White or light gray
-- Accents: Station dots, interchange markers
+- Principal: Cores das linhas de transporte - vermelho, azul, verde, amarelo, laranja
+- Fundo: Branco ou cinza-claro
+- Destaques: Pontos de estação, marcadores de baldeação
 
-## Visual Elements
+## Elementos visuais
 
-- Colored route lines
-- 45° and 90° angles only
-- Station circle markers
-- Interchange symbols
-- Simplified geography
-- Line thickness hierarchy
+- Linhas de rota coloridas
+- Somente ângulos de 45° e 90°
+- Marcadores circulares de estação
+- Símbolos de baldeação
+- Geografia simplificada
+- Hierarquia de espessura das linhas
 
-## Typography
+## Tipografia
 
-- Clean sans-serif
-- Station name labels
-- Line number/name badges
-- Horizontal or angled text
+- Fonte sem serifa e limpa
+- Rótulos com os nomes das estações
+- Selos com o número ou nome da linha
+- Texto horizontal ou inclinado
 
 ## Best For
 

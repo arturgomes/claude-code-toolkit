@@ -1,28 +1,28 @@
 # knolling
 
-Organized flat-lay with top-down arrangement
+Organização em flat-lay, com objetos dispostos em vista de cima
 
-## Color Palette
+## Paleta de cores
 
-- Primary: Object's natural colors
-- Background: Solid color - black, white, or colored surface
-- Accents: Shadows, subtle highlights
+- Principal: Cores naturais dos objetos
+- Fundo: Cor sólida - preto, branco ou superfície colorida
+- Destaques: Sombras, realces sutis
 
-## Visual Elements
+## Elementos visuais
 
-- Top-down camera angle
-- Objects arranged at 90° angles
-- Equal spacing between items
-- Clean organization
-- Symmetry and order
-- No overlapping items
+- Câmera em ângulo de cima para baixo
+- Objetos dispostos em ângulos de 90°
+- Espaçamento igual entre os itens
+- Organização limpa
+- Simetria e ordem
+- Nenhum item sobreposto
 
-## Typography
+## Tipografia
 
-- Clean labels
-- Positioned outside objects
-- Connecting lines to items
-- Minimal, catalog-style
+- Rótulos limpos
+- Posicionados fora dos objetos
+- Linhas conectando aos itens
+- Estilo minimalista, de catálogo
 
 ## Best For
 

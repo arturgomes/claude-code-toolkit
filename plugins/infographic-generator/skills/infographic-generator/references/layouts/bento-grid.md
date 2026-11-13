@@ -1,14 +1,14 @@
 # bento-grid
 
-Modular grid layout with varied cell sizes, like a bento box.
+Layout de grade modular com células de tamanhos variados, como uma caixa bento.
 
-## Structure
+## Estrutura
 
-- Grid of rectangular cells
-- Mixed cell sizes (1x1, 2x1, 1x2, 2x2)
-- No strict symmetry required
-- Hero cell for main point
-- Supporting cells around it
+- Grade de células retangulares
+- Tamanhos de célula variados (1x1, 2x1, 1x2, 2x2)
+- Simetria rígida não é necessária
+- Célula de destaque para o ponto principal
+- Células de apoio ao redor dela
 
 ## Best For
 
@@ -18,21 +18,21 @@ Modular grid layout with varied cell sizes, like a bento box.
 - Portfolio displays
 - Mixed content types
 
-## Visual Elements
+## Elementos visuais
 
-- Clear cell boundaries
-- Varied cell backgrounds
-- Icons or illustrations per cell
-- Consistent padding/margins
-- Visual hierarchy through size
+- Limites de célula bem definidos
+- Fundos de célula variados
+- Ícones ou ilustrações em cada célula
+- Espaçamento e margens consistentes
+- Hierarquia visual pelo tamanho
 
-## Text Placement
+## Posição do texto
 
-- Main title at top
-- Cell titles within each cell
-- Brief content per cell
-- Minimal text, maximum visual
-- Key takeaway or summary in a prominent cell
+- Título principal no topo
+- Títulos das células dentro de cada célula
+- Conteúdo breve em cada célula
+- Mínimo de texto, máximo de elementos visuais
+- Ideia principal ou resumo em uma célula de destaque
 
 ## Recommended Pairings
 

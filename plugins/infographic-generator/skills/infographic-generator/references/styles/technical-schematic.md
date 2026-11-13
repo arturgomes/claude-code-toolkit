@@ -1,35 +1,35 @@
 # technical-schematic
 
-Technical diagrams with engineering precision and clean geometry.
+Diagramas técnicos com precisão de engenharia e geometria limpa.
 
-## Color Palette
+## Paleta de cores
 
-- Primary: Blues (#2563EB), teals, grays, white lines
-- Background: Deep blue (#1E3A5F), white, or light gray with grid
-- Accents: Amber highlights (#F59E0B), cyan callouts
+- Principal: Azuis (#2563EB), verde-azulados, cinzas, linhas brancas
+- Fundo: Azul-escuro (#1E3A5F), branco ou cinza-claro com grade
+- Destaques: Realces em âmbar (#F59E0B), chamadas em ciano
 
-## Variants
+## Variações
 
-| Variant | Focus | Visual Emphasis |
+| Variação | Foco | Ênfase visual |
 |---------|-------|-----------------|
-| **Blueprint** | Engineering schematics | White on blue, measurements, grid |
-| **Isometric** | 3D spatial representation | 30° angle blocks, clean fills |
+| **Blueprint** | Esquemas de engenharia | Branco sobre azul, medidas, grade |
+| **Isométrico** | Representação espacial em 3D | Blocos em ângulo de 30°, preenchimentos limpos |
 
-## Visual Elements
+## Elementos visuais
 
-- Geometric precision throughout
-- Grid pattern or isometric angle
-- Dimension lines and measurements
-- Technical symbols and annotations
-- Clean vector shapes
-- Consistent stroke weights
+- Precisão geométrica em todo o desenho
+- Padrão de grade ou ângulo isométrico
+- Linhas de cota e medidas
+- Símbolos técnicos e anotações
+- Formas vetoriais limpas
+- Espessura de traço consistente
 
-## Typography
+## Tipografia
 
-- Technical stencil or clean sans-serif
-- All-caps labels
-- Measurement annotations
-- Floating labels for isometric
+- Fonte técnica estilo stencil ou sem serifa e limpa
+- Rótulos em caixa-alta
+- Anotações de medidas
+- Rótulos flutuantes para o estilo isométrico
 
 ## Best For
 

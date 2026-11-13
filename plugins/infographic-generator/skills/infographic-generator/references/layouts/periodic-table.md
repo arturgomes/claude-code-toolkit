@@ -1,14 +1,14 @@
 # periodic-table
 
-Grid of categorized elements with consistent cell formatting.
+Grade de elementos categorizados com formatação de célula consistente.
 
-## Structure
+## Estrutura
 
-- Rectangular grid
-- Each cell is one element
-- Color-coded categories
-- Consistent cell format
-- Optional grouping gaps
+- Grade retangular
+- Cada célula é um elemento
+- Categorias codificadas por cores
+- Formato de célula consistente
+- Espaços de agrupamento opcionais
 
 ## Best For
 
@@ -18,21 +18,21 @@ Grid of categorized elements with consistent cell formatting.
 - Element collections
 - Reference guides
 
-## Visual Elements
+## Elementos visuais
 
-- Uniform cell sizes
-- Category colors
-- Symbol/abbreviation prominent
-- Small icon per cell
-- Category legend
+- Células de tamanho uniforme
+- Cores das categorias
+- Símbolo/abreviação em destaque
+- Pequeno ícone em cada célula
+- Legenda das categorias
 
-## Text Placement
+## Posição do texto
 
-- Title at top
-- Cell: symbol, name, brief info
-- Category names in legend
-- Optional row/column headers
-- Footnotes for special cases
+- Título no topo
+- Célula: símbolo, nome, breve informação
+- Nomes das categorias na legenda
+- Cabeçalhos de linha/coluna opcionais
+- Notas de rodapé para casos especiais
 
 ## Recommended Pairings
 

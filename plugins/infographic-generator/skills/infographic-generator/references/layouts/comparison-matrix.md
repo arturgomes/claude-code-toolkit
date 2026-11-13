@@ -1,14 +1,14 @@
 # comparison-matrix
 
-Grid-based multi-factor comparison across multiple items.
+Comparação em grade de vários fatores entre vários itens.
 
-## Structure
+## Estrutura
 
-- Table/grid layout
-- Rows: items being compared
-- Columns: comparison criteria
-- Cells: scores, checks, or values
-- Header row and column clearly marked
+- Layout de tabela/grade
+- Linhas: itens comparados
+- Colunas: critérios de comparação
+- Células: pontuações, marcas de verificação ou valores
+- Linha e coluna de cabeçalho bem destacadas
 
 ## Best For
 
@@ -18,21 +18,21 @@ Grid-based multi-factor comparison across multiple items.
 - Specification sheets
 - Rating comparisons
 
-## Visual Elements
+## Elementos visuais
 
-- Clear grid lines or cell boundaries
-- Checkmarks, X marks, or scores in cells
-- Color coding for quick scanning
-- Icons for criteria categories
-- Highlight for recommended option
+- Linhas de grade ou limites de célula nítidos
+- Marcas de verificação, marcas X ou pontuações nas células
+- Codificação por cores para leitura rápida
+- Ícones para as categorias de critérios
+- Destaque para a opção recomendada
 
-## Text Placement
+## Posição do texto
 
-- Title at top
-- Item names in first column
-- Criteria in header row
-- Brief values in cells
-- Legend if using symbols
+- Título no topo
+- Nomes dos itens na primeira coluna
+- Critérios na linha de cabeçalho
+- Valores breves nas células
+- Legenda, se usar símbolos
 
 ## Recommended Pairings
 

@@ -13,3 +13,4 @@ Derived from `baoyu-infographic` v1.56.1 by JimLiu (https://github.com/JimLiu/ba
 - Only text inside double quotes is drawn on the image; everything else in the content block is direction
 - Fixed upstream `Recommended Pairings` entries that named styles which do not exist
 - Business framing in layout and style files replaced with school examples
+- Prompt text (base template, level, layout and style definitions) translated to Brazilian Portuguese; agent-only sections (`Best For`, `Recommended Pairings`, `Style Fit`) stay in English because they are never inlined

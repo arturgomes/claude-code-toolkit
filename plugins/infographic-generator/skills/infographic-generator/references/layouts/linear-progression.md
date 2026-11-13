@@ -1,21 +1,21 @@
 # linear-progression
 
-Sequential progression showing steps, timeline, or chronological events.
+Progressão sequencial que mostra etapas, linha do tempo ou eventos cronológicos.
 
-## Structure
+## Estrutura
 
-- Linear arrangement (horizontal or vertical)
-- Nodes/markers at key points
-- Connecting line or path between nodes
-- Clear start and end points
-- Directional flow indicators
+- Disposição linear (horizontal ou vertical)
+- Nós/marcadores em pontos-chave
+- Linha ou caminho de ligação entre os nós
+- Pontos de início e fim claros
+- Indicadores de direção do fluxo
 
-## Variants
+## Variações
 
-| Variant | Focus | Visual Emphasis |
+| Variação | Foco | Ênfase visual |
 |---------|-------|-----------------|
-| **Timeline** | Chronological events, dates | Time markers, period labels |
-| **Process** | Action steps, numbered sequence | Step numbers, action icons |
+| **Linha do tempo** | Eventos cronológicos, datas | Marcadores de tempo, rótulos de período |
+| **Processo** | Etapas de ação, sequência numerada | Números das etapas, ícones de ação |
 
 ## Best For
 
@@ -25,20 +25,20 @@ Sequential progression showing steps, timeline, or chronological events.
 - Workflow documentation
 - Lab procedures and math steps
 
-## Visual Elements
+## Elementos visuais
 
-- Numbered steps or date markers
-- Arrows or connectors showing direction
-- Icons representing each step/event
-- Consistent node spacing
-- Progress indicators optional
+- Etapas numeradas ou marcadores de data
+- Setas ou conectores indicando a direção
+- Ícones representando cada etapa/evento
+- Espaçamento consistente entre os nós
+- Indicadores de progresso opcionais
 
-## Text Placement
+## Posição do texto
 
-- Title at top
-- Step/event titles at each node
-- Brief descriptions below nodes
-- Dates or numbers clearly visible
+- Título no topo
+- Títulos das etapas/eventos em cada nó
+- Descrições breves abaixo dos nós
+- Datas ou números bem visíveis
 
 ## Recommended Pairings
 

@@ -53,8 +53,8 @@ def test_no_cjk_anywhere():
 def test_build_prompt_inlines_everything():
     out = build_prompt.build("circular-flow", "hand-drawn-edu", "early", "portrait", "pt-BR", "Ciclo da água: \"Evaporação\"")
     assert "{{" not in out
-    assert "9:16" in out and "Brazilian Portuguese (pt-BR)" in out and "ã õ ç" in out
-    assert "# circular-flow" in out and "# hand-drawn-edu" in out and "Ages 6-10" in out
+    assert "9:16" in out and "português do Brasil (pt-BR)" in out and "ã õ ç" in out
+    assert "# circular-flow" in out and "# hand-drawn-edu" in out and "Idades 6-10" in out
     assert "\"Evaporação\"" in out
 
 
@@ -83,8 +83,8 @@ def test_agent_only_hints_are_not_inlined():
     out = build_prompt.build("bento-grid", "chalkboard", "middle", "landscape", "en", "x")
     for hint in ("Recommended Pairings", "Best For", "Style Fit"):
         assert hint not in out
-    assert "## Structure" in out and "## Typography" in out
+    assert "## Estrutura" in out and "## Tipografia" in out
 
 
 def test_template_draws_only_quoted_text():
-    assert "inside double quotes" in (ROOT / "references" / "base-prompt.md").read_text(encoding="utf-8")
+    assert "entre aspas duplas" in (ROOT / "references" / "base-prompt.md").read_text(encoding="utf-8")

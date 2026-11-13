@@ -1,28 +1,28 @@
 # kawaii
 
-Japanese cute style with big eyes and pastel colors
+Estilo fofo japonês com olhos grandes e cores pastel
 
-## Color Palette
+## Paleta de cores
 
-- Primary: Soft pastels - pink (#FFB6C1), mint (#98D8C8), lavender (#E6E6FA)
-- Background: Light pink or cream, sparkle overlays
-- Accents: Bright pops, star and heart shapes
+- Principal: Tons pastel suaves - rosa (#FFB6C1), verde-menta (#98D8C8), lavanda (#E6E6FA)
+- Fundo: Rosa-claro ou creme, com brilhos sobrepostos
+- Destaques: Toques de cores vivas, formas de estrelas e corações
 
-## Visual Elements
+## Elementos visuais
 
-- Big sparkly eyes on characters
-- Rounded, soft shapes
-- Blushing cheeks
-- Sparkles and stars scattered
-- Cute animal characters
-- Chibi proportions
+- Olhos grandes e brilhantes nos personagens
+- Formas arredondadas e suaves
+- Bochechas coradas
+- Brilhos e estrelas espalhados
+- Personagens de animais fofos
+- Proporções chibi
 
-## Typography
+## Tipografia
 
-- Rounded, bubbly fonts
-- Cute decorations on letters
-- Hearts and stars in text
-- Soft, friendly appearance
+- Fontes arredondadas, no estilo bolha
+- Decorações fofas nas letras
+- Corações e estrelas no texto
+- Aparência suave e amigável
 
 ## Best For
 

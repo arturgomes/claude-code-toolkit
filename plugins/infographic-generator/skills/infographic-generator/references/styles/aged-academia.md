@@ -1,35 +1,35 @@
 # aged-academia
 
-Historical scientific illustration with aged paper aesthetic.
+Ilustração científica histórica com estética de papel envelhecido.
 
-## Color Palette
+## Paleta de cores
 
-- Primary: Sepia brown (#704214), aged ink, muted earth tones
-- Background: Parchment (#F4E4BC), yellowed paper texture
-- Accents: Faded red annotations, iron gall ink spots
+- Principal: Marrom sépia (#704214), tinta envelhecida, tons terrosos suaves
+- Fundo: Pergaminho (#F4E4BC), textura de papel amarelado
+- Destaques: Anotações em vermelho desbotado, manchas de tinta ferrogálica
 
-## Variants
+## Variações
 
-| Variant | Focus | Visual Emphasis |
+| Variação | Foco | Ênfase visual |
 |---------|-------|-----------------|
-| **Notebook** | Personal sketches, inventions | Cursive notes, margin annotations |
-| **Specimen** | Scientific classification | Numbered diagrams, Latin labels |
+| **Caderno** | Esboços pessoais, invenções | Notas em letra cursiva, anotações nas margens |
+| **Espécime** | Classificação científica | Diagramas numerados, rótulos em latim |
 
-## Visual Elements
+## Elementos visuais
 
-- Aged paper texture overlay
-- Detailed cross-hatching and line work
-- Scientific illustration precision
-- Study notes and annotations
-- Specimen plate or sketch aesthetic
-- Numbered diagram elements
+- Textura de papel envelhecido sobreposta
+- Hachuras cruzadas e traços detalhados
+- Precisão de ilustração científica
+- Notas de estudo e anotações
+- Estética de prancha de espécime ou de esboço
+- Elementos de diagrama numerados
 
-## Typography
+## Tipografia
 
-- Handwritten cursive or serif fonts
-- Scientific annotations
-- Small caps for labels
-- Italics for scientific names
+- Fontes cursivas manuscritas ou com serifa
+- Anotações científicas
+- Versaletes nos rótulos
+- Itálico para nomes científicos
 
 ## Best For
 

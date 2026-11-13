@@ -1,14 +1,14 @@
 # story-mountain
 
-Plot structure visualization showing rising action, climax, and resolution.
+Visualização da estrutura de um enredo, mostrando ação crescente, clímax e resolução.
 
-## Structure
+## Estrutura
 
-- Mountain/arc shape
-- Rising slope (build-up)
-- Peak (climax)
-- Falling slope (resolution)
-- Start and end at base level
+- Forma de montanha/arco
+- Encosta ascendente (preparação)
+- Pico (clímax)
+- Encosta descendente (resolução)
+- Início e fim no nível da base
 
 ## Best For
 
@@ -18,21 +18,21 @@ Plot structure visualization showing rising action, climax, and resolution.
 - Emotional journeys
 - Campaign arcs
 
-## Visual Elements
+## Elementos visuais
 
-- Mountain or arc curve
-- Points along the path
-- Climax visually emphasized
-- Slope steepness meaningful
-- Base camps or milestones
+- Curva de montanha ou arco
+- Pontos ao longo do caminho
+- Clímax com destaque visual
+- Inclinação da encosta com significado
+- Acampamentos-base ou marcos
 
-## Text Placement
+## Posição do texto
 
-- Title at top
-- Stage labels along path
-- Climax prominently labeled
-- Brief descriptions at points
-- Start/end clearly marked
+- Título no topo
+- Rótulos das etapas ao longo do caminho
+- Clímax com rótulo de destaque
+- Descrições breves nos pontos
+- Início/fim claramente marcados
 
 ## Recommended Pairings
 

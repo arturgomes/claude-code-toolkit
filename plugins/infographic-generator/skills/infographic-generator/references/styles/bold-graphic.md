@@ -1,35 +1,35 @@
 # bold-graphic
 
-High-contrast comic style with bold outlines and dramatic visuals.
+Estilo de quadrinhos de alto contraste, com contornos grossos e visuais dramáticos.
 
-## Color Palette
+## Paleta de cores
 
-- Primary: Bold primaries - red, yellow, blue, black
-- Background: White, halftone patterns, dramatic shadows
-- Accents: Spot colors, neon highlights
+- Principal: Cores primárias vibrantes - vermelho, amarelo, azul, preto
+- Fundo: Branco, padrões de meio-tom (halftone), sombras dramáticas
+- Destaques: Cores especiais, realces em neon
 
-## Variants
+## Variações
 
-| Variant | Focus | Visual Emphasis |
+| Variação | Foco | Ênfase visual |
 |---------|-------|-----------------|
-| **Graphic-novel** | Dramatic narratives | Action lines, hatching, panels |
-| **Pop-art** | High-energy impact | Halftone dots, Warhol repetition |
+| **Graphic novel** | Narrativas dramáticas | Linhas de ação, hachuras, quadros |
+| **Pop art** | Impacto de alta energia | Pontos de meio-tom, repetição ao estilo Warhol |
 
-## Visual Elements
+## Elementos visuais
 
-- Bold black outlines
-- High contrast compositions
-- Halftone dot patterns
-- Comic panel borders optional
-- Action lines and motion
-- Speech bubbles and sound effects
+- Contornos pretos grossos
+- Composições de alto contraste
+- Padrões de pontos de meio-tom
+- Bordas de quadros de HQ opcionais
+- Linhas de ação e movimento
+- Balões de fala e efeitos sonoros
 
-## Typography
+## Tipografia
 
-- Comic book lettering
-- Impact fonts for emphasis
-- POW/BANG effects for pop-art
-- Caption boxes for narrative
+- Letras de quadrinhos
+- Fontes de alto impacto para dar ênfase
+- Efeitos POW/BANG para o pop art
+- Caixas de legenda para a narrativa
 
 ## Best For
 

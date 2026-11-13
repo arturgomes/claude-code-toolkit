@@ -1,14 +1,14 @@
 # venn-diagram
 
-Overlapping circles showing relationships, commonalities, and differences.
+Círculos sobrepostos que mostram relações, pontos em comum e diferenças.
 
-## Structure
+## Estrutura
 
-- 2-3 overlapping circles
-- Each circle is a category/concept
-- Overlaps show shared elements
-- Center shows common to all
-- Unique areas for exclusives
+- 2-3 círculos sobrepostos
+- Cada círculo é uma categoria/conceito
+- As interseções mostram elementos compartilhados
+- O centro mostra o que é comum a todos
+- Áreas próprias para os elementos exclusivos
 
 ## Best For
 
@@ -18,21 +18,21 @@ Overlapping circles showing relationships, commonalities, and differences.
 - Comparative analysis
 - Finding common ground
 
-## Visual Elements
+## Elementos visuais
 
-- Translucent circle fills
-- Clear overlap regions
-- Distinct colors per circle
-- Icons in regions
-- Boundary labels
+- Preenchimento translúcido dos círculos
+- Regiões de sobreposição nítidas
+- Cores distintas em cada círculo
+- Ícones nas regiões
+- Rótulos nos limites
 
-## Text Placement
+## Posição do texto
 
-- Title at top
-- Circle labels outside or on edge
-- Items in appropriate regions
-- Overlap region labels
-- Legend if needed
+- Título no topo
+- Rótulos dos círculos do lado de fora ou na borda
+- Itens nas regiões correspondentes
+- Rótulos das regiões de interseção
+- Legenda, se necessário
 
 ## Recommended Pairings
 

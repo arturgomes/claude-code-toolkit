@@ -1,21 +1,21 @@
 # hierarchical-layers
 
-Nested layers showing levels of importance, influence, or proximity.
+Camadas aninhadas que mostram níveis de importância, influência ou proximidade.
 
-## Structure
+## Estrutura
 
-- Multiple layers from core to periphery
-- Core/top: most important/central
-- Outer/bottom: decreasing importance
-- 3-7 levels typically
-- Clear boundaries between levels
+- Várias camadas, do núcleo à periferia
+- Núcleo/topo: o mais importante/central
+- Externo/base: importância decrescente
+- Em geral, 3-7 níveis
+- Limites claros entre os níveis
 
-## Variants
+## Variações
 
-| Variant | Shape | Visual Emphasis |
+| Variação | Forma | Ênfase visual |
 |---------|-------|-----------------|
-| **Pyramid** | Triangle, vertical | Top-down hierarchy, quantity |
-| **Concentric** | Rings, radial | Center-out influence, proximity |
+| **Pirâmide** | Triângulo, vertical | Hierarquia de cima para baixo, quantidade |
+| **Concêntrico** | Anéis, radial | Influência do centro para fora, proximidade |
 
 ## Best For
 
@@ -25,21 +25,21 @@ Nested layers showing levels of importance, influence, or proximity.
 - Organizational structures
 - Food chains and levels of a system
 
-## Visual Elements
+## Elementos visuais
 
-- Distinct color per level
-- Icons or illustrations per tier
-- Size indicates importance/quantity
-- Labels inside or beside layers
-- Decorative apex/center element
+- Uma cor distinta por nível
+- Ícones ou ilustrações em cada camada
+- O tamanho indica importância/quantidade
+- Rótulos dentro ou ao lado das camadas
+- Elemento decorativo no ápice/centro
 
-## Text Placement
+## Posição do texto
 
-- Title at top or side
-- Level names inside each tier
-- Brief descriptions outside
-- Quantities or percentages if relevant
-- Legend for color meanings
+- Título no topo ou na lateral
+- Nomes dos níveis dentro de cada camada
+- Descrições breves do lado de fora
+- Quantidades ou porcentagens, se relevante
+- Legenda para o significado das cores
 
 ## Recommended Pairings
 

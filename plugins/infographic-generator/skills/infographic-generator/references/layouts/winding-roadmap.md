@@ -1,14 +1,14 @@
 # winding-roadmap
 
-Curved path showing journey with milestones and checkpoints.
+Caminho curvo que mostra uma jornada com marcos e pontos de verificação.
 
-## Structure
+## Estrutura
 
-- S-curve or winding path
-- Milestones along the path
-- Start and destination points
-- Side elements (obstacles, helpers)
-- Progress indicators
+- Curva em S ou caminho sinuoso
+- Marcos ao longo do caminho
+- Pontos de partida e de destino
+- Elementos laterais (obstáculos, ajudantes)
+- Indicadores de progresso
 
 ## Best For
 
@@ -18,21 +18,21 @@ Curved path showing journey with milestones and checkpoints.
 - Learning paths
 - Strategy timelines
 
-## Visual Elements
+## Elementos visuais
 
-- Curving road or river
-- Milestone markers/flags
-- Scene elements along path
-- Vehicle/character on journey
-- Destination landmark
+- Estrada ou rio sinuoso
+- Marcadores/bandeiras de marco
+- Elementos de cena ao longo do caminho
+- Veículo/personagem na jornada
+- Ponto de referência do destino
 
-## Text Placement
+## Posição do texto
 
-- Title at top
-- Milestone labels at each point
-- Path section names
-- Destination description
-- Optional timeline indicators
+- Título no topo
+- Rótulos dos marcos em cada ponto
+- Nomes dos trechos do caminho
+- Descrição do destino
+- Indicadores de linha do tempo opcionais
 
 ## Recommended Pairings
 

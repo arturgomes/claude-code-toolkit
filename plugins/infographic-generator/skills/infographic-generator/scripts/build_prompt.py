@@ -9,10 +9,10 @@ from pathlib import Path
 REFS = Path(__file__).resolve().parent.parent / "references"
 LANGUAGES = {
     "pt-BR": (
-        "Brazilian Portuguese (pt-BR)",
-        "Render Portuguese accents exactly: ã õ ç á à â é ê í ó ô ú. A missing or wrong accent is an error.",
+        "português do Brasil (pt-BR)",
+        "Escreva os acentos exatamente: ã õ ç á à â é ê í ó ô ú. Acento faltando ou errado é erro.",
     ),
-    "en": ("English", "Use standard English spelling."),
+    "en": ("inglês (English)", "Use a ortografia padrão do inglês."),
 }
 NAMED_ASPECTS = {"landscape": "16:9", "portrait": "9:16", "square": "1:1"}
 RATIO = re.compile(r"^\d+(\.\d+)?:\d+(\.\d+)?$")

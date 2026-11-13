@@ -1,62 +1,62 @@
 # hand-drawn-edu
 
-Hand-drawn educational infographic with macaron pastel color blocks on warm cream paper texture.
+Infográfico educacional desenhado à mão, com blocos de cor em tons pastel macaron sobre textura de papel creme quente.
 
-## Color Palette
+## Paleta de cores
 
-- Background: Warm cream (#F5F0E8) with subtle paper grain texture
-- Primary text: Deep charcoal (#2D2D2D) for headlines, outlines
-- Macaron Blue: #A8D8EA for cool-toned information zones
-- Macaron Mint: #B5E5CF for growth/positive zones
-- Macaron Lavender: #D5C6E0 for abstract/concept zones
-- Macaron Peach: #FFD5C2 for warm-toned zones
-- Accent: Coral Red (#E8655A) for key data, warnings, emphasis
-- Muted annotations: Warm gray (#6B6B6B) for secondary labels
+- Fundo: Creme quente (#F5F0E8) com sutil textura granulada de papel
+- Texto principal: Carvão escuro (#2D2D2D) para títulos e contornos
+- Azul macaron: #A8D8EA para zonas de informação em tons frios
+- Menta macaron: #B5E5CF para zonas de crescimento/positivas
+- Lavanda macaron: #D5C6E0 para zonas abstratas/de conceitos
+- Pêssego macaron: #FFD5C2 para zonas em tons quentes
+- Destaque: Vermelho-coral (#E8655A) para dados-chave, avisos e ênfase
+- Anotações discretas: Cinza quente (#6B6B6B) para rótulos secundários
 
-## Visual Elements
+## Elementos visuais
 
-- Macaron pastel rounded cards as distinct information zones
-- Hand-drawn wavy connection lines and arrows with small text labels
-- Simple stick-figure characters and cartoon icons to humanize concepts
-- Doodle decorations: small stars, underlines, spirals, sparkles
-- Color fills don't completely fill outlines — preserve casual hand-drawn feel
-- Dashed borders for secondary or contained zones
-- Small icon doodles (clipboard, lock, checkmark, lightbulb) to reinforce concepts
-- Bold centered quote or takeaway at the bottom
-- Slight hand-drawn wobble on all lines and shapes
+- Cartões arredondados em tons pastel macaron como zonas de informação distintas
+- Linhas de conexão e setas onduladas, desenhadas à mão, com pequenos rótulos de texto
+- Personagens simples de bonecos de palito e ícones de cartum para humanizar os conceitos
+- Rabiscos decorativos: estrelinhas, sublinhados, espirais, brilhos
+- O preenchimento de cor não cobre totalmente os contornos — preserve o toque casual de desenho à mão
+- Bordas tracejadas para zonas secundárias ou contidas
+- Pequenos ícones rabiscados (prancheta, cadeado, sinal de visto, lâmpada) para reforçar os conceitos
+- Frase ou conclusão em destaque, em negrito e centralizada, na parte inferior
+- Leve tremor de traço feito à mão em todas as linhas e formas
 
-## Variants
+## Variações
 
-| Variant | Focus | Visual Emphasis |
+| Variação | Foco | Ênfase visual |
 |---------|-------|-----------------|
-| **Sketch-notes** | Concept mapping | More stick figures, thought bubbles, connecting arrows |
-| **Pastel cards** | Structured info | Cleaner macaron blocks, less doodle, more white space |
+| **Anotações visuais** | Mapeamento de conceitos | Mais bonecos de palito, balões de pensamento, setas de ligação |
+| **Cartões pastel** | Informação estruturada | Blocos macaron mais limpos, menos rabiscos, mais espaço em branco |
 
-## Typography
+## Tipografia
 
-- Main title: Bold hand-drawn lettering with organic strokes, large confident letterforms with slight wobble
-- Section headers: Hand-lettered text on or inside macaron color blocks
-- Body text: Clear handwritten print style, legible but not mechanical
-- Annotations: Warm gray (#6B6B6B), smaller, neat handwritten labels
-- Keywords: Bold emphasis within body text
+- Título principal: Letras desenhadas à mão em negrito, com traços orgânicos, letras grandes e seguras com leve tremor
+- Títulos de seção: Texto escrito à mão sobre ou dentro dos blocos de cor macaron
+- Texto do corpo: Letra de forma manuscrita clara, legível, mas não mecânica
+- Anotações: Cinza quente (#6B6B6B), menores, rótulos manuscritos caprichados
+- Palavras-chave: Ênfase em negrito dentro do texto do corpo
 
-## Style Enforcement
+## Regras obrigatórias
 
-- All lines must have slight hand-drawn wobble — no perfect geometry
-- Each information zone uses a distinct macaron color block
-- Maintain consistent wobble quality across all shapes and lines
-- Include at least one simple cartoon character or stick figure
-- Generous white space between zones — each zone should breathe
-- Maximum 4 macaron colors per infographic
+- Todas as linhas devem ter leve tremor de traço feito à mão — nada de geometria perfeita
+- Cada zona de informação usa um bloco de cor macaron distinto
+- Mantenha a mesma qualidade de tremor em todas as formas e linhas
+- Inclua pelo menos um personagem de cartum simples ou boneco de palito
+- Espaço em branco generoso entre as zonas — cada zona deve respirar
+- No máximo 4 cores macaron por infográfico
 
-## Avoid
+## Evite
 
-- Perfect geometric shapes or straight lines
-- Photorealistic elements or stock illustration style
-- Pure white backgrounds
-- Flat vector icons or digital-precision graphics
-- Overcrowded layouts — let zones breathe
-- Corporate or clinical aesthetic
+- Formas geométricas perfeitas ou linhas retas
+- Elementos fotorrealistas ou estilo de ilustração de banco de imagens
+- Fundos totalmente brancos
+- Ícones vetoriais planos ou gráficos de precisão digital
+- Layouts sobrecarregados — deixe as zonas respirarem
+- Estética corporativa ou clínica
 
 ## Best For
 

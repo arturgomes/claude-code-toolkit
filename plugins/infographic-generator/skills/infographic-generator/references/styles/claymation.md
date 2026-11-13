@@ -1,28 +1,28 @@
 # claymation
 
-3D clay figure aesthetic with stop-motion charm
+Estética de figuras 3D de massinha, com o charme do stop-motion
 
-## Color Palette
+## Paleta de cores
 
-- Primary: Saturated clay colors - bright but slightly muted
-- Background: Neutral studio backdrop, soft gradients
-- Accents: Complementary clay colors, shiny highlights
+- Principal: Cores saturadas de massinha - vivas, mas levemente amenizadas
+- Fundo: Cenário neutro de estúdio, degradês suaves
+- Destaques: Cores complementares de massinha, realces brilhantes
 
-## Visual Elements
+## Elementos visuais
 
-- Clay/plasticine texture on all objects
-- Fingerprint marks and imperfections
-- Rounded, sculpted forms
-- Soft shadows
-- Stop-motion staging
-- Miniature set aesthetic
+- Textura de massinha/plastilina em todos os objetos
+- Marcas de dedos e imperfeições
+- Formas arredondadas e esculpidas
+- Sombras suaves
+- Encenação de stop-motion
+- Estética de cenário em miniatura
 
-## Typography
+## Tipografia
 
-- Extruded clay letters
-- Dimensional, rounded text
-- Playful and chunky
-- Embedded in clay scenes
+- Letras de massinha extrudada
+- Texto tridimensional e arredondado
+- Divertido e robusto
+- Integrado às cenas de massinha
 
 ## Best For
 

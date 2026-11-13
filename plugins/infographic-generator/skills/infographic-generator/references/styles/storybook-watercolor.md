@@ -1,28 +1,28 @@
 # storybook-watercolor
 
-Soft hand-painted illustration with whimsical charm
+Ilustração suave, pintada à mão, com um charme fantasioso
 
-## Color Palette
+## Paleta de cores
 
-- Primary: Soft watercolor washes - muted blues, greens, warm earth
-- Background: Watercolor paper texture, white or cream
-- Accents: Deeper pigment pools, splatter effects
+- Principal: Lavagens suaves de aquarela - azuis e verdes discretos, tons terrosos quentes
+- Fundo: Textura de papel para aquarela, branco ou creme
+- Destaques: Poças de pigmento mais intensas, efeitos de respingos
 
-## Visual Elements
+## Elementos visuais
 
-- Visible brushstrokes
-- Soft color bleeds and gradients
-- White space as design element
-- Delicate line work over washes
-- Natural, organic shapes
-- Dreamy, atmospheric quality
+- Pinceladas visíveis
+- Transições suaves e degradês de cor que se misturam
+- Espaço em branco como elemento de design
+- Traços delicados sobre as lavagens de aquarela
+- Formas naturais e orgânicas
+- Qualidade onírica e atmosférica
 
-## Typography
+## Tipografia
 
-- Elegant hand-lettering
-- Watercolor-style text
-- Flowing, organic letterforms
-- Integrated with illustrations
+- Letras elegantes, feitas à mão
+- Texto em estilo aquarela
+- Letras fluidas e orgânicas
+- Texto integrado às ilustrações
 
 ## Best For
 

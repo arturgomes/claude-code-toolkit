@@ -1,14 +1,14 @@
 # iceberg
 
-Surface vs hidden depths, visible vs underlying factors.
+Superfície versus profundezas ocultas, fatores visíveis versus fatores subjacentes.
 
-## Structure
+## Estrutura
 
-- Waterline dividing visible/hidden
-- Tip above water (obvious/surface)
-- Larger mass below (hidden/deep)
-- Proportional to emphasize hidden depth
-- Optional layers within underwater section
+- Linha d'água dividindo o visível do oculto
+- Ponta acima da água (óbvio/superfície)
+- Massa maior abaixo (oculto/profundo)
+- Proporcional, para enfatizar a profundidade oculta
+- Camadas opcionais dentro da parte submersa
 
 ## Best For
 
@@ -18,21 +18,21 @@ Surface vs hidden depths, visible vs underlying factors.
 - Public vs private aspects
 - Known vs unknown factors
 
-## Visual Elements
+## Elementos visuais
 
-- Clear water/surface line
-- Above: smaller, brighter
-- Below: larger, darker/deeper
-- Wave or water texture
-- Gradient showing depth
+- Linha nítida entre a água e a superfície
+- Acima: menor, mais brilhante
+- Abaixo: maior, mais escuro/profundo
+- Textura de ondas ou de água
+- Gradiente mostrando a profundidade
 
-## Text Placement
+## Posição do texto
 
-- Title at top
-- Surface items above waterline
-- Hidden items below, larger
-- Waterline label optional
-- Depth indicators for layers
+- Título no topo
+- Itens da superfície acima da linha d'água
+- Itens ocultos abaixo, maiores
+- Rótulo da linha d'água opcional
+- Indicadores de profundidade para as camadas
 
 ## Recommended Pairings
 

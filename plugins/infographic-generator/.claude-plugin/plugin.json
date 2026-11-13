@@ -1,6 +1,6 @@
 {
   "name": "infographic-generator",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Turns a lesson, text or topic into a ready-to-use image prompt for an educational infographic aimed at school students (early, middle, high). 18 layouts x 15 styles, text in pt-BR or en. Derived from baoyu-infographic (MIT).",
   "author": {
     "name": "Artur Gomes",

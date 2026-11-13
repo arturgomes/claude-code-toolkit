@@ -1,46 +1,46 @@
-Create an educational infographic for school students following these specifications:
+Crie um infográfico educativo para estudantes, seguindo estas especificações:
 
-## Image Specifications
+## Especificações da imagem
 
-- **Type**: Educational infographic
+- **Tipo**: infográfico educativo
 - **Layout**: {{LAYOUT}}
-- **Style**: {{STYLE}}
-- **Aspect Ratio**: {{ASPECT_RATIO}}
-- **Language**: {{LANGUAGE}}
+- **Estilo**: {{STYLE}}
+- **Proporção**: {{ASPECT_RATIO}}
+- **Idioma**: {{LANGUAGE}}
 
-## Core Principles
+## Princípios
 
-- Teach one idea per section; make the reading order obvious (numbered when order matters)
-- Follow the layout structure precisely for information architecture
-- Apply the style aesthetics consistently throughout
-- Keep text short; highlight keywords and core concepts
-- Use ample whitespace and a clear visual hierarchy: the headline is the largest element
-- High contrast between text and background; every label readable from the back of a classroom or on a phone screen
-- Be accurate: draw only what the content states, with no invented labels, numbers, arrows or extra facts
-- Keep imagery age-appropriate: friendly, no violence, no brand logos, no copyrighted characters; people and historical figures as stylized illustrations, never photorealistic
+- Ensine uma ideia por seção; deixe a ordem de leitura óbvia (numerada quando a ordem importa)
+- Siga a estrutura do layout com precisão para organizar a informação
+- Aplique a estética do estilo de forma consistente em toda a imagem
+- Textos curtos; destaque palavras-chave e conceitos centrais
+- Muito espaço livre e hierarquia visual clara: o título é o maior elemento
+- Alto contraste entre texto e fundo; todo rótulo legível do fundo da sala de aula ou na tela de um celular
+- Seja fiel: desenhe só o que o conteúdo diz, sem rótulos, números, setas ou fatos inventados
+- Imagens adequadas à idade: simpáticas, sem violência, sem logotipos de marcas, sem personagens protegidos por direitos autorais; pessoas e figuras históricas como ilustrações estilizadas, nunca fotorrealistas
 
-## Text Requirements
+## Regras de texto
 
-- Draw only the strings inside double quotes in the content below (titles, labels, glossary); spell each exactly as given
-- Everything else in the content (headings, objectives, key concepts, visual descriptions, design notes) is direction for you and is never written on the image
-- No filler text, no lorem ipsum, no watermarks, no signatures
-- All text in {{LANGUAGE}}. {{LANGUAGE_NOTE}}
-- Titles prominent and readable; key terms visually emphasized; labels clear and appropriately sized
+- Desenhe apenas os textos entre aspas duplas no conteúdo abaixo (títulos, rótulos, glossário); escreva cada um exatamente como está
+- Todo o resto do conteúdo (títulos de seção, objetivos, ideias centrais, descrições visuais, notas de design) é orientação para você e nunca aparece escrito na imagem
+- Sem texto de preenchimento, sem lorem ipsum, sem marcas d'água, sem assinaturas
+- Todo o texto em {{LANGUAGE}}. {{LANGUAGE_NOTE}}
+- Títulos em destaque e legíveis; termos-chave enfatizados; rótulos claros e de tamanho adequado
 
-## Audience Guidelines
+## Público
 
 {{AUDIENCE_GUIDELINES}}
 
-## Layout Guidelines
+## Layout
 
 {{LAYOUT_GUIDELINES}}
 
-## Style Guidelines
+## Estilo
 
 {{STYLE_GUIDELINES}}
 
 ---
 
-Generate the infographic based on the content below:
+Gere o infográfico a partir do conteúdo abaixo:
 
 {{CONTENT}}

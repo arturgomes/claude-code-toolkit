@@ -1,28 +1,28 @@
 # origami
 
-Folded paper forms with geometric precision
+Formas de papel dobrado com precisão geométrica
 
-## Color Palette
+## Paleta de cores
 
-- Primary: Solid origami paper colors - red, blue, green, gold
-- Background: White or soft gray, subtle shadows
-- Accents: Paper fold highlights, crisp shadows
+- Principal: Cores sólidas de papel de origami - vermelho, azul, verde, dourado
+- Fundo: Branco ou cinza-claro, sombras sutis
+- Destaques: Realces nas dobras do papel, sombras nítidas
 
-## Visual Elements
+## Elementos visuais
 
-- Geometric folded shapes
-- Visible fold lines
-- Cast shadows showing depth
-- Paper texture
-- Angular, faceted forms
-- Low-poly aesthetic
+- Formas geométricas dobradas
+- Linhas de dobra visíveis
+- Sombras projetadas que mostram profundidade
+- Textura de papel
+- Formas angulares e facetadas
+- Estética low-poly
 
-## Typography
+## Tipografia
 
-- Clean geometric fonts
-- Angular letterforms
-- Folded paper text effect
-- Minimal, precise labels
+- Fontes geométricas e limpas
+- Letras angulares
+- Efeito de texto em papel dobrado
+- Rótulos minimalistas e precisos
 
 ## Best For
 

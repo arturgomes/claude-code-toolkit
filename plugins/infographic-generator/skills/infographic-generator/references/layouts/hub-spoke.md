@@ -1,14 +1,14 @@
 # hub-spoke
 
-Central concept with radiating connections to related items.
+Conceito central com conexões que se irradiam para itens relacionados.
 
-## Structure
+## Estrutura
 
-- Central hub (main concept)
-- Spokes radiating outward
-- Nodes at spoke ends (related concepts)
-- Even or weighted distribution
-- Optional secondary connections
+- Núcleo central (conceito principal)
+- Raios irradiando para fora
+- Nós nas pontas dos raios (conceitos relacionados)
+- Distribuição uniforme ou ponderada
+- Conexões secundárias opcionais
 
 ## Best For
 
@@ -18,21 +18,21 @@ Central concept with radiating connections to related items.
 - Ecosystem mapping
 - Mind maps
 
-## Visual Elements
+## Elementos visuais
 
-- Prominent central hub
-- Clear spoke lines
-- Consistent node styling
-- Icons representing each spoke item
-- Optional grouping colors
+- Núcleo central em destaque
+- Linhas de raio nítidas
+- Estilo de nó consistente
+- Ícones representando cada item dos raios
+- Cores de agrupamento opcionais
 
-## Text Placement
+## Posição do texto
 
-- Title at top
-- Core concept in center hub
-- Spoke item labels at nodes
-- Brief descriptions near nodes
-- Connection labels on spokes if needed
+- Título no topo
+- Conceito principal no núcleo central
+- Rótulos dos itens nos nós
+- Descrições breves perto dos nós
+- Rótulos de conexão nos raios, se necessário
 
 ## Recommended Pairings
 

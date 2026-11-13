@@ -1,14 +1,14 @@
 # bridge
 
-Gap-crossing structure connecting problem to solution or current to future state.
+Estrutura de ponte que atravessa uma lacuna, ligando o problema à solução ou o estado atual ao estado futuro.
 
-## Structure
+## Estrutura
 
-- Left side: current state/problem
-- Right side: desired state/solution
-- Bridge element spanning the gap
-- Gap representing challenge/obstacle
-- Bridge elements as steps/methods
+- Lado esquerdo: estado atual/problema
+- Lado direito: estado desejado/solução
+- Elemento de ponte atravessando a lacuna
+- Lacuna representando o desafio/obstáculo
+- Elementos da ponte como etapas/métodos
 
 ## Best For
 
@@ -18,21 +18,21 @@ Gap-crossing structure connecting problem to solution or current to future state
 - Transformation bridges
 - Strategic initiatives
 
-## Visual Elements
+## Elementos visuais
 
-- Two distinct platforms/sides
-- Visible gap or chasm
-- Bridge structure with supports
-- Icons representing each side
-- Stepping stones or bridge planks
+- Duas plataformas/margens bem distintas
+- Lacuna ou abismo visível
+- Estrutura da ponte com apoios
+- Ícones representando cada lado
+- Pedras de travessia ou tábuas da ponte
 
-## Text Placement
+## Posição do texto
 
-- Title at top
-- Left label (From/Problem/Current)
-- Right label (To/Solution/Future)
-- Bridge elements labeled
-- Gap description below
+- Título no topo
+- Rótulo à esquerda (De/Problema/Atual)
+- Rótulo à direita (Para/Solução/Futuro)
+- Elementos da ponte com rótulos
+- Descrição da lacuna abaixo
 
 ## Recommended Pairings
 

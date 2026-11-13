@@ -1,24 +1,24 @@
 # middle
 
-Ages 11-14 (pt-BR: Ensino Fundamental, anos finais; en: middle school).
+Idades 11-14 (pt-BR: Ensino Fundamental, anos finais; en: middle school).
 
-## Content Limits
+## Limites de conteúdo
 
-- 4-6 sections; one idea per section
-- Labels of up to 8 words; sentences of 15 words or fewer, at most two per section
-- Simple numbers, dates and one-step formulas allowed
-- At most three key terms, each with a short gloss (a plain-words meaning) in a small strip or callout
+- 4-6 seções; uma ideia por seção
+- Rótulos de até 8 palavras; frases de 15 palavras ou menos, no máximo duas por seção
+- Números simples, datas e fórmulas de um passo são permitidos
+- No máximo três termos-chave, cada um com uma explicação curta (o significado em palavras simples) numa faixa ou num destaque pequeno
 
-## Language
+## Linguagem
 
-- Clear, direct, everyday vocabulary; technical terms kept and glossed, never swapped for a vaguer word
-- Questions as section headings are welcome, for example: how does water return to the sky?
+- Vocabulário claro, direto e do dia a dia; termos técnicos mantidos e explicados, nunca trocados por uma palavra mais vaga
+- Perguntas como títulos de seção são bem-vindas, por exemplo: como a água volta para o céu?
 
-## Visual Treatment
+## Tratamento visual
 
-- Large, highly legible lettering; clear numbered flow when order matters
-- Color-coding that stays consistent (one color per concept)
-- Icons and labeled diagrams over paragraphs of text
+- Letras grandes e muito legíveis; sequência numerada clara quando a ordem importa
+- Cores com código consistente (uma cor por conceito)
+- Ícones e diagramas com rótulos em vez de parágrafos de texto
 
 ## Style Fit
 

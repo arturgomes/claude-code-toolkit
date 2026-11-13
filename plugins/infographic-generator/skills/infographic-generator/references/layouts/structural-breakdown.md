@@ -1,21 +1,21 @@
 # structural-breakdown
 
-Internal structure visualization with labeled parts or layers.
+Visualização da estrutura interna com partes ou camadas identificadas.
 
-## Structure
+## Estrutura
 
-- Central subject (object, system, body)
-- Parts or layers clearly shown
-- Labels with callout lines
-- Exploded or cutaway view
-- Optional zoomed detail sections
+- Elemento central (objeto, sistema, corpo)
+- Partes ou camadas bem visíveis
+- Rótulos com linhas de chamada
+- Vista explodida ou em corte
+- Seções de detalhe ampliadas opcionais
 
-## Variants
+## Variações
 
-| Variant | View Type | Visual Emphasis |
+| Variação | Tipo de vista | Ênfase visual |
 |---------|-----------|-----------------|
-| **Exploded** | Parts separated outward | Component relationships |
-| **Cross-section** | Sliced/cutaway view | Internal layers, composition |
+| **Explodida** | Partes separadas para fora | Relações entre os componentes |
+| **Corte transversal** | Vista fatiada/em corte | Camadas internas, composição |
 
 ## Best For
 
@@ -25,21 +25,21 @@ Internal structure visualization with labeled parts or layers.
 - Device teardowns
 - Material composition
 
-## Visual Elements
+## Elementos visuais
 
-- Main subject clearly rendered
-- Callout lines with dots/arrows
-- Label boxes at endpoints
-- Numbered parts optionally
-- Layer boundaries or separation
+- Elemento principal bem representado
+- Linhas de chamada com pontos/setas
+- Caixas de rótulo nas extremidades
+- Partes numeradas, opcionalmente
+- Limites ou separação entre camadas
 
-## Text Placement
+## Posição do texto
 
-- Title at top
-- Part/layer labels at callouts
-- Brief descriptions in boxes
-- Legend for numbered systems
-- Depth/thickness if relevant
+- Título no topo
+- Rótulos das partes/camadas nas linhas de chamada
+- Descrições breves em caixas
+- Legenda para as partes numeradas
+- Profundidade/espessura, se relevante
 
 ## Recommended Pairings
 

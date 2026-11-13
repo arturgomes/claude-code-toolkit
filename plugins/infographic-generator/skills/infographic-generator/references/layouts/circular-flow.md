@@ -1,14 +1,14 @@
 # circular-flow
 
-Cyclic process showing continuous or recurring steps.
+Processo cíclico que mostra etapas contínuas ou recorrentes.
 
-## Structure
+## Estrutura
 
-- Circular arrangement
-- Steps around the circle
-- Arrows showing direction
-- No clear start/end (continuous)
-- Center can hold main concept
+- Disposição circular
+- Etapas ao redor do círculo
+- Setas indicando a direção
+- Sem início nem fim claros (contínuo)
+- O centro pode abrigar o conceito principal
 
 ## Best For
 
@@ -18,21 +18,21 @@ Cyclic process showing continuous or recurring steps.
 - Continuous improvement
 - Natural cycles
 
-## Visual Elements
+## Elementos visuais
 
-- Circle or ring shape
-- Directional arrows
-- Step nodes evenly spaced
-- Icons per step
-- Optional center element
+- Forma de círculo ou anel
+- Setas direcionais
+- Nós das etapas igualmente espaçados
+- Ícones em cada etapa
+- Elemento central opcional
 
-## Text Placement
+## Posição do texto
 
-- Title at top
-- Step labels at each node
-- Brief descriptions near nodes
-- Center concept if applicable
-- Cycle name
+- Título no topo
+- Rótulos das etapas em cada nó
+- Descrições breves perto dos nós
+- Conceito central, se houver
+- Nome do ciclo
 
 ## Recommended Pairings
 

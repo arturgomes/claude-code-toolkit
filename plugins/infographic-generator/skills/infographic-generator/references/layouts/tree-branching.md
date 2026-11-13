@@ -1,14 +1,14 @@
 # tree-branching
 
-Hierarchical structure branching from root to leaves, showing categories and subcategories.
+Estrutura hierárquica que se ramifica da raiz às folhas, mostrando categorias e subcategorias.
 
-## Structure
+## Estrutura
 
-- Root/trunk at top or left
-- Branches splitting into sub-branches
-- Leaves as terminal nodes
-- Clear parent-child relationships
-- Balanced or organic branching
+- Raiz/tronco no topo ou à esquerda
+- Ramos que se dividem em sub-ramos
+- Folhas como nós terminais
+- Relações de pai e filho claras
+- Ramificação equilibrada ou orgânica
 
 ## Best For
 
@@ -18,21 +18,21 @@ Hierarchical structure branching from root to leaves, showing categories and sub
 - File/folder structures
 - Family trees
 
-## Visual Elements
+## Elementos visuais
 
-- Connecting lines showing relationships
-- Nodes at branch points
-- Icons or labels at each node
-- Color coding by branch
-- Visual weight decreasing toward leaves
+- Linhas de ligação mostrando as relações
+- Nós nos pontos de ramificação
+- Ícones ou rótulos em cada nó
+- Codificação por cores de cada ramo
+- Peso visual diminuindo em direção às folhas
 
-## Text Placement
+## Posição do texto
 
-- Title at top
-- Root concept prominently labeled
-- Branch and leaf labels
-- Optional descriptions at key nodes
-- Legend for categories
+- Título no topo
+- Conceito da raiz com rótulo de destaque
+- Rótulos dos ramos e das folhas
+- Descrições opcionais nos nós principais
+- Legenda das categorias
 
 ## Recommended Pairings
 

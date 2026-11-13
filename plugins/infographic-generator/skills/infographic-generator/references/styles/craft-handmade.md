@@ -1,43 +1,43 @@
 # craft-handmade (DEFAULT)
 
-Hand-drawn and paper craft aesthetic with warm, organic feel.
+Estética de desenho à mão e artesanato em papel, com um toque caloroso e orgânico.
 
-## Color Palette
+## Paleta de cores
 
-- Primary: Warm pastels, soft saturated colors, craft paper tones
-- Background: Light cream (#FFF8F0), textured paper (#F5F0E6)
-- Accents: Bold highlights, construction paper colors
+- Principal: Tons pastel quentes, cores suaves e saturadas, tons de papel artesanal
+- Fundo: Creme claro (#FFF8F0), papel texturizado (#F5F0E6)
+- Destaques: Realces fortes, cores de cartolina
 
-## Variants
+## Variações
 
-| Variant | Focus | Visual Emphasis |
+| Variação | Foco | Ênfase visual |
 |---------|-------|-----------------|
-| **Hand-drawn** | Cartoon illustration | Simple icons, slightly imperfect lines |
-| **Paper-cutout** | Layered paper craft | Drop shadows, torn edges, texture |
+| **Desenhado à mão** | Ilustração em estilo cartum | Ícones simples, linhas levemente imperfeitas |
+| **Recorte de papel** | Artesanato em papel, em camadas | Sombras projetadas, bordas rasgadas, textura |
 
-## Visual Elements
+## Elementos visuais
 
-- Hand-drawn or cut-paper quality
-- Organic, slightly imperfect shapes
-- Layered depth with shadows (paper variant)
-- Simple cartoon elements and icons
-- Character illustrations (people, personalities in cartoon form)
-- Ample whitespace, clean composition
-- Keywords and core concepts highlighted
-- **Strictly hand-drawn—no realistic or photographic elements**
+- Aparência de desenho à mão ou de recorte de papel
+- Formas orgânicas, levemente imperfeitas
+- Profundidade em camadas, com sombras (variação em papel)
+- Elementos e ícones simples em estilo cartum
+- Ilustrações de personagens (pessoas e personalidades em forma de cartum)
+- Bastante espaço em branco, composição limpa
+- Palavras-chave e conceitos centrais em destaque
+- **Estritamente desenhado à mão — sem elementos realistas ou fotográficos**
 
-## Style Enforcement
+## Regras obrigatórias
 
-- All imagery must maintain cartoon/illustrated aesthetic
-- Replace real photos or realistic figures with hand-drawn equivalents
-- Maintain consistent line weight and illustration style throughout
+- Todas as imagens devem manter a estética de cartum/ilustração
+- Substitua fotos reais ou figuras realistas por equivalentes desenhados à mão
+- Mantenha a espessura de linha e o estilo de ilustração consistentes do início ao fim
 
-## Typography
+## Tipografia
 
-- Hand-drawn or casual font style
-- Clear, readable labels
-- Keywords emphasized with larger/bolder text
-- Cut-out letter style for paper variant
+- Fonte manuscrita ou de estilo casual
+- Rótulos claros e legíveis
+- Palavras-chave enfatizadas com texto maior/mais grosso
+- Letras recortadas para a variação em papel
 
 ## Best For
 

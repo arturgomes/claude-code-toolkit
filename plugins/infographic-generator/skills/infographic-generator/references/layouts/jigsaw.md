@@ -1,14 +1,14 @@
 # jigsaw
 
-Interlocking puzzle pieces showing how parts fit together.
+Peças de quebra-cabeça encaixadas que mostram como as partes se combinam.
 
-## Structure
+## Estrutura
 
-- Puzzle pieces that interlock
-- Each piece represents a component
-- Connections show relationships
-- Can be assembled or exploded view
-- Missing piece highlights gaps
+- Peças de quebra-cabeça que se encaixam
+- Cada peça representa um componente
+- As conexões mostram as relações
+- Pode ser montado ou em vista explodida
+- Uma peça faltando destaca lacunas
 
 ## Best For
 
@@ -18,21 +18,21 @@ Interlocking puzzle pieces showing how parts fit together.
 - Integration concepts
 - Completeness assessments
 
-## Visual Elements
+## Elementos visuais
 
-- Classic puzzle piece shapes
-- Distinct colors per piece
-- Interlocking edges visible
-- Icons or labels per piece
-- Optional missing piece
+- Formas clássicas de peças de quebra-cabeça
+- Cores distintas em cada peça
+- Bordas de encaixe visíveis
+- Ícones ou rótulos em cada peça
+- Peça faltando opcional
 
-## Text Placement
+## Posição do texto
 
-- Title at top
-- Piece labels inside or beside
-- Connection descriptions
-- Missing piece explanation
-- Assembly context
+- Título no topo
+- Rótulos das peças dentro ou ao lado
+- Descrições das conexões
+- Explicação da peça faltando
+- Contexto da montagem
 
 ## Recommended Pairings
 

@@ -1,28 +1,28 @@
 # ikea-manual
 
-Minimal line art assembly instruction style
+Estilo minimalista de instruções de montagem, em arte de linhas
 
-## Color Palette
+## Paleta de cores
 
-- Primary: Black lines, minimal fills
-- Background: White or cream paper
-- Accents: Red for warnings, blue for highlights
+- Principal: Linhas pretas, preenchimentos mínimos
+- Fundo: Papel branco ou creme
+- Destaques: Vermelho para avisos, azul para realces
 
-## Visual Elements
+## Elementos visuais
 
-- Simple line drawings
-- Numbered step sequences
-- Arrow indicators
-- Exploded assembly views
-- Wordless communication
-- Stick figures for scale
+- Desenhos simples de linhas
+- Sequências de passos numerados
+- Indicadores em forma de seta
+- Vistas explodidas de montagem
+- Comunicação sem palavras
+- Bonecos de palito para dar noção de escala
 
-## Typography
+## Tipografia
 
-- Minimal text
-- Step numbers prominent
-- Universal symbols
-- Simple sans-serif when needed
+- Texto mínimo
+- Números dos passos em destaque
+- Símbolos universais
+- Fonte sem serifa simples, quando necessário
 
 ## Best For
 

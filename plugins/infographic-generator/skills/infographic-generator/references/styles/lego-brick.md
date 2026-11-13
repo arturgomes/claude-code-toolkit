@@ -1,28 +1,28 @@
 # lego-brick
 
-Toy brick construction with playful aesthetic
+Construção com peças de brinquedo e estética lúdica
 
-## Color Palette
+## Paleta de cores
 
-- Primary: Classic LEGO colors - red, blue, yellow, green, white
-- Background: Light gray baseplate or white
-- Accents: Bright primary pops, shiny studs
+- Principal: Cores clássicas do LEGO - vermelho, azul, amarelo, verde, branco
+- Fundo: Placa de base cinza-clara ou branco
+- Destaques: Toques de cores primárias vivas, pinos brilhantes
 
-## Visual Elements
+## Elementos visuais
 
-- Visible brick studs
-- Modular construction
-- Minifigure characters
-- Building instruction style
-- Stackable elements
-- Plastic sheen
+- Pinos das peças visíveis
+- Construção modular
+- Personagens minifigura
+- Estilo de manual de montagem
+- Elementos empilháveis
+- Brilho de plástico
 
-## Typography
+## Tipografia
 
-- Blocky, bold fonts
-- LEGO instruction style
-- Step numbers
-- Playful appearance
+- Fontes quadradas e em negrito
+- Estilo dos manuais do LEGO
+- Números dos passos
+- Aparência lúdica
 
 ## Best For
 
