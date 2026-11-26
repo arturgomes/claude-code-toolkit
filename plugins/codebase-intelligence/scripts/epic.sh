@@ -9,6 +9,7 @@
 #   heartbeat-paths <CHILD> [ROOT] [VAULT]           a child's worktrees + vault notes, for check
 #   children <UMBRELLA.md>                           an umbrella plan's child table as TSV
 #   ci-delegation [TSV] [ROOT]                       which local checks PR CI provably covers
+#   stack-plan <UMBRELLA.md>                         layer<TAB>id<TAB>parent, or exit 2 if not one linear chain
 #
 # ROOT is the project the epic runs in: $EPIC_ROOT, else the caller's cwd. It may be one git repo or
 # an umbrella folder of repos. Run bookkeeping (pid, exit, log, prompt) lives outside every repo:
@@ -139,7 +140,8 @@ cmd_heartbeat_paths() {
 }
 
 # Umbrella plan: the rows of the first markdown table under a "## Children" heading.
-#   | id | runs | deps |      runs = a ticket key, or a plan path relative to the umbrella file
+#   | id | runs | deps |      runs = a ticket key, a plan path relative to the umbrella file, or
+#                               `@item` = the "### <id>" section of this same file
 # Prints one "id<TAB>runs<TAB>deps" line per child (plan paths made absolute, deps comma-joined).
 # Rejects: bad ids, duplicate ids, missing plan files, deps naming no child. Exit 2 on any error.
 cmd_children() {
@@ -149,7 +151,8 @@ cmd_children() {
   awk -F'|' -v base="$base" '
     function trim(s) { gsub(/^[ \t`]+|[ \t`]+$/, "", s); return s }
     /^##[ \t]+Children[ \t]*$/ { inside = 1; next }
-    inside && /^#/ { if (seen_table) exit; next }
+    /^###[ \t]+/ { h = $0; sub(/^###[ \t]+/, "", h); sub(/[ \t]+$/, "", h); heads[h] = 1 }
+    inside && /^#/ { if (seen_table) inside = 0; next }
     inside && /^[ \t]*\|/ {
       seen_table = 1
       id = trim($2); runs = trim($3); deps = trim($4)
@@ -158,15 +161,16 @@ cmd_children() {
       if (id !~ /^([A-Z][A-Z0-9]*-[0-9]+|[a-z0-9][a-z0-9-]*)$/) { print "bad child id: " id > "/dev/stderr"; bad = 1; next }
       if (id in ids) { print "duplicate child id: " id > "/dev/stderr"; bad = 1; next }
       if (runs == "") runs = id
-      if (runs !~ /^[A-Z][A-Z0-9]*-[0-9]+$/ && runs !~ /^\//) runs = base "/" runs
+      if (runs !~ /^[A-Z][A-Z0-9]*-[0-9]+$/ && runs !~ /^\// && runs != "@item") runs = base "/" runs
       ids[id] = 1; n++; order[n] = id; R[id] = runs; D[id] = deps
       next
     }
-    inside && seen_table && !/^[ \t]*\|/ { exit }
+    inside && seen_table && !/^[ \t]*\|/ { inside = 0 }
     END {
       if (n == 0) { print "no child rows under a ## Children table" > "/dev/stderr"; exit 2 }
       for (i = 1; i <= n; i++) {
         id = order[i]
+        if (R[id] == "@item" && !(id in heads)) { print "no ### " id " section for @item child" > "/dev/stderr"; bad = 1 }
         if (R[id] ~ /^\// && system("test -f \"" R[id] "\"") != 0) { print "plan file missing for " id ": " R[id] > "/dev/stderr"; bad = 1 }
         m = split(D[id], dl, ",")
         for (j = 1; j <= m; j++) if (dl[j] != "" && !(dl[j] in ids)) { print "dep " dl[j] " of " id " is not a child" > "/dev/stderr"; bad = 1 }
@@ -174,6 +178,33 @@ cmd_children() {
       if (bad) exit 2
       for (i = 1; i <= n; i++) printf "%s\t%s\t%s\n", order[i], R[order[i]], D[order[i]]
     }' "$file"
+}
+
+# An epic ships as ONE GitHub stack only when its children form a single chain: the bottom layer sits on
+# the trunk, every other layer on the one below ("stacks with branching structures aren't supported").
+# Prints "layer<TAB>id<TAB>parent" bottom-up, parent = "trunk" or a child id. Exit 2 and say why on a
+# fork, a fan-in, several roots or a cycle: the caller then ships the children independently.
+cmd_stack_plan() {
+  local file=${1:?umbrella plan} rows
+  rows=$(cmd_children "$file") || return 2
+  printf '%s\n' "$rows" | awk -F'\t' '
+    { n++; id[n] = $1; deps[$1] = $3; nd = ($3 == "") ? 0 : split($3, a, ",")
+      if (nd > 1) { printf "fan-in: %s has %d deps\n", $1, nd > "/dev/stderr"; bad = 1 }
+      if (nd == 1) { parent[$1] = a[1]; kids[a[1]]++ } else roots = roots (roots == "" ? "" : " ") $1 }
+    END {
+      for (i = 1; i <= n; i++) if (kids[id[i]] > 1) { printf "branching: %s has %d dependents\n", id[i], kids[id[i]] > "/dev/stderr"; bad = 1 }
+      nr = split(roots, r, " ")
+      if (nr == 0) { print "no root: every child has a dep (cycle)" > "/dev/stderr"; bad = 1 }
+      else if (nr > 1) { print "one stack needs one root, found " nr ": " roots > "/dev/stderr"; bad = 1 }
+      if (bad) exit 2
+      cur = r[1]; layer = 0
+      while (cur != "" && layer <= n) {
+        layer++; printf "%d\t%s\t%s\n", layer, cur, (cur in parent) ? parent[cur] : "trunk"
+        nxt = ""; for (i = 1; i <= n; i++) if (parent[id[i]] == cur) nxt = id[i]
+        cur = nxt
+      }
+      if (layer != n) { print "cycle: chain from the root reaches " layer " of " n " children" > "/dev/stderr"; exit 2 }
+    }'
 }
 
 # repo<TAB>check<TAB>workflow<TAB>needle, per project: <ROOT>/.claude/epic-ci-delegation.tsv.
@@ -206,5 +237,6 @@ case "$sub" in
   heartbeat-paths) cmd_heartbeat_paths "$@" ;;
   children) cmd_children "$@" ;;
   ci-delegation) cmd_ci_delegation "$@" ;;
+  stack-plan) cmd_stack_plan "$@" ;;
   *) sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
 esac

@@ -7,6 +7,17 @@ structural search** (single tier). Cross-session memory lives in an Obsidian vau
 the `ultimate-obsidian` MCP. **No prp-core (or any other plugin) required.**
 
 **Version history**
+- **v3.31.0** — **`/prp-epic --create` writes the work list; `--ship stacked` lands it as one GitHub stack.**
+  `--create <goal | EPIC-KEY | KEY KEY …>` decomposes into XS–M vertical slices (each with outcome,
+  acceptance, verify) and writes a reviewable `<slug>.epic.md` (vault `02-Notes/Plans/` by default, or
+  `--out`), validates it, and **stops**: it never runs what it just wrote. The run then takes that file;
+  `@item` children execute their own `### <id>` section via `/prp-orchestrate`. With `ship: stacked` the
+  items form one chain: each layer is built from the one below, unblocks on `ci-green` instead of waiting
+  for a human merge, is linked with `gh stack link` once the chain is complete, and gets one headless
+  restack run (`git rebase --onto`) when the layer under it squash-merges. New `epic.sh stack-plan`
+  rejects forks, fan-ins, several roots and cycles before any child launches. Run state stays in the
+  ledger, never in the `.epic.md`. Self-test now 59 checks. **Stacked flow not yet run live**:
+  `--dry-run`, then a two-layer chain, first.
 - **v3.30.0** — **`/prp-epic`: a whole epic to PRs, unattended.** Takes a Jira epic key, or an umbrella
   plan whose `## Children` table lists smaller plans and/or tickets with their deps. Each child runs as its
   own detached headless `claude -p` process: a ticket through `/prp-orchestrate`, a plan through

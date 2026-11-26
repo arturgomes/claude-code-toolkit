@@ -203,6 +203,58 @@ printf '# nothing here\n' > "$U/empty.md"
 "$EPIC_SH" children "$U/empty.md" >/dev/null 2>&1; RC=$?
 assert_eq "children: no ## Children table exits 2" "2" "$RC"
 
+# --- children: `@item` runs the "### <id>" section of the same .epic.md --------
+cat > "$U/items.epic.md" <<'ITEMS'
+# Epic
+## Children
+| id | runs | deps |
+|---|---|---|
+| tokens | @item | |
+| SEATHQ-5 | | tokens |
+## Items
+### tokens
+Outcome: design tokens exist.
+ITEMS
+assert_eq "children: @item stays @item and needs no plan file" "$(printf 'tokens\t@item\t\nSEATHQ-5\tSEATHQ-5\ttokens')" "$("$EPIC_SH" children "$U/items.epic.md")"
+printf '## Children\n| id | runs | deps |\n|---|---|---|\n| ghost | @item | |\n## Items\n### other\ntext\n' > "$U/noitem.epic.md"
+ERR=$("$EPIC_SH" children "$U/noitem.epic.md" 2>&1); RC=$?
+assert_eq "children: @item without its section exits 2" "2" "$RC"
+assert_match "children: missing item section reported" 'no ### ghost section for @item child' "$ERR"
+
+# --- stack-plan: an epic ships as ONE linear GitHub stack, or it is refused ------
+mk() { printf '## Children\n| id | runs | deps |\n|---|---|---|\n%s\n' "$2" > "$U/$1.md"; }
+mk chain '| SEATHQ-3 | | SEATHQ-2 |
+| SEATHQ-1 | | |
+| SEATHQ-2 | | SEATHQ-1 |'
+EXPECTED=$(printf '%s\t%s\t%s\n' 1 SEATHQ-1 trunk 2 SEATHQ-2 SEATHQ-1 3 SEATHQ-3 SEATHQ-2)
+assert_eq "stack-plan: a chain is ordered bottom-up whatever the row order, each layer names its parent" "$EXPECTED" "$("$EPIC_SH" stack-plan "$U/chain.md")"
+mk one '| SEATHQ-1 | | |'
+assert_eq "stack-plan: a single child is layer 1 on the trunk" "$(printf '1\tSEATHQ-1\ttrunk')" "$("$EPIC_SH" stack-plan "$U/one.md")"
+mk fork '| SEATHQ-1 | | |
+| SEATHQ-2 | | SEATHQ-1 |
+| SEATHQ-3 | | SEATHQ-1 |'
+ERR=$("$EPIC_SH" stack-plan "$U/fork.md" 2>&1); RC=$?
+assert_eq "stack-plan: a fork exits 2" "2" "$RC"
+assert_match "stack-plan: a fork names the parent and its dependents" 'branching: SEATHQ-1 has 2 dependents' "$ERR"
+mk fanin '| SEATHQ-1 | | |
+| SEATHQ-2 | | |
+| SEATHQ-3 | | SEATHQ-1, SEATHQ-2 |'
+ERR=$("$EPIC_SH" stack-plan "$U/fanin.md" 2>&1); RC=$?
+assert_eq "stack-plan: a fan-in exits 2" "2" "$RC"
+assert_match "stack-plan: a fan-in names the child and its deps" 'fan-in: SEATHQ-3 has 2 deps' "$ERR"
+mk twin '| SEATHQ-1 | | |
+| SEATHQ-2 | | |'
+ERR=$("$EPIC_SH" stack-plan "$U/twin.md" 2>&1); RC=$?
+assert_eq "stack-plan: two independent roots exit 2" "2" "$RC"
+assert_match "stack-plan: two roots reported" 'one stack needs one root, found 2: SEATHQ-1 SEATHQ-2' "$ERR"
+mk loop '| SEATHQ-1 | | SEATHQ-2 |
+| SEATHQ-2 | | SEATHQ-1 |'
+ERR=$("$EPIC_SH" stack-plan "$U/loop.md" 2>&1); RC=$?
+assert_eq "stack-plan: a cycle exits 2" "2" "$RC"
+assert_match "stack-plan: a cycle is reported, not looped on" 'cycle|no root' "$ERR"
+"$EPIC_SH" stack-plan "$U/bad.md" >/dev/null 2>&1; RC=$?
+assert_eq "stack-plan: an invalid child table exits 2 too" "2" "$RC"
+
 printf '\n%s passed, %s failed\n' "$PASSES" "$FAILS"
 [ "$FAILS" -eq 0 ] && echo "ALL PASSED"
 [ "$FAILS" -eq 0 ]
